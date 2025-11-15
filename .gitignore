@@ -5,3 +5,9 @@
 .DS_Store
 *.Rproj
 .DS_Store
+venv/
+.env/
+.venv/
+pip-selfcheck.json
+__pycache__/
+*.py[cod]

@@ -1,0 +1,7 @@
+# Install once if needed:
+
+install.packages(c("tidyverse", "ggplot2"))
+
+
+library(tidyverse)           # data manipulation + plotting
+library(ggplot2)             # plotting 
