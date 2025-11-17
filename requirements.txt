@@ -1,7 +1,11 @@
 # Install once if needed:
 
-install.packages(c("tidyverse", "ggplot2"))
+install.packages(c("tidyverse", "ggplot2", "e1071", "caret", "kernlab"))
+
 
 
 library(tidyverse)           # data manipulation + plotting
 library(ggplot2)             # plotting 
+library(e1071)              # SVM implementation
+library(caret)              # confusion matrix and other ML utilities
+library(kernlab)              # confusion matrix and other ML utilities

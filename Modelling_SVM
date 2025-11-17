@@ -1,0 +1,37 @@
+library(tidyverse)
+library(ggplot2)
+library(e1071)
+library(caret)
+library(kernlab)
+
+
+data <- read.csv("data/data.csv", sep = ";")
+summary(data)
+nrow(data)
+anyNA(data)
+colSums(is.na(data))
+str(data)
+
+# for me to know which feature better helps classify, a higher anova score indicates me better predictability
+
+cat("\n=== ANOVA F-Statistics for Individual Features ===\n")
+
+numeric_cols <- sapply(data, is.numeric)
+features <- names(data)
+features <- features[features != "Target"] 
+
+results <- data.frame(Feature=character(), F_value=numeric(), p_value=numeric(), stringsAsFactors=FALSE)
+
+for(feat in features) {
+  formula <- as.formula(paste(feat, "~ Target"))
+  anova_result <- aov(formula, data=data)
+  summary_anova <- summary(anova_result)
+  f_val <- summary_anova[[1]]$`F value`[1]
+  p_val <- summary_anova[[1]]$`Pr(>F)`[1]
+  results <- rbind(results, data.frame(Feature=feat, F_value=round(f_val, 2), 
+                                       p_value=format(p_val, scientific=TRUE)))
+}
+
+results <- results[order(-results$F_value),]
+print(results, row.names=FALSE)
+
