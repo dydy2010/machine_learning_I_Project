@@ -1,4 +1,4 @@
-data <- read.csv("data/data.csv", sep = ";")
+data <- read.csv("data/preprocessed_data.csv")
 
 """
 The results  indicate that grades and the amount of credits approved have the highest F-Values, 
@@ -8,23 +8,24 @@ In this case, I want to choose the features of second semester marks and the amo
 
 """
 
+data$Target <- as.factor(data$Target)
+
 # Prepare the data frame
 marks <- data.frame(
-  x.1 = as.numeric(data$Curricular.units.2nd.sem..grade.),  # 2nd semester marks
-  x.2 = as.numeric(data$Curricular.units.2nd.sem..approved.),  # 1st semester marks
+  x.1 = data$Curricular.units.2nd.sem..grade.,
+  x.2 = data$Curricular.units.2nd.sem..approved.,
   y = as.factor(data$Target)
 )
 
-marks <- dat[complete.cases(dat), ]
+marks <- marks[complete.cases(marks), ]
 
 # Plot 
-ggplot(data = marks, aes(x = x.2, y =x.1, color = y)) + 
+ggplot(data = marks, aes(x = x.2, y = x.1, color = y)) + 
   geom_point(size = 2) + 
-  scale_color_manual(values=c("Dropout" = "#ff2000", 
-                               "Enrolled" = "#828282", 
-                               "Graduate" = "#2ecc71"))+
-    scale_y_continuous(limits = c(9, NA)) +
-
+  scale_color_manual(values = c("Dropout" = "#ff2000", 
+                                 "Enrolled" = "#828282", 
+                                 "Graduate" = "#2ecc71")) +
+  scale_y_continuous(limits = c(9, NA)) +
   labs(
     x = "2nd Semester Passed Units",
     y = "2nd Semester Marks"
@@ -47,22 +48,9 @@ cat("Test set size:", nrow(test_data), "\n")
 Now, I will fit the SVM model with a linear, a radial and a polynomial kernel.
 """
 
-svm_linear <- svm(y ~ x.1 + x.2, 
-                  data = train_data, 
-                  kernel = "linear", 
-                  cost = 1)
-
-svm_radial <- svm(y ~ x.1 + x.2, 
-                  data = train_data, 
-                  kernel = "radial", 
-                  cost = 10, 
-                  gamma = 0.1)
-
-svm_poly <- svm(y ~ x.1 + x.2, 
-                data = train_data, 
-                kernel = "polynomial", 
-                cost = 1, 
-                degree = 3)
+svm_linear <- svm(y ~ x.1 + x.2, data = train_data, kernel = "linear", cost = 1)
+svm_radial <- svm(y ~ x.1 + x.2, data = train_data, kernel = "radial", cost = 10, gamma = 0.1)
+svm_poly <- svm(y ~ x.1 + x.2, data = train_data, kernel = "polynomial", cost = 1, degree = 3)
 
 """
 Predict and compare the models
@@ -73,15 +61,15 @@ pred_radial <- predict(svm_radial, test_data)
 pred_poly <- predict(svm_poly, test_data)
 
 cat("\n Linear Kernel Result:\n")
-cm_linear <- confusionMatrix(pred_linear, test_data)
+cm_linear <- confusionMatrix(pred_linear, test_data$y)
 print(cm_linear)
 
 cat("\n Radial Kernel Result:\n")
-cm_radial <- confusionMatrix(pred_radial, test_data)
+cm_radial <- confusionMatrix(pred_radial, test_data$y)
 print(cm_radial)
 
 cat("\n Polynomial Kernel Result:\n")
-cm_poly <- confusionMatrix(pred_poly, test_data)
+cm_poly <- confusionMatrix(pred_poly, test_data$y)
 print(cm_poly)
 
 
