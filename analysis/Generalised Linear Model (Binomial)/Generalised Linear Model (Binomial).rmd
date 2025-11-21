@@ -1,0 +1,60 @@
+# Binomial GLM Models - Brief Report
+
+## Objectives
+Two binary classification models:
+1. Predict high vs low admission scores
+2. Predict graduate vs dropout outcomes
+
+## Model Type
+Generalized Linear Model with Binomial family (Logistic Regression)
+
+## Performance Metrics
+
+### Model 1: High vs Low Admission
+- Accuracy: 70.4%
+- AUC-ROC: 0.803
+- Balanced precision and recall
+
+### Model 2: Graduate vs Dropout
+- Accuracy: 85.5%
+- AUC-ROC: 0.920
+- Recall for graduates: 93%
+
+## Key Predictors
+
+### Admission Model (Top 3)
+1. Previous Qualification Grade (Odds Ratio: 4.39)
+2. Application Order (Odds Ratio: 0.86)
+3. Displaced Status (Odds Ratio: 1.09)
+
+### Success Model (Top 3)
+1. 1st Semester Approved Courses (Odds Ratio: 3.58)
+2. Tuition Fees Up to Date (Odds Ratio: 2.64)
+3. Scholarship Holder (Odds Ratio: 1.65)
+
+## Dataset
+
+### Admission Model
+- Total samples: 4,424 students
+- Training: 3,539 students
+- Test: 885 students
+- Features: 9 variables
+
+### Success Model
+- Total samples: 3,630 students (graduates and dropouts only)
+- Training: 2,904 students
+- Test: 726 students
+- Features: 14 variables
+
+## Odds Ratio Interpretation
+An odds ratio of 3.58 means: for each additional approved course in 1st semester, the odds of graduating increase by 258%.
+
+## Use Cases
+- Admission model: Classification of applicant quality
+- Success model: Early identification of at-risk students for intervention
+
+## Limitations
+- Binary outcomes only (cannot predict intermediate states like "enrolled")
+- Assumes linear relationships in log-odds space
+- Requires balanced classes for optimal performance
+

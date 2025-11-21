@@ -1,0 +1,35 @@
+# Linear Regression Model - Brief Report
+
+## Objective
+Predict exact 2nd semester grade values based on student characteristics and 1st semester performance.
+
+## Model Type
+Ordinary Least Squares (OLS) Linear Regression
+
+## Performance Metrics
+- R² Score: 0.347
+- RMSE: 1.10 grade points
+- MAE: 0.86 grade points
+
+## Interpretation
+The model explains 35% of grade variation. On average, predictions are within 0.86 grade points of actual values.
+
+## Key Predictors (Top 3)
+1. 1st Semester Grade (coefficient: +0.52) - strongest predictor
+2. 1st Semester Approved Courses (coefficient: +0.39)
+3. Admission Grade (coefficient: +0.17)
+
+## Dataset
+- Total samples: 3,554 students
+- Training set: 2,843 students
+- Test set: 711 students
+- Features: 13 variables
+
+## Use Case
+Appropriate for predicting continuous grade values when exact numerical predictions are required. Best used for academic counseling and grade projections.
+
+## Limitations
+- Assumes linear relationships between variables
+- Explains only 35% of variance (other factors not in model affect grades)
+- Cannot capture non-linear patterns
+
