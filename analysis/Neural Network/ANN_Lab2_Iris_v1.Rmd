@@ -1,0 +1,218 @@
+---
+title: "Iris Data Classification using a Neural Network"
+author: "Daniel Meister"
+date: "10/23/2025"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading the Packages
+
+First make sure we have all the functionality from the `tidyverse` available:
+
+```{r}
+library(tidyverse)
+theme_set(theme_bw())
+```
+
+We are going to use the `neuralnet` package for this second example and also some helper functions from `caret`
+
+```{r}
+library(neuralnet)
+library(caret)
+```
+## Loading the Data
+
+Load the `iris` data set into the environment
+
+```{r}
+data(iris)
+```
+
+and let's have a look a the structure.
+
+```{r}
+str(iris)
+```
+## Have a quick look at the Data
+
+```{r}
+iris %>%
+  ggplot(aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +
+  geom_point()
+```
+```{r}
+iris %>%
+  ggplot(aes(x = Petal.Length, y = Petal.Width, color = Species)) +
+  geom_point()
+```
+
+## Prepare the Data for Training
+
+```{r}
+set.seed(123)
+indices <- createDataPartition(iris$Species, p=.85, list = F)
+```
+
+### Why do we use the `caret` function
+
+Look at the distribution of our different prediction classes in the train and test datasets:
+
+```{r}
+iris %>%
+  mutate(train = row_number() %in% indices) %>%
+  select(Species, train) %>%
+  table()
+```
+Now compare this to the "random" approach:
+
+```{r}
+iris %>%
+  mutate(train = runif(nrow(iris)) < .85) %>%
+  select(Species, train) %>%
+  table()
+```
+So using the `createDataPartition` function makes sure that no class is over- or underrepresented relative to the total occurance in the two sets
+
+### Create some easy Variables to access Data
+
+```{r}
+train <- iris %>%
+  slice(indices)
+test_in <- iris %>%
+  slice(-indices) %>%
+  select(-Species)
+test_truth <- iris %>%
+  slice(-indices) %>%
+  pull(Species)
+```
+
+## Train the Neural Network
+
+Call the `neuralnet` function creating a network with two hidden layers containing 4 and 3 neurons (probably way too complex for our problem here).
+
+```{r}
+set.seed(123)
+iris_net <- neuralnet(Species ~ ., train, hidden = c(4,3))
+```
+
+Plot the resulting network including the weights
+
+```{r}
+plot(iris_net)
+```
+## Make Predictions
+
+```{r}
+test_results <- neuralnet::compute(iris_net, test_in)
+test_results$net.result
+```
+
+Find class (i.e. output neuron) with the highest probability and convert this back into a factor
+
+```{r}
+test_pred <- apply(test_results$net.result, 1, which.max)
+test_pred <- factor(levels(test_truth)[test_pred], levels = levels(test_truth))
+test_pred
+```
+## Evaluate the Results
+
+```{r}
+conf_matrix <- confusionMatrix(test_truth, test_pred)
+conf_matrix
+```
+## Optimize Network Structure
+
+First we need to remodel the data due to some limitations of `caret`
+
+```{r}
+xor <- model.matrix(~ Species, iris)
+xor[,1] <- ifelse(xor[,2] %in% 0 & xor[,3] %in% 0, 1, 0)
+colnames(xor)[1] <- 'Speciessetosa'
+head(xor)
+```
+```{r}
+iris_mod <- cbind(xor, iris %>% select(-Species))
+train_mod <- iris_mod %>% slice(indices)
+```
+
+
+```{r}
+set.seed(142)
+formula = Speciessetosa + Speciesversicolor + Speciesvirginica ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width
+models <- train(formula, train_mod,
+               method="neuralnet",   
+               ### Parameters for layers
+               tuneGrid = expand.grid(.layer1=c(2:4), .layer2=c(0:4), .layer3=c(0)),               
+               ### Parameters for optmisation
+               learningrate = 0.01,  
+               threshold = 0.001,     
+               stepmax = 50000         
+)
+```
+And have a look at the different models
+
+```{r}
+plot(models)
+```
+
+
+And try out the best model
+
+```{r}
+set.seed(42)
+best_model <- neuralnet(
+  formula,
+  iris_mod %>% slice(indices),
+  hidden = c(2,3),
+  learningrate = 0.01, 
+  threshold = 0.01,   
+  stepmax = 50000 
+)
+plot(best_model)
+```
+A word of caution: the `iris` dataset is almost to easy to separate, so it is very easy to get stuck in local minimums i.e. your results may depend a lot on the random seeds chosen.
+
+## Do we need to Scale and Center the Inputs?*
+
+While it is advised to do so (for potentially faster training times) neural networks can also work with unscaled data (and adjust the weights accordingly)
+
+```{r message=FALSE, warning=FALSE}
+tuGrid <- expand.grid(size=1:8, decay=3**(-6:1))
+
+trCtrl <- trainControl(
+  method = 'repeatedcv', 
+  number = 10, 
+  repeats = 10, 
+  returnResamp = 'final'
+)
+
+model_noscale <- train(
+  x = iris[,1:4], y = iris[,5],
+  method = 'nnet', metric = 'Kappa', 
+  trace = FALSE,
+  tuneGrid = tuGrid,
+  trControl = trCtrl
+)
+
+model_scaled <- train(
+  x = (iris[,1:4]), y = iris[,5],
+  method = 'nnet', metric = 'Kappa', 
+  preProcess = c('center', 'scale'),
+  trace = FALSE,
+  tuneGrid = tuGrid,
+  trControl = trCtrl
+)
+
+  model_noscale$finalModel
+  model_scaled$finalModel
+  plot(model_noscale)
+  plot(model_scaled)
+  boxplot(data.frame(model_noscale$resample$Kappa, model_scaled$resample$Kappa))
+```
+

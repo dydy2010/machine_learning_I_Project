@@ -25,13 +25,24 @@ knitr::opts_chunk$set(
 )
 
 # Load required libraries
+library(tidyverse)
+library(caret)
+library(nnet)
 
 ```
 
 # Neural Network Analysis
 
 ## Objective
-Use neural networks to predict student dropout vs. graduation, leveraging the ability to capture complex non-linear interactions between features.
+We want our neural network to play the role of an early-warning whether a student is likely to drop out or graduate by learning the messy, non-linear patterns hidden in data.
+
+## Predictive features choosing preprocessed
+
+We focus on three feature blocks available in the preprocessed dataset:
+
+1. **First semesters performance:** 1st- and 2nd-semester grades plus approved credits capture the strongest signals from our ANOVA screening during data preprocessing.
+2. **Financial pressure/support:** Tuition fees up to date, debtor status, and scholarship holder tell us whether financial stress the student faces.
+3. **Entry profile:** Admission grade and age at enrollment anchor the model with information about students’ starting point.
 
 ## Data Loading & Preprocessing
 
@@ -39,12 +50,10 @@ Use neural networks to predict student dropout vs. graduation, leveraging the ab
 # Load data
 data <- read.csv("../../data/preprocessed_data.csv", stringsAsFactors = TRUE)
 
-# Filter for Graduate vs Dropout
-nn_data <- data %>%
-  filter(Target %in% c("Graduate", "Dropout")) %>%
-  mutate(Target_binary = as.factor(ifelse(Target == "Graduate", "Graduate", "Dropout")))
+# Keep all three outcome classes so NN addresses the same business question
+data$Target <- factor(data$Target, levels = c("Dropout", "Enrolled", "Graduate"))
 
-# Select features (adjust based on your analysis)
+# Selected features
 nn_features <- c(
   "Curricular.units.1st.sem..approved.",
   "Curricular.units.1st.sem..grade.",
@@ -58,24 +67,24 @@ nn_features <- c(
 )
 
 # Create modeling dataset
-nn_model_data <- nn_data %>%
-  select(all_of(nn_features), Target_binary) %>%
+nn_model_data <- data %>%
+  select(all_of(nn_features), Target) %>%
   na.omit()
 
-# Normalize numeric features (important for neural networks!)
+# Scaling (important for neural networks)
 numeric_cols <- sapply(nn_model_data, is.numeric)
 nn_model_data[, numeric_cols] <- scale(nn_model_data[, numeric_cols])
 
-cat("Dataset size:", nrow(nn_model_data), "students\n")
+cat("Dataset size:", nrow(nn_model_data), "students\n") # cat() is R function that prints text to console in  single line
 cat("Class distribution:\n")
-table(nn_model_data$Target_binary)
+table(nn_model_data$Target) # counts how many records fall into each target class to preview
 ```
 
 ## Train/Test Split
 
 ```{r train-test-split}
 set.seed(123)
-train_idx <- createDataPartition(nn_model_data$Target_binary, p = 0.8, list = FALSE)
+train_idx <- createDataPartition(nn_model_data$Target, p = 0.8, list = FALSE) # not using runif(nrow(GermanCredit)) < 0.8 simply to sample ~80% of rows without worrying about class balance
 train_nn <- nn_model_data[train_idx, ]
 test_nn <- nn_model_data[-train_idx, ]
 
@@ -85,13 +94,15 @@ cat("Test set:", nrow(test_nn), "samples\n")
 
 ## Model Training
 
-### Option 1: Simple Neural Network with `nnet`
+### Option 1: Lab 1-style `nnet` (single hidden layer)
+
+This mirrors the German Credit lab: one hidden layer, weight decay for regularization, and a compact architecture that works well on tabular socioeconomic data like ours.
 
 ```{r train-nnet}
-# Train neural network with one hidden layer
+# Train neural network with one hidden layer (Lab 1 style)
 # size = number of hidden units, decay = regularization parameter
 nn_model <- nnet(
-  Target_binary ~ .,
+  Target ~ .,
   data = train_nn,
   size = 10,        # 10 hidden units
   decay = 0.01,     # Regularization
@@ -104,24 +115,30 @@ cat("Hidden units:", nn_model$n[2], "\n")
 cat("Weights:", length(nn_model$wts), "\n")
 ```
 
-### Option 2: Neural Network with `neuralnet` (uncomment if you prefer)
+### Option 2: Lab 2-style `neuralnet` (deeper architecture)
+
+The Iris lab introduced `neuralnet` for experimenting with multiple hidden layers and visualizing weights. To keep factors compatible we first create dummy variables, then train a deeper network (chunk is off by default—enable once the prep runs).
 
 ```{r train-neuralnet, eval=FALSE}
 # library(neuralnet)
-# 
-# # Create formula
-# formula_nn <- as.formula(paste("Target_binary ~", paste(nn_features, collapse = " + ")))
-# 
-# # Train
+# library(caret)
+#
+# # One-hot encode predictors (Lab 2 approach)
+# dummies <- dummyVars(Target ~ ., data = train_nn)
+# train_nn_matrix <- data.frame(predict(dummies, newdata = train_nn))
+# train_nn_matrix$Target <- train_nn$Target
+#
+# formula_nn <- as.formula(paste("Target ~", paste(setdiff(names(train_nn_matrix), "Target"), collapse = " + ")))
+#
 # nn_model_alt <- neuralnet(
 #   formula_nn,
-#   data = train_nn,
-#   hidden = c(10, 5),  # Two hidden layers
+#   data = train_nn_matrix,
+#   hidden = c(10, 5),  # Two hidden layers similar to Lab 2
 #   linear.output = FALSE,
 #   threshold = 0.01
 # )
-# 
-# plot(nn_model_alt)  # Visualize network
+#
+# plot(nn_model_alt)
 ```
 
 ## Model Evaluation
@@ -133,8 +150,7 @@ pred_nn_class <- predict(nn_model, newdata = test_nn, type = "class")
 # Confusion matrix
 conf_matrix <- confusionMatrix(
   as.factor(pred_nn_class),
-  test_nn$Target_binary,
-  positive = "Graduate"
+  test_nn$Target
 )
 
 print(conf_matrix)
@@ -143,12 +159,13 @@ print(conf_matrix)
 ## Performance Metrics Summary
 
 ```{r performance-summary}
-cat("=== Neural Network Performance ===\n\n")
+cat("=== Neural Network Performance (macro-averaged) ===\n\n")
 cat("Accuracy:", round(conf_matrix$overall["Accuracy"], 3), "\n")
-cat("Precision:", round(conf_matrix$byClass["Precision"], 3), "\n")
-cat("Recall:", round(conf_matrix$byClass["Recall"], 3), "\n")
-cat("F1-Score:", round(conf_matrix$byClass["F1"], 3), "\n")
-cat("Balanced Accuracy:", round(conf_matrix$byClass["Balanced Accuracy"], 3), "\n")
+by_class <- conf_matrix$byClass
+cat("Precision:", round(mean(by_class[,"Precision"]), 3), "\n")
+cat("Recall:", round(mean(by_class[,"Recall"]), 3), "\n")
+cat("F1-Score:", round(mean(by_class[,"F1"]), 3), "\n")
+cat("Balanced Accuracy:", round(mean(by_class[,"Balanced Accuracy"]), 3), "\n")
 ```
 
 ## Confusion Matrix Visualization

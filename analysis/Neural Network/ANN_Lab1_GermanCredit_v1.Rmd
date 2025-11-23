@@ -1,0 +1,120 @@
+---
+title: "German Credit Scores using a Neural Network"
+author: "Daniel Meister"
+date: "10/23/2025"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading the Packages
+
+For this example we use the `nnet` package (and `gamlss.add` to plot these networks) and `ggplot2` to create some plots.
+
+```{r}
+library(nnet)
+library(gamlss.add)
+library(dplyr)
+library(ggplot2)
+theme_set(theme_bw())
+```
+
+And we also need the `caret` package for some helper functions
+
+```{r}
+library(caret)
+```
+## Loading the Data
+
+Load the `GermanCredit` data set into the environment
+
+```{r}
+data(GermanCredit)
+```
+
+and let's have a look at the structure.
+
+```{r}
+str(GermanCredit)
+```
+## A first look at the Data
+
+```{r}
+GermanCredit %>%
+  ggplot(aes(x = Age, fill = Class)) +
+  geom_histogram(position = "stack")
+```
+
+
+## Prepare the Data
+
+Split the data into 80% to train and 20% to test.
+
+```{r}
+set.seed(123)
+is_train <- runif(nrow(GermanCredit)) < 0.8
+mean(is_train)
+```
+```{r}
+train <- GermanCredit[is_train, ]
+test <- GermanCredit[!is_train, ]
+```
+
+## Build the network
+
+```{r}
+set.seed(412)
+credit_net <- nnet(Class ~ ., data = train, size=16, maxit=10000, range=0.1, decay=5e-4, MaxNWts = 2000)
+```
+
+```{r}
+plot(credit_net)
+```
+```{r}
+credit_net
+```
+
+## Make Predictions
+
+
+```{r}
+pred <- predict(credit_net, test, type="class")
+cm_nn <- table(pred=pred, true=test$Class)
+cm_nn
+```
+
+Calculating the accuracy
+
+```{r}
+sum(diag(cm_nn))/sum(sum(cm_nn))
+```
+
+And the precision
+
+```{r}
+cm_nn[1, 1]/(cm_nn[1, 1] + cm_nn[1, 2])
+```
+Or do all of it using the `confusionMatrix` function
+
+```{r}
+confusionMatrix(as.factor(pred), as.factor(test$Class))
+```
+## ROC Curves*
+
+The Receiver Operating Characteristic is a useful tool to indicate model quality. For this we plot sensitivity against 1-specificity
+
+```{r}
+library(ROCR)
+```
+```{r}
+pred_raw <- predict(credit_net, test, decision.values=TRUE, type = "raw")
+pred <- ROCR::prediction(pred_raw, test$Class)
+perf <- ROCR::performance(pred, "tpr", "fpr")
+plot(perf, lwd=2, col="blue")
+abline(a=0, b=1)
+```
+
