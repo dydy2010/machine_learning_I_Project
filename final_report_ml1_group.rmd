@@ -4,15 +4,15 @@ subtitle: "Understanding the Pathways to Academic Achievement"
 author: " Dongyuan Gao, Ramiro, Cyriel"
 date: "`r Sys.Date()`"
 output: # output both html and pdf, need to check if both output aligns in the end
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
   html_document:
     toc: true
     toc_float: true
     toc_depth: 3
     code_folding: hide # HTML with code chunks collapsed by default
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
 ---
 
 ```{r setup, include=FALSE}
@@ -26,6 +26,7 @@ knitr::opts_chunk$set(
 )
 
 # Load required libraries
+# install.packages("kernlab")
 library(tidyverse)
 library(ggplot2)
 library(e1071)         # SVM
