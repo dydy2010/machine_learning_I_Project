@@ -2,7 +2,7 @@
 
 ## ✅ What's Been Created For You
 
-1. **MASTER_REPORT.rmd** - Complete template with compelling storyline (ready to fill in)
+1. **final_report_ml1_group.rmd** - Complete template with compelling storyline (ready to fill in)
 2. **TEAM_GUIDE.md** - Detailed collaboration instructions
 3. **Neural_Network_Template.rmd** - Ready-to-use template for Person B
 4. **SVM_Template.rmd** - Ready-to-use template for Person C

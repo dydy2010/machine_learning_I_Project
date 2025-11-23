@@ -26,6 +26,7 @@ knitr::opts_chunk$set(
 )
 
 # Load required libraries
+# install.packages("kernlab")
 library(tidyverse)
 library(ggplot2)
 library(e1071)         # SVM
