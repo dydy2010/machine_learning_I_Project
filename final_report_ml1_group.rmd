@@ -8,9 +8,7 @@ output: # output both html and pdf, need to check if both output aligns in the e
     toc: true
     toc_float: true
     toc_depth: 3
-    code_folding: hide
-    theme: flatly
-    highlight: tango
+    code_folding: hide # HTML with code chunks collapsed by default
   pdf_document:
     toc: true
     toc_depth: 3
@@ -39,7 +37,7 @@ library(pROC)          # ROC curves
 library(gridExtra)     # Multiple plots
 ```
 
-# Executive Summary
+# Summary
 
 **Problem Statement/Our Storyline:** Higher education institutions face significant challenges with student drop-outs. A fictional university has engaged our education consulting firm to diagnose why students drop out. The university wants to understand and improve students academic performance, and design interventions that reduce failed academic lives. Understanding which students are at risk of dropping out, and timely support that can change academic and life trajectories.
 **Our Data** We have chosen a real case dataset from University of California, Irvine. To simulate the fictional case.

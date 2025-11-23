@@ -1,0 +1,174 @@
+---
+title: "Support Vector Machine Analysis - Student Dropout Prediction"
+subtitle: "Understanding the Pathways to Academic Achievement"
+
+date: "`r Sys.Date()`"
+output: # output both html and pdf, need to check if both output aligns in the end
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    code_folding: hide
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,           # Show code by default (can be hidden with code_folding in HTML)
+  message = FALSE,       # Hide package loading messages
+  warning = FALSE,       # Hide warnings
+  fig.width = 10,
+  fig.height = 6,
+  fig.align = "center"
+)
+
+# Load required libraries
+
+```
+
+# Support Vector Machine Analysis
+
+## Feature Selection
+
+The results indicate that grades and the amount of credits approved have the highest F-Values, suggesting they are the most significant predictors for predicting the success of graduating or not.
+
+In this case, I want to choose the features of second semester marks and the amount of units passed to plot my model.
+
+## Data Loading & Preparation
+
+```{r load-data}
+data <- read.csv("../../data/preprocessed_data.csv")
+
+data$Target <- as.factor(data$Target)
+
+# Prepare the data frame
+marks <- data.frame(
+  x.1 = data$Curricular.units.2nd.sem..grade.,
+  x.2 = data$Curricular.units.2nd.sem..approved.,
+  y = as.factor(data$Target)
+)
+
+marks <- marks[complete.cases(marks), ]
+```
+
+## Exploratory Visualization
+
+```{r plot-data}
+# Plot 
+ggplot(data = marks, aes(x = x.2, y = x.1, color = y)) + 
+  geom_point(size = 2) + 
+  scale_color_manual(values = c("Dropout" = "#ff2000", 
+                                 "Enrolled" = "#828282", 
+                                 "Graduate" = "#2ecc71")) +
+  scale_y_continuous(limits = c(9, NA)) +
+  labs(
+    x = "2nd Semester Passed Units",
+    y = "2nd Semester Marks"
+  )
+```
+
+## Train/Test Split
+
+Now, I will split the data into training and testing sets, and then fit several SVM models to classify the students based on their marks.
+
+```{r train-test-split}
+set.seed(123)
+trainIndex <- createDataPartition(marks$y, p = 0.8, list = FALSE)
+train_data <- marks[trainIndex, ]
+test_data <- marks[-trainIndex, ]
+
+cat("Training set size:", nrow(train_data), "\n")
+cat("Test set size:", nrow(test_data), "\n")
+```
+
+## Model Training
+
+Now, I will fit the SVM model with a linear, a radial and a polynomial kernel.
+
+```{r train-models}
+svm_linear <- svm(y ~ x.1 + x.2, data = train_data, kernel = "linear", cost = 1)
+svm_radial <- svm(y ~ x.1 + x.2, data = train_data, kernel = "radial", cost = 10, gamma = 0.1)
+svm_poly <- svm(y ~ x.1 + x.2, data = train_data, kernel = "polynomial", cost = 1, degree = 3)
+```
+
+## Model Evaluation
+
+Predict and compare the models
+
+```{r predictions}
+pred_linear <- predict(svm_linear, test_data)
+pred_radial <- predict(svm_radial, test_data)
+pred_poly <- predict(svm_poly, test_data)
+```
+
+### Linear Kernel Results
+
+```{r eval-linear}
+cat("\n Linear Kernel Result:\n")
+cm_linear <- confusionMatrix(pred_linear, test_data$y)
+print(cm_linear)
+```
+
+### Radial Kernel Results
+
+```{r eval-radial}
+cat("\n Radial Kernel Result:\n")
+cm_radial <- confusionMatrix(pred_radial, test_data$y)
+print(cm_radial)
+```
+
+### Polynomial Kernel Results
+
+```{r eval-poly}
+cat("\n Polynomial Kernel Result:\n")
+cm_poly <- confusionMatrix(pred_poly, test_data$y)
+print(cm_poly)
+```
+
+## Performance Comparison
+
+```{r comparison}
+results <- data.frame(
+  Model = c("Linear", "Radial", "Polynomial"),
+  Accuracy = c(cm_linear$overall['Accuracy'],
+               cm_radial$overall['Accuracy'],
+               cm_poly$overall['Accuracy'])
+)
+
+knitr::kable(results, digits = 3)
+```
+
+## Decision Boundary Visualizations
+
+### Linear Kernel
+
+```{r plot-linear, fig.width=8, fig.height=6}
+plot(svm_linear, train_data, x.1 ~ x.2,
+     svSymbol = 1, dataSymbol = 16,
+     symbolPalette = c("#ff2000", "#828282", "#2ecc71"),
+     color.palette = terrain.colors)
+title("Linear Kernel SVM")
+```
+
+### Radial Kernel
+
+```{r plot-radial, fig.width=8, fig.height=6}
+plot(svm_radial, train_data, x.1 ~ x.2,
+     svSymbol = 1, dataSymbol = 16,
+     symbolPalette = c("#ff2000", "#828282", "#2ecc71"),
+     color.palette = terrain.colors)
+title("Radial Kernel SVM")
+```
+
+### Polynomial Kernel
+
+```{r plot-poly, fig.width=8, fig.height=6}
+plot(svm_poly, train_data, x.1 ~ x.2,
+     svSymbol = 1, dataSymbol = 16,
+     symbolPalette = c("#ff2000", "#828282", "#2ecc71"),
+     color.palette = terrain.colors)
+title("Polynomial Kernel SVM")
+```
