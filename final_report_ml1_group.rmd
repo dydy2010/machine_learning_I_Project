@@ -40,33 +40,25 @@ library(gridExtra)     # Multiple plots
 
 # Summary
 
-**Problem Statement/Our Storyline:** Higher education institutions face significant challenges with student drop-outs. A fictional university has engaged our education consulting firm to diagnose why students drop out. The university wants to understand and improve students academic performance, and design interventions that reduce failed academic lives. Understanding which students are at risk of dropping out, and timely support that can change academic and life trajectories.
-**Our Data** We have chosen a real case dataset from University of California, Irvine. To simulate the fictional case.
-**Our Approach:** We analyzed 4,424 students from a Portuguese higher education institution using five complementary machine learning techniques to predict student outcomes (Dropout, Enrolled, Graduate) and understand the factors that drive academic success.
+**Problem Statement/Our Storyline:** Higher education institutions face significant challenges with student drop-outs. A fictional university has engaged our education consulting firm to diagnose why students drop out. The university wants to understand and improve students academic performance, and design interventions that reduce failed academic lives. Understanding which students are at risk of dropping out, and timely support that can change academic and life trajectories. **Our Data** We have chosen a real case dataset from University of California, Irvine. To simulate the fictional case. **Our Approach:** We analyzed 4,424 students from a Portuguese higher education institution using five complementary machine learning techniques to predict student outcomes (Dropout, Enrolled, Graduate) and understand the factors that drive academic success.
 
-**Key Findings:** 
-- 
--
-- 
-- 
-**Business Impact:** These models enable institutions to identify at-risk students early, allocate resources and implement targeted interventions.
+## **Key Findings:**
 
----
+-   
+
+-   
+
+-   **Business Impact:** These models enable institutions to identify at-risk students early, allocate resources and implement targeted interventions.
+
+------------------------------------------------------------------------
 
 # 1. Introduction & Data Context
 
 ## 1.1 Motivation
 
-Student dropout is a critical issue in higher education with consequences for:
-- **Students:** Lost time, financial burden, and psychological impact
-- **Institutions:** Revenue loss, reduced graduation rates, reputational damage
-- **Society:** Lost human capital and economic potential
+Student dropout is a critical issue in higher education with consequences for: - **Students:** Lost time, financial burden, and psychological impact - **Institutions:** Revenue loss, reduced graduation rates, reputational damage - **Society:** Lost human capital and economic potential
 
-By predicting dropout risk early, institutions can intervene with:
-- Academic support programs
-- Financial aid counseling
-- Mental health services
-- Personalized study plans
+By predicting dropout risk early, institutions can intervene with: - Academic support programs - Financial aid counseling - Mental health services - Personalized study plans
 
 ## 1.2 Data Source and Selection Process
 
@@ -80,17 +72,14 @@ After careful consideration, we chose the third option from the UC Irvine reposi
 
 ### Dataset Characteristics
 
-**Source:** UCI Machine Learning Repository - Predict Students' Dropout and Academic Success  
-**Institution:** Portuguese higher education institution  
-**Time Period:** Multiple academic years  
+**Source:** UCI Machine Learning Repository - Predict Students' Dropout and Academic Success\
+**Institution:** Portuguese higher education institution\
+**Time Period:** Multiple academic years\
 **Sample Size:** 4,424 students across 37 variables
 
 The dataset provides a comprehensive view of student characteristics and outcomes, making it well-suited for applying multiple machine learning techniques.
 
-**Target Variable (3 factors):**
-- **Dropout:** Students who left the program (1,421 students, 32%)
-- **Enrolled:** Students currently continuing (794 students, 18%)
-- **Graduate:** Students who completed successfully (2,209 students, 50%)
+**Target Variable (3 factors):** - **Dropout:** Students who left the program (1,421 students, 32%) - **Enrolled:** Students currently continuing (794 students, 18%) - **Graduate:** Students who completed successfully (2,209 students, 50%)
 
 The distribution shows a balanced dataset with a slight majority of graduates. It reflects the institution's overall success rate and provides sufficient samples across all outcome categories, for model training.
 
@@ -109,11 +98,11 @@ table(data$Target)
 
 Our dataset includes 36 predictors, providing a rich set of variables for analysis:
 
-**1. Demographic Information:** Age at enrollment, gender, nationality, marital status  
-**2. Socioeconomic Factors:** Parents' occupation and education levels, scholarship holder status  
-**3. Academic Background:** Previous qualifications and grades, admission grade  
-**4. Academic Performance:** Semester-by-semester grades, enrolled credits, completed evaluations, approved courses  
-**5. Financial Indicators:** Tuition fee payment status, debtor status  
+**1. Demographic Information:** Age at enrollment, gender, nationality, marital status\
+**2. Socioeconomic Factors:** Parents' occupation and education levels, scholarship holder status\
+**3. Academic Background:** Previous qualifications and grades, admission grade\
+**4. Academic Performance:** Semester-by-semester grades, enrolled credits, completed evaluations, approved courses\
+**5. Financial Indicators:** Tuition fee payment status, debtor status\
 **6. Macroeconomic Context:** Unemployment rate, inflation rate, GDP at time of enrollment
 
 ### Why This Dataset Works for Our Analysis
@@ -130,7 +119,7 @@ The dataset is suitable for applying all required machine learning methods:
 
 The dataset contains 4,424 observations, which is large enough to support robust train-test splits and complex model training, and manageable for our computer setups. With 36 predictors in demographic, academic, financial, and socioeconomic, we have sufficient complexity to apply models and find valuable insights for our client.
 
----
+------------------------------------------------------------------------
 
 # 2. Exploratory Data Analysis
 
@@ -140,15 +129,13 @@ The dataset contains 4,424 observations, which is large enough to support robust
 
 ```
 
-**Key Observation:** 
-## 2.2 xxxx
+**Key Observation:** \## 2.2 xxxx
 
 ```{r first-sem-analysis, fig.height=5}
 
 ```
 
-**Insight:** 
-## 2.3 Financial & Socioeconomic Factors
+**Insight:** \## 2.3 Financial & Socioeconomic Factors
 
 ```{r financial-factors, fig.height=4}
 
@@ -170,8 +157,7 @@ ggplot(data, aes(x = Age.at.enrollment, fill = Target)) +
   theme(legend.position = "bottom")
 ```
 
-**Insight:** 
----
+## **Insight:**
 
 # 3. Modeling Approach & Strategy
 
@@ -179,105 +165,86 @@ ggplot(data, aes(x = Age.at.enrollment, fill = Target)) +
 
 We employ five modeling techniques, in ML1 course we learned what they are good for:
 
-| Model | Purpose | Strengths |
-|-------|---------|-----------|
-| **Linear Regression** |  |  |
-| **GLM (Binomial)** |  |  |
-| **GLM (Poisson)** |  |  |
-| **GAM** |  |  |
-| **Neural Networks** |  |  |
-| **SVM** |  |  |
+| Model                 | Purpose | Strengths |
+|-----------------------|---------|-----------|
+| **Linear Regression** |         |           |
+| **GLM (Binomial)**    |         |           |
+| **GLM (Poisson)**     |         |           |
+| **GAM**               |         |           |
+| **Neural Networks**   |         |           |
+| **SVM**               |         |           |
 
 ## 3.2 Research Questions(needs to be checked later and rewritten during analysis)
 
 Each model addresses specific questions(only suggestions, needs to be rewritten):
 
-1. **Linear Regression:** How do student characteristics linearly predict academic performance?
-2. **GLM (Binomial):** What factors distinguish graduates from dropouts in probabilistic terms?
-3. **GLM (Poisson):** What predicts the count of failed courses or evaluations?
-4. **GAM:** Are there non-linear relationships that traditional models miss?
-5. **Neural Networks:** Can deep learning uncover hidden interaction patterns?
-6. **SVM:** Can we build a robust classifier that maximizes margin between success and failure?
+1.  **Linear Regression:** How do student characteristics linearly predict academic performance?
+2.  **GLM (Binomial):** What factors distinguish graduates from dropouts in probabilistic terms?
+3.  **GLM (Poisson):** What predicts the count of failed courses or evaluations?
+4.  **GAM:** Are there non-linear relationships that traditional models miss?
+5.  **Neural Networks:** Can deep learning uncover hidden interaction patterns?
+6.  **SVM:** Can we build a robust classifier that maximizes margin between success and failure?
 
 ## 3.3 Evaluation Strategy (needs to be checked according to lectures again)
 
-- **Training/Test Split:** 80/20 stratified split to maintain class balance
-- **Metrics:** Accuracy, Precision, Recall, F1-Score, AUC-ROC, RMSE (for regression)(needs to be rewritten according to lectures)
-- **Cross-Model Comparison:** Identify consistent predictors across methods
+-   **Training/Test Split:** 80/20 stratified split to maintain class balance
+-   **Metrics:** Accuracy, Precision, Recall, F1-Score, AUC-ROC, RMSE (for regression)(needs to be rewritten according to lectures)
+-   **Cross-Model Comparison:** Identify consistent predictors across methods
 
----
+------------------------------------------------------------------------
 
 # 4. Linear Regression Analysis
 
-
-
----
+------------------------------------------------------------------------
 
 # 5. Generalized Linear Model - Binomial
 
-
-
----
+------------------------------------------------------------------------
 
 # 6. Generalized Linear Model - Poisson
 
-
-
----
+------------------------------------------------------------------------
 
 # 7. Generalized Additive Model - GAM
 
-
-
----
+------------------------------------------------------------------------
 
 # 8. Neural Network Analysis
 
-
-
----
+------------------------------------------------------------------------
 
 # 9. Support Vector Machine Analysis
 
+------------------------------------------------------------------------
 
-
----
-
----
+------------------------------------------------------------------------
 
 # 11. Business Recommendations
 
-
-
----
+------------------------------------------------------------------------
 
 # 12. Limitations & Future Work
 
-
-
----
+------------------------------------------------------------------------
 
 # 13. Conclusions
 
 **Summary:** We successfully built and compared six machine learning models to predict student dropout risk. The analysis reveals that:
 
-1. 
-2
-3. 
-4. 
-**Impact By implementing these models, institutions can:
-- Identify at-risk students with 85-90% accuracy
-- Allocate intervention resources efficiently
-- Improve graduation rates through data-driven strategies
+1.  2
+2.  
+3.  \*\*Impact By implementing these models, institutions can:
+
+-   Identify at-risk students with 85-90% accuracy
+-   Allocate intervention resources efficiently
+-   Improve graduation rates through data-driven strategies
 
 **Final Thought:** Machine learning cannot prevent dropout alone, but it can guide human interventions to the right students at the right time. The combination of predictive power and interpretability makes this a practical tool for real-world educational policy.
 
----
+------------------------------------------------------------------------
 
 # Appendix: Technical Details (if needed)
 
-```
+\`\`\`
 
----
-
-
+------------------------------------------------------------------------
