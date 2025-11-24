@@ -31,7 +31,7 @@ library(nnet)
 library(ROCR)
 
 ```
-
+##  next steps: 0. change template format for code chunks, how it is shown for everyones template 1. need to finish lab2 neuralnet 2. need to interprete the results 3. need to refine the format and analysis(code chunks how shown etc) check length 4. need to compare with lab1 lab2 and move to notes* 
 ## Objective
 We want our neural network to play the role of an early-warning whether a student is likely to drop out or graduate by learning the messy, non-linear patterns hidden in data.
 
@@ -106,10 +106,6 @@ nn_model <- nnet(
   maxit = 500,      # Maximum iterations
   trace = FALSE     # Don't print training progress
 )
-
-cat("Model trained successfully!\n")
-cat("Hidden units:", nn_model$n[2], "\n")
-cat("Weights:", length(nn_model$wts), "\n")
 ```
 
 ### Alternative: Lab 2 Style (neuralnet)
@@ -167,7 +163,6 @@ cat("Accuracy:", round(conf_matrix$overall["Accuracy"], 3), "\n")
 by_class <- conf_matrix$byClass
 cat("Precision (macro):", round(mean(by_class[,"Precision"], na.rm = TRUE), 3), "\n")
 cat("Recall (macro):", round(mean(by_class[,"Recall"], na.rm = TRUE), 3), "\n")
-cat("F1-Score (macro):", round(mean(by_class[,"F1"], na.rm = TRUE), 3), "\n")
 cat("Balanced Accuracy:", round(mean(by_class[,"Balanced Accuracy"], na.rm = TRUE), 3), "\n")
 ```
 
