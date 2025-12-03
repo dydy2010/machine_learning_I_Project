@@ -1,0 +1,235 @@
+---
+title: "Neural Network Analysis - Student Dropout Prediction"
+subtitle: "Understanding the Pathways to Academic Achievement"
+date: "`r Sys.Date()`"
+output: # output both html and pdf, need to check if both output aligns in the end
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    code_folding: hide
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,           # Show code by default (can be hidden with code_folding in HTML)
+  message = FALSE,       # Hide package loading messages
+  warning = FALSE,       # Hide warnings
+  fig.width = 10,
+  fig.height = 6,
+  fig.align = "center"
+)
+
+# Load required libraries
+library(tidyverse)
+library(caret)
+library(nnet)
+library(ROCR)
+
+```
+##  next steps: 0. change template format for code chunks, how it is shown for everyones template 1. need to finish lab2 neuralnet 2. need to interprete the results 3. need to refine the format and analysis(code chunks how shown etc) check length 4. need to compare with lab1 lab2 and move to notes* 
+## Objective
+We want our neural network to play the role of an early-warning whether a student is likely to drop out or graduate by learning the messy, non-linear patterns hidden in data.
+
+## Feature Selection
+
+We focus on three feature blocks from the preprocessed dataset:
+
+1. **First semesters performance:** 1st- and 2nd-semester grades plus approved credits capture the strongest signals from our ANOVA screening during data preprocessing.
+2. **Financial pressure/support:** Tuition fees up to date, debtor status, and scholarship holder tell us whether financial stress the student faces.
+3. **Entry profile:** Admission grade and age at enrollment anchor the model with information about students’ starting point.
+
+## Data Loading & Preprocessing
+
+```{r load-data}
+# Note: When pasting into final_report_ml1_group.rmd, remove this line (data already loaded)
+data <- read.csv("../../data/preprocessed_data.csv", stringsAsFactors = TRUE)
+
+# Keep all three outcome classes so NN addresses the same business question
+data$Target <- factor(data$Target, levels = c("Dropout", "Enrolled", "Graduate"))
+
+# Selected features
+nn_features <- c(
+  "Curricular.units.1st.sem..approved.",
+  "Curricular.units.1st.sem..grade.",
+  "Curricular.units.2nd.sem..approved.",
+  "Curricular.units.2nd.sem..grade.",
+  "Tuition.fees.up.to.date",
+  "Scholarship.holder",
+  "Age.at.enrollment",
+  "Admission.grade",
+  "Debtor"
+)
+
+# Create modeling dataset
+nn_model_data <- data %>%
+  select(all_of(nn_features), Target) %>%
+  na.omit()
+
+# Scaling (important for neural networks)
+numeric_cols <- sapply(nn_model_data, is.numeric)
+nn_model_data[, numeric_cols] <- scale(nn_model_data[, numeric_cols])
+
+cat("Dataset size:", nrow(nn_model_data), "students\n") # cat() is R function that prints text to console in  single line
+cat("Class distribution:\n")
+table(nn_model_data$Target) # counts how many records fall into each target class to preview
+```
+
+## Train/Test Split
+
+```{r train-test-split}
+set.seed(123)
+train_idx <- createDataPartition(nn_model_data$Target, p = 0.8, list = FALSE) # not using runif(nrow(GermanCredit)) < 0.8 simply to sample ~80% of rows without worrying about class balance
+train_nn <- nn_model_data[train_idx, ]
+test_nn <- nn_model_data[-train_idx, ]
+
+cat("Training set:", nrow(train_nn), "samples\n")
+cat("Test set:", nrow(test_nn), "samples\n")
+```
+
+## Model Training (Lab 1 Style)
+
+Following `ANN_Lab1_GermanCredit_v1.Rmd`, we use `nnet` with one hidden layer and weight decay for regularization—a compact architecture suited to tabular socioeconomic data.
+
+```{r train-nnet}
+# Train neural network with one hidden layer (Lab 1 style)
+# size = number of hidden units, decay = regularization parameter
+nn_model <- nnet(
+  Target ~ .,
+  data = train_nn,
+  size = 10,        # 10 hidden units
+  decay = 0.01,     # Regularization
+  maxit = 500,      # Maximum iterations
+  trace = FALSE     # Don't print training progress
+)
+```
+
+### Alternative: Lab 2 Style (neuralnet)
+
+The `ANN_Lab2_Iris_v1.Rmd` lab uses `neuralnet` for deeper architectures. The chunk below is disabled by default; enable it to experiment with multiple hidden layers. Evaluate with the same confusion matrix code by replacing `nn_model` with `nn_model_alt`.
+
+```{r train-neuralnet, eval=FALSE}
+# library(neuralnet)
+# library(caret)
+#
+# # One-hot encode predictors (Lab 2 approach)
+# dummies <- dummyVars(Target ~ ., data = train_nn)
+# train_nn_matrix <- data.frame(predict(dummies, newdata = train_nn))
+# train_nn_matrix$Target <- train_nn$Target
+#
+# formula_nn <- as.formula(paste("Target ~", paste(setdiff(names(train_nn_matrix), "Target"), collapse = " + ")))
+#
+# nn_model_alt <- neuralnet(
+#   formula_nn,
+#   data = train_nn_matrix,
+#   hidden = c(10, 5),  # Two hidden layers similar to Lab 2
+#   linear.output = FALSE,
+#   threshold = 0.01
+# )
+#
+# plot(nn_model_alt)
+```
+
+## Model Evaluation
+
+Following Lab 1's evaluation approach, we generate predictions and build a confusion matrix. For multi-class problems, `caret::confusionMatrix` provides per-class and overall metrics.
+
+```{r evaluate}
+# Predictions on test set (Lab 1 style: type = "class" returns predicted labels)
+pred_nn_class <- predict(nn_model, newdata = test_nn, type = "class")
+
+# Confusion matrix (similar to Lab 1's table() but with more metrics)
+conf_matrix <- confusionMatrix(
+  as.factor(pred_nn_class),
+  test_nn$Target
+)
+
+print(conf_matrix)
+```
+
+## Performance Metrics Summary
+
+We report macro-averaged metrics across all three classes to give equal weight to Dropout, Enrolled, and Graduate predictions.
+
+```{r performance-summary}
+cat("=== Neural Network Performance (macro-averaged) ===\n\n")
+cat("Accuracy:", round(conf_matrix$overall["Accuracy"], 3), "\n")
+
+# For multi-class, byClass is a matrix with one row per class
+by_class <- conf_matrix$byClass
+cat("Precision (macro):", round(mean(by_class[,"Precision"], na.rm = TRUE), 3), "\n")
+cat("Recall (macro):", round(mean(by_class[,"Recall"], na.rm = TRUE), 3), "\n")
+cat("Balanced Accuracy:", round(mean(by_class[,"Balanced Accuracy"], na.rm = TRUE), 3), "\n")
+```
+
+## Confusion Matrix Visualization Heatmap (more visually appealing for spotting patterns)
+
+A heatmap shows where the model predicts correctly versus where it makes mistakes, helping us see which student groups are harder to classify.
+
+```{r confusion-matrix-plot}
+# Create confusion matrix dataframe for ggplot
+cm_df <- as.data.frame(conf_matrix$table)
+names(cm_df) <- c("Prediction", "Reference", "Freq")
+
+# Plot heatmap (similar visualization style to Lab 1's manual table inspection)
+ggplot(cm_df, aes(x = Reference, y = Prediction, fill = Freq)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = Freq), size = 6, color = "white", fontface = "bold") +
+  scale_fill_gradient(low = "#3498DB", high = "#E74C3C") +
+  labs(title = "Neural Network Confusion Matrix",
+       subtitle = "Rows = Predicted, Columns = Actual",
+       x = "Actual Outcome", y = "Predicted Outcome") +
+  theme(legend.position = "right")
+```
+
+## ROC Curve Analysis
+
+`ANN_Lab1_GermanCredit_v1.Rmd` demonstrated ROC curves for binary classification using `ROCR`. For our multi-class problem, we compute one-vs-rest ROC curves to measure discrimination per class.
+
+```{r roc-curve, message=FALSE}
+# Get predicted probabilities for ROC analysis (same "raw" output used in Lab 1)
+pred_probs <- predict(nn_model, newdata = test_nn, type = "raw")
+
+# Graduate vs. rest (one-vs-rest, same ROCR workflow as Lab 1)
+pred_graduate <- prediction(pred_probs[, "Graduate"], test_nn$Target == "Graduate")
+perf_graduate <- performance(pred_graduate, "tpr", "fpr")
+auc_graduate <- performance(pred_graduate, "auc")@y.values[[1]]
+
+# Dropout vs. rest
+pred_dropout <- prediction(pred_probs[, "Dropout"], test_nn$Target == "Dropout")
+perf_dropout <- performance(pred_dropout, "tpr", "fpr")
+auc_dropout <- performance(pred_dropout, "auc")@y.values[[1]]
+
+cat("AUC for Graduate vs. Rest:", round(auc_graduate, 3), "\n")
+cat("AUC for Dropout vs. Rest:", round(auc_dropout, 3), "\n")
+
+# Plot ROC curves with ROCR
+plot(perf_graduate, col = "#2ecc71", main = "ROC Curves (One-vs-Rest)")
+plot(perf_dropout, add = TRUE, col = "#e74c3c")
+legend("bottomright", legend = c("Graduate", "Dropout"),
+       col = c("#2ecc71", "#e74c3c"), lwd = 2)
+```
+
+## Findings & Interpretation
+
+**Model architecture:** 9 input features → 10 hidden neurons (sigmoid) → 3 output classes (softmax), with weight decay (0.01) for regularization.
+
+**Strengths:** Neural networks capture non-linear interactions that linear models miss. For example, a student with average grades but paid tuition may have different dropout risk than one with high grades but unpaid fees.
+
+**Limitations:**
+
+- Less interpretable than GLM coefficients
+- Results sensitive to hidden layer size, decay, and random seed
+- Risk of overfitting with more features or layers
+
+## Conclusions
+
+1. Neural networks effectively classify student outcomes using academic and financial features.
+2. Scaling inputs (Lab 2) and stratified splitting (Lab 2) improve model stability.
+3. ROC curves (Lab 1) help evaluate discrimination beyond simple accuracy.
+
+**Recommendation:** Use neural network predictions as part of an early-warning system; combine with interpretable models (GLM/GAM) for stakeholder communication.
