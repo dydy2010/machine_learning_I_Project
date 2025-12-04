@@ -27,8 +27,10 @@ knitr::opts_chunk$set(
 # Load required libraries
 library(tidyverse)
 library(caret)
-library(nnet)
+library(nnet)         # Lab 1 style neural network
+library(neuralnet)    # Lab 2 style neural network
 library(ROCR)
+library(gridExtra)    # For side-by-side plots
 
 ```
 ##  next steps: 0. change template format for code chunks, how it is shown for everyones template 1. need to finish lab2 neuralnet 2. need to interprete the results 3. need to refine the format and analysis(code chunks how shown etc) check length 4. need to compare with lab1 lab2 and move to notes* 
@@ -91,14 +93,17 @@ cat("Training set:", nrow(train_nn), "samples\n")
 cat("Test set:", nrow(test_nn), "samples\n")
 ```
 
-## Model Training (Lab 1 Style)
+## Model Training
 
-Following `ANN_Lab1_GermanCredit_v1.Rmd`, we use `nnet` with one hidden layer and weight decay for regularization—a compact architecture suited to tabular socioeconomic data.
+We train two neural networks to compare Lab 1 and Lab 2 approaches.
 
-```{r train-nnet}
-# Train neural network with one hidden layer (Lab 1 style)
-# size = number of hidden units, decay = regularization parameter
-nn_model <- nnet(
+### Model A: Single Hidden Layer (Lab 1 - nnet)
+
+Following `ANN_Lab1_GermanCredit_v1.Rmd`, we use `nnet` with one hidden layer and weight decay.
+
+```{r train-model-A}
+# Model A: nnet with single hidden layer (Lab 1 style)
+model_A <- nnet(
   Target ~ .,
   data = train_nn,
   size = 10,        # 10 hidden units
@@ -108,128 +113,171 @@ nn_model <- nnet(
 )
 ```
 
-### Alternative: Lab 2 Style (neuralnet)
+### Model B: Three Hidden Layers (Lab 2 - neuralnet)
 
-The `ANN_Lab2_Iris_v1.Rmd` lab uses `neuralnet` for deeper architectures. The chunk below is disabled by default; enable it to experiment with multiple hidden layers. Evaluate with the same confusion matrix code by replacing `nn_model` with `nn_model_alt`.
+Following `ANN_Lab2_Iris_v1.Rmd`, we use `neuralnet` with a deeper (three-layer) architecture. This requires one-hot encoding since `neuralnet` needs numeric inputs only.
 
-```{r train-neuralnet, eval=FALSE}
-# library(neuralnet)
-# library(caret)
-#
-# # One-hot encode predictors (Lab 2 approach)
-# dummies <- dummyVars(Target ~ ., data = train_nn)
-# train_nn_matrix <- data.frame(predict(dummies, newdata = train_nn))
-# train_nn_matrix$Target <- train_nn$Target
-#
-# formula_nn <- as.formula(paste("Target ~", paste(setdiff(names(train_nn_matrix), "Target"), collapse = " + ")))
-#
-# nn_model_alt <- neuralnet(
-#   formula_nn,
-#   data = train_nn_matrix,
-#   hidden = c(10, 5),  # Two hidden layers similar to Lab 2
-#   linear.output = FALSE,
-#   threshold = 0.01
-# )
-#
-# plot(nn_model_alt)
+```{r train-model-B}
+# One-hot encode predictors for neuralnet (Lab 2 approach)
+dummies <- dummyVars(Target ~ ., data = train_nn)
+train_matrix <- data.frame(predict(dummies, newdata = train_nn))
+test_matrix <- data.frame(predict(dummies, newdata = test_nn))
+
+# Create dummy columns for 3-class target (neuralnet needs numeric output)
+train_matrix$Target_Dropout <- as.numeric(train_nn$Target == "Dropout")
+train_matrix$Target_Enrolled <- as.numeric(train_nn$Target == "Enrolled")
+train_matrix$Target_Graduate <- as.numeric(train_nn$Target == "Graduate")
+
+# Build formula: output columns ~ input columns
+input_names <- names(train_matrix)[!grepl("Target", names(train_matrix))]
+output_names <- c("Target_Dropout", "Target_Enrolled", "Target_Graduate")
+formula_B <- as.formula(paste(
+  paste(output_names, collapse = " + "), "~",
+  paste(input_names, collapse = " + ")
+))
+
+# Model B: neuralnet with three hidden layers (Lab 2 style)
+model_B <- neuralnet(
+  formula_B,
+  data = train_matrix,
+  hidden = c(5,7,5),   # Three hidden layers: 5 neurons, then 7 and 5 neurons
+  linear.output = FALSE,
+  threshold = 0.05,
+  stepmax = 1e6        # big number to allow more iterations
+)
 ```
 
 ## Model Evaluation
 
-Following Lab 1's evaluation approach, we generate predictions and build a confusion matrix. For multi-class problems, `caret::confusionMatrix` provides per-class and overall metrics.
+We generate predictions and confusion matrices for both models.
 
-```{r evaluate}
-# Predictions on test set (Lab 1 style: type = "class" returns predicted labels)
-pred_nn_class <- predict(nn_model, newdata = test_nn, type = "class")
+```{r evaluate-both-models}
+# --- Model A predictions (nnet) ---
+pred_A_class <- predict(model_A, newdata = test_nn, type = "class")
+conf_matrix_A <- confusionMatrix(as.factor(pred_A_class), test_nn$Target)
 
-# Confusion matrix (similar to Lab 1's table() but with more metrics)
-conf_matrix <- confusionMatrix(
-  as.factor(pred_nn_class),
-  test_nn$Target
+# --- Model B predictions (neuralnet) ---
+# compute() runs the network on new data and returns raw output values
+pred_B_raw <- compute(model_B, test_matrix[, input_names])$net.result
+# Pick the class with highest probability for each student
+pred_B_class <- factor(
+  c("Dropout", "Enrolled", "Graduate")[apply(pred_B_raw, 1, which.max)],
+  levels = c("Dropout", "Enrolled", "Graduate")
 )
-
-print(conf_matrix)
+conf_matrix_B <- confusionMatrix(pred_B_class, test_nn$Target)
 ```
 
 ## Performance Metrics Summary
 
-We report macro-averaged metrics across all three classes to give equal weight to Dropout, Enrolled, and Graduate predictions.
+We report macro-averaged metrics for both models to compare their performance.
 
 ```{r performance-summary}
-cat("=== Neural Network Performance (macro-averaged) ===\n\n")
-cat("Accuracy:", round(conf_matrix$overall["Accuracy"], 3), "\n")
+cat("=== Model A (nnet - 1 hidden layer) ===\n")
+cat("Accuracy:", round(conf_matrix_A$overall["Accuracy"], 3), "\n")
+by_class_A <- conf_matrix_A$byClass
+cat("Precision (macro):", round(mean(by_class_A[,"Precision"], na.rm = TRUE), 3), "\n")
+cat("Recall (macro):", round(mean(by_class_A[,"Recall"], na.rm = TRUE), 3), "\n\n")
 
-# For multi-class, byClass is a matrix with one row per class
-by_class <- conf_matrix$byClass
-cat("Precision (macro):", round(mean(by_class[,"Precision"], na.rm = TRUE), 3), "\n")
-cat("Recall (macro):", round(mean(by_class[,"Recall"], na.rm = TRUE), 3), "\n")
-cat("Balanced Accuracy:", round(mean(by_class[,"Balanced Accuracy"], na.rm = TRUE), 3), "\n")
+cat("=== Model B (neuralnet - 3 hidden layers) ===\n")
+cat("Accuracy:", round(conf_matrix_B$overall["Accuracy"], 3), "\n")
+by_class_B <- conf_matrix_B$byClass
+cat("Precision (macro):", round(mean(by_class_B[,"Precision"], na.rm = TRUE), 3), "\n")
+cat("Recall (macro):", round(mean(by_class_B[,"Recall"], na.rm = TRUE), 3), "\n")
 ```
 
-## Confusion Matrix Visualization Heatmap (more visually appealing for spotting patterns)
+Model A (1 layer) still delivers the strongest result on the test set (Accuracy 0.764, Macro Precision 0.703, Macro Recall 0.666). The deeper Model B (three layers: 5-7-5) improved slightly over the earlier two-layer trial but remains lower overall (Accuracy 0.747, Macro Precision 0.681, Macro Recall 0.652). This mirrors the lecture message that more layers are not automatically better for structured tabular data.
 
-A heatmap shows where the model predicts correctly versus where it makes mistakes, helping us see which student groups are harder to classify.
+## Confusion Matrix Comparison
 
-```{r confusion-matrix-plot}
-# Create confusion matrix dataframe for ggplot
-cm_df <- as.data.frame(conf_matrix$table)
-names(cm_df) <- c("Prediction", "Reference", "Freq")
+Side-by-side heatmaps comparing both models. X-axis (top) = Predicted, Y-axis = True labels.
 
-# Plot heatmap (similar visualization style to Lab 1's manual table inspection)
-ggplot(cm_df, aes(x = Reference, y = Prediction, fill = Freq)) +
-  geom_tile(color = "white") +
-  geom_text(aes(label = Freq), size = 6, color = "white", fontface = "bold") +
-  scale_fill_gradient(low = "#3498DB", high = "#E74C3C") +
-  labs(title = "Neural Network Confusion Matrix",
-       subtitle = "Rows = Predicted, Columns = Actual",
-       x = "Actual Outcome", y = "Predicted Outcome") +
-  theme(legend.position = "right")
+```{r confusion-matrix-comparison, fig.width=12, fig.height=5}
+# Helper function to create confusion matrix plot
+# Rows = True values (y-axis), Columns = Predicted values (x-axis on top)
+plot_confusion_matrix <- function(conf_matrix, title) {
+  cm_df <- as.data.frame(conf_matrix$table)
+  names(cm_df) <- c("Predicted", "True", "Count")
+  
+  ggplot(cm_df, aes(x = Predicted, y = True, fill = Count)) +
+    geom_tile(color = "white", linewidth = 1) +
+    geom_text(aes(label = Count), size = 5, fontface = "bold", color = "white") +
+    scale_fill_gradient(low = "#3498DB", high = "#E74C3C", name = "Count") +
+    scale_x_discrete(position = "top") +
+    scale_y_discrete(limits = rev(c("Dropout", "Enrolled", "Graduate"))) +
+    labs(title = title, x = "Predicted Class", y = "True Class") +
+    theme_minimal(base_size = 12) +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 13),
+      axis.text = element_text(size = 10),
+      legend.position = "right"
+    )
+}
+
+# Create plots for both models
+plot_A <- plot_confusion_matrix(conf_matrix_A, "Model A: nnet (1 hidden layer)")
+plot_B <- plot_confusion_matrix(conf_matrix_B, "Model B: neuralnet (3 hidden layers)")
+
+# Display side by side
+grid.arrange(plot_A, plot_B, ncol = 2)
 ```
 
-## ROC Curve Analysis
+## ROC Curve Comparison
 
-`ANN_Lab1_GermanCredit_v1.Rmd` demonstrated ROC curves for binary classification using `ROCR`. For our multi-class problem, we compute one-vs-rest ROC curves to measure discrimination per class.
+We compare ROC curves for the "Graduate" class (one-vs-rest) across both models using `ROCR`.
 
-```{r roc-curve, message=FALSE}
-# Get predicted probabilities for ROC analysis (same "raw" output used in Lab 1)
-pred_probs <- predict(nn_model, newdata = test_nn, type = "raw")
+```{r roc-comparison, fig.width=12, fig.height=5}
+# --- Model A ROC (nnet) ---
+prob_A <- predict(model_A, newdata = test_nn, type = "raw")
+pred_A_grad <- ROCR::prediction(prob_A[, "Graduate"], test_nn$Target == "Graduate")
+perf_A_grad <- ROCR::performance(pred_A_grad, "tpr", "fpr")
+auc_A <- round(ROCR::performance(pred_A_grad, "auc")@y.values[[1]], 3)
 
-# Graduate vs. rest (one-vs-rest, same ROCR workflow as Lab 1)
-pred_graduate <- prediction(pred_probs[, "Graduate"], test_nn$Target == "Graduate")
-perf_graduate <- performance(pred_graduate, "tpr", "fpr")
-auc_graduate <- performance(pred_graduate, "auc")@y.values[[1]]
+# --- Model B ROC (neuralnet) ---
+# Graduate is the 3rd output column in pred_B_raw
+prob_B <- pred_B_raw[, 3]
+pred_B_grad <- ROCR::prediction(prob_B, test_nn$Target == "Graduate")
+perf_B_grad <- ROCR::performance(pred_B_grad, "tpr", "fpr")
+auc_B <- round(ROCR::performance(pred_B_grad, "auc")@y.values[[1]], 3)
 
-# Dropout vs. rest
-pred_dropout <- prediction(pred_probs[, "Dropout"], test_nn$Target == "Dropout")
-perf_dropout <- performance(pred_dropout, "tpr", "fpr")
-auc_dropout <- performance(pred_dropout, "auc")@y.values[[1]]
+# Print AUC values
+cat("AUC for Graduate vs. Rest:\n")
+cat("  Model A (nnet):", auc_A, "\n")
+cat("  Model B (neuralnet):", auc_B, "\n")
 
-cat("AUC for Graduate vs. Rest:", round(auc_graduate, 3), "\n")
-cat("AUC for Dropout vs. Rest:", round(auc_dropout, 3), "\n")
+# Side-by-side ROC plots
+par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
 
-# Plot ROC curves with ROCR
-plot(perf_graduate, col = "#2ecc71", main = "ROC Curves (One-vs-Rest)")
-plot(perf_dropout, add = TRUE, col = "#e74c3c")
-legend("bottomright", legend = c("Graduate", "Dropout"),
-       col = c("#2ecc71", "#e74c3c"), lwd = 2)
+# Model A ROC
+plot(perf_A_grad, col = "#2ecc71", lwd = 2, main = "Model A: nnet (1 hidden layer)")
+abline(a = 0, b = 1, lty = 2, col = "gray")
+legend("bottomright", legend = paste("AUC =", auc_A), bty = "n", cex = 1.1)
+
+# Model B ROC
+plot(perf_B_grad, col = "#3498db", lwd = 2, main = "Model B: neuralnet (3 hidden layers)")
+abline(a = 0, b = 1, lty = 2, col = "gray")
+legend("bottomright", legend = paste("AUC =", auc_B), bty = "n", cex = 1.1)
+
+par(mfrow = c(1, 1))  # Reset layout
 ```
 
 ## Findings & Interpretation
 
-**Model architecture:** 9 input features → 10 hidden neurons (sigmoid) → 3 output classes (softmax), with weight decay (0.01) for regularization.
+**Model A (nnet):** 9 inputs → 10 hidden neurons → 3 outputs. Simple, fast, handles factors directly and reaches Accuracy 0.764 / AUC 0.907.
 
-**Strengths:** Neural networks capture non-linear interactions that linear models miss. For example, a student with average grades but paid tuition may have different dropout risk than one with high grades but unpaid fees.
+**Model B (neuralnet):** 9 inputs → 5 → 7 → 5 neurons → 3 outputs. Shows Lab 2’s deeper setup but, even after extending to three layers, levels off at Accuracy 0.747 / AUC 0.887. The confusion matrix heatmap highlights slightly more mistakes on Dropout and Graduate rows, and the ROC curve is a bit flatter than Model A’s.
 
-**Limitations:**
+**Strengths observed:** Neural networks capture the non-linear interaction between grades, tuition status, and scholarships. Model A identifies Graduate students especially well (408 correct) while still catching most Dropout cases.
 
-- Less interpretable than GLM coefficients
-- Results sensitive to hidden layer size, decay, and random seed
-- Risk of overfitting with more features or layers
+**Limitations observed:**
+
+- Deeper networks remain sensitive to hyperparameters and can overfit small samples.
+- Interpretability is limited compared to GLM/GAM coefficients.
+- Enrolled students are the hardest class for both models (recall below 0.30), suggesting we may need additional features.
 
 ## Conclusions
 
-1. Neural networks effectively classify student outcomes using academic and financial features.
-2. Scaling inputs (Lab 2) and stratified splitting (Lab 2) improve model stability.
-3. ROC curves (Lab 1) help evaluate discrimination beyond simple accuracy.
+1. Both neural networks classify student outcomes reasonably well, but the single hidden layer provides the best balance of accuracy and stability on this dataset.
+2. Adding more layers (5-7-5) slightly improves over the earlier 2-layer experiment yet still trails the simpler architecture; this reinforces the lab insight that “deeper” is not automatically “better” for structured data.
+3. Standard preprocessing steps from Lab 2 (scaling, stratified split) remain essential for consistent results.
 
-**Recommendation:** Use neural network predictions as part of an early-warning system; combine with interpretable models (GLM/GAM) for stakeholder communication.
+**Recommendation:** if not enough space in report, Keep Model A as the primary neural network in this case, and mention Model B as an exploratory Lab 2 extension
