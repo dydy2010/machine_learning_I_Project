@@ -335,23 +335,29 @@ ggplot(perm_results, aes(x = AccuracyDrop, y = Feature, fill = Model)) +
 `NeuralNetTools::plotnet()` turns the fitted networks into diagrams that show layers, neurons, and connection strengths (thicker lines = larger absolute weights). Seeing both side by side links back to Lab 2’s focus on architecture design.
 
 ```{r nn-visualization, fig.width=12, fig.height=6}
-input_labels <- recode(nn_features, !!!feature_labels)
+# Labels include line breaks so they fit without changing plot size
+short_labels <- c("1st\nCredits", "1st\nGrade", "2nd\nCredits", "2nd\nGrade",
+                  "Tuition\nOK", "Scholar", "Age", "Adm\nGrade", "Debtor")
 output_labels <- c("Dropout", "Enrolled", "Graduate")
 
-par(mfrow = c(1, 2), mar = c(0, 8, 2, 6))  # widen margins so labels fit
+par(mfrow = c(1, 2))
 NeuralNetTools::plotnet(model_A,
         alpha = 0.7,
         circle_col = list("steelblue", "skyblue"),
-        x_names = input_labels,
+        x_names = short_labels,
         y_names = output_labels,
         max_sp = TRUE,
+        cex_val = 0.8,
+        line_stag = 0.1,
         main = "Model A: nnet (1 hidden layer)")
 NeuralNetTools::plotnet(model_B,
         alpha = 0.7,
         circle_col = list("darkseagreen", "palegreen"),
-        x_names = input_labels,
+        x_names = short_labels,
         y_names = output_labels,
         max_sp = TRUE,
+        cex_val = 0.8,
+        line_stag = 0.1,
         main = "Model B: neuralnet (3 hidden layers)")
 par(mfrow = c(1, 1))
 ```
