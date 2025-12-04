@@ -33,48 +33,53 @@ library(caret)
 
 # Support Vector Machine Analysis
 
+We will now test different vector models to understand what is the best classifier for our student's performance. To classify our dataset, the model plots a separating line or boundary between the two outcome classes using a number of predictors - in order to keep it clear, we want to create a two-dimensional plane (two predictors).
+
+By applying different kernels—linear, radial, and polynomial—we assess how the shape of the decision boundary affects prediction accuracy and determine which kernel provides the most reliable classification for our dataset.
+
 ## Feature Selection
 
-The results indicate that grades and the amount of credits approved have the highest F-Values, suggesting they are the most significant predictors for predicting the success of graduating or not.
+For us to choose the best predictors, we will compute F-statistic ANOVA for every numeric feature in the dataset. The F-score tell us how much the mean of each feature differs between the two target groups (graduated vs. not graduated). higher scores mean there is a bigger separation between classes, and a better cutoff between groups. 
+Results indicate that grades and the amount of credits approved have the highest F-Values, suggesting they are the most significant predictors for predicting the success of graduating or not.
 
-In this case, I want to choose the features of second semester marks and the amount of units passed to plot my model.
+In this case, we want to choose the features of second semester marks and the amount of units passed to plot our model.
 
-## Data Loading & Preparation
+```{r fscore-top5}
+numeric_cols <- sapply(data, is.numeric)
+features <- names(data)[numeric_cols]
 
-```{r load-data}
-data <- read.csv("../../data/preprocessed_data.csv")
-
-data$Target <- as.factor(data$Target)
-
-# Prepare the data frame
-marks <- data.frame(
-  x.1 = data$Curricular.units.2nd.sem..grade.,
-  x.2 = data$Curricular.units.2nd.sem..approved.,
-  y = as.factor(data$Target)
+results <- data.frame(
+  Feature = character(),
+  F_value = numeric(),
+  p_value = numeric(),
+  stringsAsFactors = FALSE
 )
 
-marks <- marks[complete.cases(marks), ]
-```
+for (feat in features) {
+  formula <- as.formula(paste(feat, "~ Target"))
+  anova_result <- aov(formula, data = data)
+  summary_anova <- summary(anova_result)
+  
+  results <- rbind(
+    results,
+    data.frame(
+      Feature = feat,
+      F_value = round(summary_anova[[1]]$`F value`[1], 2),
+      p_value = summary_anova[[1]]$`Pr(>F)`[1]
+    )
+  )
+}
+
+results <- results[order(-results$F_value), ]
+head(results, 5)
+
 
 ## Exploratory Visualization
 
-```{r plot-data}
-# Plot 
-ggplot(data = marks, aes(x = x.2, y = x.1, color = y)) + 
-  geom_point(size = 2) + 
-  scale_color_manual(values = c("Dropout" = "#ff2000", 
-                                 "Enrolled" = "#828282", 
-                                 "Graduate" = "#2ecc71")) +
-  scale_y_continuous(limits = c(9, NA)) +
-  labs(
-    x = "2nd Semester Passed Units",
-    y = "2nd Semester Marks"
-  )
-```
 
 ## Train/Test Split
 
-Now, I will split the data into training and testing sets, and then fit several SVM models to classify the students based on their marks.
+Now, we will split the data into training and testing sets, and then fit several SVM models to classify the students based on their marks.
 
 ```{r train-test-split}
 set.seed(123)
@@ -88,7 +93,7 @@ cat("Test set size:", nrow(test_data), "\n")
 
 ## Model Training
 
-Now, I will fit the SVM model with a linear, a radial and a polynomial kernel.
+Now, we will fit the SVM model with a linear, a radial and a polynomial kernel.
 
 ```{r train-models}
 svm_linear <- svm(y ~ x.1 + x.2, data = train_data, kernel = "linear", cost = 1)

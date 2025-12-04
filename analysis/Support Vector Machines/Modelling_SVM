@@ -80,11 +80,18 @@ results <- data.frame(
                cm_poly$overall['Accuracy'])
 )
 
-plot(svm_linear, train_data, x.1 ~ x.2,
-     svSymbol = 1, dataSymbol = 16,
-     symbolPalette = c("#ff2000", "#828282", "#2ecc71"),
-     color.palette = terrain.colors)
-title("Linear Kernel SVM")
+  plot(
+    svm_linear,
+    train_data,
+    x.1 ~ x.2,
+    svSymbol = 1,
+    dataSymbol = 16,
+    symbolPalette = c("#1f77b4", "#ff7f0e", "#2ca02c"),  # NEW PALETTE
+    color.palette = terrain.colors,
+    xlab = "x.1",
+    ylab = "x.2",
+    main = ""          # removes the title
+  )
 
 plot(svm_radial, train_data, x.1 ~ x.2,
      svSymbol = 1, dataSymbol = 16,
