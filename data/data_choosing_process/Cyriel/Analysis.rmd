@@ -1,0 +1,1146 @@
+---
+title: "Statistical Modeling of Student Performance"
+author: "Student Success Analysis"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: flatly
+    code_folding: show
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 12,
+  fig.height = 6,
+  fig.align = 'center'
+)
+```
+
+# Introduction
+
+This analysis applies four types of statistical models to predict student academic outcomes using a comprehensive dataset of student demographics, academic history, and socioeconomic factors. The models progress from basic linear relationships to sophisticated non-linear patterns.
+
+## Model Overview
+
+1. **Linear Regression**: Predicts continuous grade values
+2. **Poisson GLM**: Models count data (number of courses approved)
+3. **Binomial GLM**: Classifies binary outcomes (admission levels, graduation success)
+4. **Generalized Additive Models (GAM)**: Captures non-linear relationships in all three contexts
+
+## Load Required Libraries
+
+```{r libraries}
+library(tidyverse)
+library(caret)
+library(corrplot)
+library(gridExtra)
+library(MASS)
+library(broom)
+library(pROC)
+library(scales)
+library(mgcv)
+library(gratia)
+
+theme_set(theme_minimal())
+options(warn = -1)
+```
+
+## Data Loading
+
+```{r load-data}
+df <- read.csv2('/Users/cyrielvanhelleputte/PycharmProjects/machine_learning_I_Project/data/data_choosing_process/Cyriel/data.csv',
+                fileEncoding = 'UTF-8-BOM')
+
+cat(sprintf("Dataset dimensions: %d rows × %d columns\n", nrow(df), ncol(df)))
+```
+
+---
+
+# Part 1: Linear Regression for Grade Prediction
+
+Linear regression models the relationship between predictor variables and a continuous outcome. Here we predict second semester grades based on demographic factors, previous academic performance, and economic indicators.
+
+## Data Preparation
+
+```{r linear-prep}
+TARGET <- 'Curricular.units.2nd.sem..grade.'
+
+FEATURES <- c(
+    'Previous.qualification..grade.',
+    'Admission.grade',
+    'Age.at.enrollment',
+    "Mother.s.qualification",
+    "Father.s.qualification",
+    'Scholarship.holder',
+    'Curricular.units.1st.sem..credited.',
+    'Curricular.units.1st.sem..enrolled.',
+    'Curricular.units.1st.sem..approved.',
+    'Curricular.units.1st.sem..grade.',
+    'Unemployment.rate',
+    'Inflation.rate',
+    'GDP'
+)
+
+df_model <- df %>%
+    select(all_of(c(FEATURES, TARGET))) %>%
+    mutate(across(everything(), ~ as.numeric(as.character(.)))) %>%
+    drop_na() %>%
+    filter(get(TARGET) > 0)
+
+cat(sprintf("Modeling dataset: %d students\n", nrow(df_model)))
+```
+
+The dataset is filtered to exclude students with zero grades, as these typically represent withdrawals or incomplete coursework rather than actual performance.
+
+## Exploratory Analysis
+
+```{r linear-eda}
+cat(sprintf("\nTarget Variable Statistics (%s):\n", TARGET))
+summary(df_model[[TARGET]])
+
+correlations <- cor(df_model[FEATURES], df_model[[TARGET]])
+correlations_sorted <- sort(correlations[,1], decreasing = TRUE)
+
+cat("\nTop 5 Correlations with Target:\n")
+print(head(correlations_sorted, 5))
+```
+
+### Correlation Heatmap
+
+```{r linear-correlation, fig.height=8}
+correlation_matrix <- cor(df_model[c(FEATURES, TARGET)])
+
+corrplot(correlation_matrix,
+         method = "color",
+         type = "upper",
+         tl.col = "black",
+         tl.srt = 45,
+         tl.cex = 0.8,
+         col = colorRampPalette(c("blue", "white", "red"))(200),
+         addCoef.col = "black",
+         number.cex = 0.5,
+         title = "Feature Correlation Heatmap",
+         mar = c(0, 0, 2, 0))
+```
+
+Strong positive correlations are evident between first semester performance and second semester grades, suggesting prior academic success is highly predictive.
+
+## Train-Test Split
+
+```{r linear-split}
+set.seed(42)
+
+trainIndex <- createDataPartition(df_model[[TARGET]], p = 0.8, list = FALSE)
+
+train_data <- df_model[trainIndex, ]
+test_data <- df_model[-trainIndex, ]
+
+X_train <- train_data %>% select(all_of(FEATURES))
+y_train <- train_data[[TARGET]]
+X_test <- test_data %>% select(all_of(FEATURES))
+y_test <- test_data[[TARGET]]
+
+cat(sprintf("Training: %d | Testing: %d\n", nrow(train_data), nrow(test_data)))
+```
+
+## Feature Scaling
+
+```{r linear-scale}
+preProc <- preProcess(X_train, method = c("center", "scale"))
+X_train_scaled <- predict(preProc, X_train)
+X_test_scaled <- predict(preProc, X_test)
+```
+
+Standardization ensures all features contribute proportionally to the model regardless of their original scales.
+
+## Model Training
+
+```{r linear-train}
+train_data_scaled <- X_train_scaled
+train_data_scaled[[TARGET]] <- y_train
+
+formula_str <- paste(TARGET, "~", paste(FEATURES, collapse = " + "))
+formula_obj <- as.formula(formula_str)
+
+model <- lm(formula_obj, data = train_data_scaled)
+
+cat("\nModel Coefficients:\n")
+coef_summary <- data.frame(
+  Feature = names(coef(model)),
+  Coefficient = coef(model)
+)
+print(coef_summary, row.names = FALSE)
+```
+
+## Predictions and Evaluation
+
+```{r linear-predict}
+y_train_pred <- predict(model, X_train_scaled)
+y_test_pred <- predict(model, X_test_scaled)
+
+train_r2 <- cor(y_train, y_train_pred)^2
+train_rmse <- sqrt(mean((y_train - y_train_pred)^2))
+train_mae <- mean(abs(y_train - y_train_pred))
+
+test_r2 <- cor(y_test, y_test_pred)^2
+test_rmse <- sqrt(mean((y_test - y_test_pred)^2))
+test_mae <- mean(abs(y_test - y_test_pred))
+
+cat("\nModel Performance:\n")
+cat(sprintf("Training R²: %.4f | Test R²: %.4f\n", train_r2, test_r2))
+cat(sprintf("Training RMSE: %.4f | Test RMSE: %.4f\n", train_rmse, test_rmse))
+cat(sprintf("Training MAE: %.4f | Test MAE: %.4f\n", train_mae, test_mae))
+```
+
+The R² score indicates that `r round(test_r2 * 100, 1)`% of variance in second semester grades can be explained by the selected features. The average prediction error (MAE) is `r round(test_mae, 2)` grade points.
+
+## Visualization
+
+```{r linear-plots}
+par(mfrow = c(1, 2))
+
+plot(y_train, y_train_pred,
+     xlab = "Actual Grade", ylab = "Predicted Grade",
+     main = sprintf("Training Set (R² = %.4f)", train_r2),
+     pch = 16, col = rgb(0, 0, 1, 0.5))
+abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2)
+grid()
+
+plot(y_test, y_test_pred,
+     xlab = "Actual Grade", ylab = "Predicted Grade",
+     main = sprintf("Test Set (R² = %.4f)", test_r2),
+     pch = 16, col = rgb(0, 1, 0, 0.5))
+abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2)
+grid()
+```
+
+Points clustering along the red diagonal line indicate accurate predictions. Deviations represent prediction errors.
+
+```{r linear-residuals}
+residuals_test <- y_test - y_test_pred
+
+par(mfrow = c(1, 2))
+
+plot(y_test_pred, residuals_test,
+     xlab = "Predicted Grade", ylab = "Residuals",
+     main = "Residual Plot",
+     pch = 16, col = rgb(0, 0, 1, 0.5))
+abline(h = 0, col = "red", lwd = 2, lty = 2)
+grid()
+
+hist(residuals_test, breaks = 30,
+     xlab = "Residuals", ylab = "Frequency",
+     main = "Residual Distribution",
+     col = rgb(0, 0, 1, 0.7), border = "black")
+abline(v = 0, col = "red", lwd = 2, lty = 2)
+grid()
+```
+
+The residual plot should show random scatter around zero. Patterns would indicate systematic prediction errors.
+
+## Feature Importance
+
+```{r linear-importance, fig.height=8}
+feature_importance <- data.frame(
+    Feature = names(coef(model))[-1],
+    Coefficient = coef(model)[-1]
+) %>%
+    mutate(Abs_Coefficient = abs(Coefficient)) %>%
+    arrange(desc(Abs_Coefficient))
+
+par(mar = c(5, 12, 4, 2))
+colors <- ifelse(feature_importance$Coefficient > 0, "green", "red")
+barplot(feature_importance$Coefficient,
+        names.arg = feature_importance$Feature,
+        horiz = TRUE,
+        las = 1,
+        col = adjustcolor(colors, alpha.f = 0.7),
+        xlab = "Coefficient Value",
+        main = "Feature Importance",
+        xlim = c(min(feature_importance$Coefficient) * 1.2,
+                 max(feature_importance$Coefficient) * 1.2))
+abline(v = 0, col = "black", lwd = 1)
+grid()
+```
+
+Green bars indicate positive effects on grades, while red bars show negative associations. The magnitude reflects the strength of each feature's influence.
+
+---
+
+# Part 2: Poisson GLM for Count Data
+
+Poisson regression is designed for count outcomes (non-negative integers). We model the number of courses approved, which follows a discrete distribution where variance approximates the mean.
+
+## Model 1: First Semester Course Approvals
+
+### Data Preparation
+
+```{r poisson1-prep}
+TARGET_1 <- 'Curricular.units.1st.sem..approved.'
+
+FEATURES_1 <- c(
+    'Previous.qualification..grade.',
+    'Admission.grade',
+    'Age.at.enrollment',
+    "Mother.s.qualification",
+    "Father.s.qualification",
+    'Scholarship.holder',
+    'Gender',
+    'Debtor',
+    'Tuition.fees.up.to.date',
+    'Curricular.units.1st.sem..enrolled.',
+    'Unemployment.rate',
+    'Inflation.rate',
+    'GDP'
+)
+
+df_model1 <- df %>%
+    select(all_of(c(FEATURES_1, TARGET_1))) %>%
+    mutate(across(everything(), ~ as.numeric(as.character(.)))) %>%
+    drop_na()
+
+cat(sprintf("Dataset: %d students\n", nrow(df_model1)))
+
+cat("\nTarget Distribution:\n")
+print(head(table(df_model1[[TARGET_1]]), 10))
+cat(sprintf("Mean: %.2f | Variance: %.2f\n",
+            mean(df_model1[[TARGET_1]]),
+            var(df_model1[[TARGET_1]])))
+```
+
+### Train-Test Split
+
+```{r poisson1-split}
+set.seed(42)
+
+X1 <- df_model1 %>% select(all_of(FEATURES_1))
+y1 <- df_model1[[TARGET_1]]
+
+trainIndex1 <- createDataPartition(y1, p = 0.8, list = FALSE)
+
+X_train1 <- X1[trainIndex1, ]
+X_test1 <- X1[-trainIndex1, ]
+y_train1 <- y1[trainIndex1]
+y_test1 <- y1[-trainIndex1]
+
+cat(sprintf("Training: %d | Testing: %d\n", length(y_train1), length(y_test1)))
+```
+
+### Model Training
+
+```{r poisson1-train}
+train_data1 <- X_train1
+train_data1[[TARGET_1]] <- y_train1
+
+formula_1 <- as.formula(paste(TARGET_1, "~", paste(FEATURES_1, collapse = " + ")))
+
+poisson_model1 <- glm(formula_1, data = train_data1, family = poisson(link = "log"))
+
+cat("\nModel Summary:\n")
+print(summary(poisson_model1))
+```
+
+The log link function ensures predictions are always non-negative, appropriate for count data.
+
+### Predictions and Evaluation
+
+```{r poisson1-eval}
+y_pred_train1 <- predict(poisson_model1, newdata = X_train1, type = "response")
+y_pred_test1 <- predict(poisson_model1, newdata = X_test1, type = "response")
+
+test_rmse1 <- sqrt(mean((y_test1 - y_pred_test1)^2))
+test_mae1 <- mean(abs(y_test1 - y_pred_test1))
+test_r2_1 <- cor(y_test1, y_pred_test1)^2
+
+cat("\nPerformance Metrics:\n")
+cat(sprintf("Test RMSE: %.4f courses\n", test_rmse1))
+cat(sprintf("Test MAE: %.4f courses\n", test_mae1))
+cat(sprintf("Test R²: %.4f\n", test_r2_1))
+```
+
+### Rate Ratios
+
+```{r poisson1-ratios}
+coef_summary1 <- summary(poisson_model1)$coefficients
+coef_df1 <- data.frame(
+    Feature = rownames(coef_summary1),
+    Coefficient = coef_summary1[, "Estimate"],
+    Rate_Ratio = exp(coef_summary1[, "Estimate"]),
+    P_value = coef_summary1[, "Pr(>|z|)"]
+) %>%
+    mutate(Abs_Coef = abs(Coefficient)) %>%
+    arrange(desc(Abs_Coef))
+
+cat("\nTop Predictors:\n")
+print(head(coef_df1[, c("Feature", "Coefficient", "Rate_Ratio", "P_value")], 10),
+      row.names = FALSE)
+```
+
+Rate ratios above 1 increase expected course approvals; below 1 decrease them. For example, a rate ratio of 1.5 means a 50% increase in expected courses per unit increase in the predictor.
+
+### Visualization
+
+```{r poisson1-plots}
+par(mfrow = c(1, 2))
+
+plot(y_train1, y_pred_train1,
+     xlab = "Actual Courses", ylab = "Predicted Courses",
+     main = sprintf("Training (RMSE = %.3f)",
+                    sqrt(mean((y_train1 - y_pred_train1)^2))),
+     pch = 16, col = rgb(0, 0, 1, 0.5))
+abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2)
+grid()
+
+plot(y_test1, y_pred_test1,
+     xlab = "Actual Courses", ylab = "Predicted Courses",
+     main = sprintf("Test (RMSE = %.3f)", test_rmse1),
+     pch = 16, col = rgb(0, 1, 0, 0.5))
+abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2)
+grid()
+```
+
+```{r poisson1-coef, fig.height=10}
+coef_plot_df <- coef_df1 %>%
+    filter(Feature != "(Intercept)") %>%
+    head(13)
+
+par(mar = c(5, 12, 4, 2))
+colors <- ifelse(coef_plot_df$Coefficient > 0, "green", "red")
+barplot(coef_plot_df$Coefficient,
+        names.arg = coef_plot_df$Feature,
+        horiz = TRUE,
+        las = 1,
+        col = adjustcolor(colors, alpha.f = 0.7),
+        xlab = "Coefficient (Log Rate)",
+        main = "Feature Effects on Course Approvals")
+abline(v = 0, col = "black", lwd = 1)
+grid()
+```
+
+## Model 2: Second Semester Course Approvals
+
+### Data Preparation
+
+```{r poisson2-prep}
+TARGET_2 <- 'Curricular.units.2nd.sem..approved.'
+
+FEATURES_2 <- c(
+    'Previous.qualification..grade.',
+    'Admission.grade',
+    'Age.at.enrollment',
+    'Scholarship.holder',
+    'Debtor',
+    'Tuition.fees.up.to.date',
+    'Curricular.units.1st.sem..approved.',
+    'Curricular.units.1st.sem..grade.',
+    'Curricular.units.2nd.sem..enrolled.',
+    'Unemployment.rate',
+    'GDP'
+)
+
+df_model2 <- df %>%
+    select(all_of(c(FEATURES_2, TARGET_2))) %>%
+    mutate(across(everything(), ~ as.numeric(as.character(.)))) %>%
+    drop_na()
+
+cat(sprintf("Dataset: %d students\n", nrow(df_model2)))
+```
+
+This model incorporates first semester performance, making it predictive of how initial academic success influences subsequent achievement.
+
+### Train-Test Split and Training
+
+```{r poisson2-train}
+set.seed(42)
+
+X2 <- df_model2 %>% select(all_of(FEATURES_2))
+y2 <- df_model2[[TARGET_2]]
+
+trainIndex2 <- createDataPartition(y2, p = 0.8, list = FALSE)
+
+X_train2 <- X2[trainIndex2, ]
+X_test2 <- X2[-trainIndex2, ]
+y_train2 <- y2[trainIndex2]
+y_test2 <- y2[-trainIndex2]
+
+train_data2 <- X_train2
+train_data2[[TARGET_2]] <- y_train2
+
+formula_2 <- as.formula(paste(TARGET_2, "~", paste(FEATURES_2, collapse = " + ")))
+
+poisson_model2 <- glm(formula_2, data = train_data2, family = poisson(link = "log"))
+```
+
+### Evaluation
+
+```{r poisson2-eval}
+y_pred_test2 <- predict(poisson_model2, newdata = X_test2, type = "response")
+
+test_rmse2 <- sqrt(mean((y_test2 - y_pred_test2)^2))
+test_mae2 <- mean(abs(y_test2 - y_pred_test2))
+test_r2_2 <- cor(y_test2, y_pred_test2)^2
+
+cat("Performance Metrics:\n")
+cat(sprintf("Test RMSE: %.4f | MAE: %.4f | R²: %.4f\n",
+            test_rmse2, test_mae2, test_r2_2))
+```
+
+### Comparison with Linear Regression
+
+```{r poisson-comparison}
+lr_model <- lm(as.formula(paste(TARGET_1, "~", paste(FEATURES_1, collapse = " + "))),
+               data = train_data1)
+y_pred_lr <- predict(lr_model, newdata = X_test1)
+
+lr_rmse <- sqrt(mean((y_test1 - y_pred_lr)^2))
+lr_mae <- mean(abs(y_test1 - y_pred_lr))
+
+cat("\nModel Comparison:\n")
+cat(sprintf("Poisson GLM - RMSE: %.4f | MAE: %.4f\n", test_rmse1, test_mae1))
+cat(sprintf("Linear Reg  - RMSE: %.4f | MAE: %.4f\n", lr_rmse, lr_mae))
+
+n_negative <- sum(y_pred_lr < 0)
+cat(sprintf("\nLinear regression produced %d impossible negative predictions\n", n_negative))
+cat("Poisson GLM ensures all predictions are valid (non-negative)\n")
+```
+
+Poisson regression maintains logical constraints that linear regression violates, making it more appropriate for count outcomes.
+
+---
+
+# Part 3: Binomial GLM for Classification
+
+Binomial GLM (logistic regression) models binary outcomes using a logit link function that constrains predictions to probabilities between 0 and 1.
+
+## Model 1: High vs Low Admission Score
+
+### Data Preparation
+
+```{r binomial1-prep}
+median_admission <- median(df$Admission.grade, na.rm = TRUE)
+df$High_Admission <- ifelse(df$Admission.grade >= median_admission, 1, 0)
+
+cat(sprintf("Median admission grade: %.2f\n", median_admission))
+cat(sprintf("Low Admission: %d | High Admission: %d\n",
+            sum(df$High_Admission == 0, na.rm = TRUE),
+            sum(df$High_Admission == 1, na.rm = TRUE)))
+
+features_admission <- c(
+  'Previous.qualification..grade.',
+  'Age.at.enrollment',
+  'Mother.s.qualification',
+  'Father.s.qualification',
+  'Application.order',
+  'Scholarship.holder',
+  'Gender',
+  'Displaced',
+  'International'
+)
+
+df_admission <- df %>%
+  select(all_of(c(features_admission, 'High_Admission'))) %>%
+  mutate(across(everything(), as.numeric)) %>%
+  na.omit()
+
+cat(sprintf("Dataset: %d students\n", nrow(df_admission)))
+```
+
+### Train-Test Split and Scaling
+
+```{r binomial1-split}
+set.seed(42)
+train_index_adm <- createDataPartition(df_admission$High_Admission, p = 0.8, list = FALSE)
+train_adm <- df_admission[train_index_adm, ]
+test_adm <- df_admission[-train_index_adm, ]
+
+preproc_adm <- preProcess(train_adm[, features_admission], method = c("center", "scale"))
+train_adm_scaled <- predict(preproc_adm, train_adm)
+test_adm_scaled <- predict(preproc_adm, test_adm)
+```
+
+### Model Training
+
+```{r binomial1-train}
+glm_adm <- glm(High_Admission ~ .,
+               data = train_adm_scaled,
+               family = binomial(link = "logit"))
+
+cat("Model Summary:\n")
+print(summary(glm_adm))
+```
+
+### Predictions and Evaluation
+
+```{r binomial1-eval}
+pred_adm_prob <- predict(glm_adm, test_adm_scaled, type = "response")
+pred_adm <- ifelse(pred_adm_prob > 0.5, 1, 0)
+
+accuracy_adm <- mean(pred_adm == test_adm_scaled$High_Admission)
+
+cat(sprintf("\nAccuracy: %.4f (%.2f%%)\n", accuracy_adm, accuracy_adm * 100))
+
+cm_adm <- confusionMatrix(factor(pred_adm, levels = c(0, 1)),
+                          factor(test_adm_scaled$High_Admission, levels = c(0, 1)))
+print(cm_adm)
+```
+
+### ROC Curve
+
+```{r binomial1-roc}
+roc_adm <- roc(test_adm_scaled$High_Admission, pred_adm_prob, quiet = TRUE)
+auc_adm <- auc(roc_adm)
+
+plot(roc_adm, col = "darkorange", lwd = 2,
+     main = sprintf("ROC Curve - High Admission (AUC = %.3f)", auc_adm))
+abline(a = 0, b = 1, lty = 2, col = "navy", lwd = 2)
+grid()
+```
+
+The area under the ROC curve (AUC) measures discrimination ability. Values closer to 1.0 indicate better classification performance.
+
+### Odds Ratios
+
+```{r binomial1-odds}
+coef_df_adm <- data.frame(
+  Feature = features_admission,
+  Coefficient = coef(glm_adm)[-1],
+  Odds_Ratio = exp(coef(glm_adm)[-1])
+) %>%
+  arrange(desc(abs(Coefficient)))
+
+cat("\nFeature Coefficients and Odds Ratios:\n")
+print(coef_df_adm, row.names = FALSE)
+```
+
+An odds ratio of 1.5 means each unit increase in that feature multiplies the odds of high admission by 1.5 (a 50% increase).
+
+## Model 2: Graduate vs Dropout Prediction
+
+### Data Preparation
+
+```{r binomial2-prep}
+df_success <- df %>%
+  filter(Target %in% c('Graduate', 'Dropout')) %>%
+  mutate(Success = ifelse(Target == 'Graduate', 1, 0))
+
+cat(sprintf("Dropout: %d | Graduate: %d\n",
+            sum(df_success$Success == 0),
+            sum(df_success$Success == 1)))
+
+features_success <- c(
+  'Previous.qualification..grade.',
+  'Admission.grade',
+  'Age.at.enrollment',
+  'Mother.s.qualification',
+  'Father.s.qualification',
+  'Scholarship.holder',
+  'Gender',
+  'Debtor',
+  'Tuition.fees.up.to.date',
+  'Curricular.units.1st.sem..approved.',
+  'Curricular.units.1st.sem..grade.',
+  'Unemployment.rate',
+  'Inflation.rate',
+  'GDP'
+)
+
+df_success_model <- df_success %>%
+  select(all_of(c(features_success, 'Success'))) %>%
+  mutate(across(everything(), as.numeric)) %>%
+  na.omit()
+
+cat(sprintf("Dataset: %d students\n", nrow(df_success_model)))
+```
+
+### Train-Test Split and Training
+
+```{r binomial2-train}
+set.seed(42)
+train_index_suc <- createDataPartition(df_success_model$Success, p = 0.8, list = FALSE)
+train_suc <- df_success_model[train_index_suc, ]
+test_suc <- df_success_model[-train_index_suc, ]
+
+preproc_suc <- preProcess(train_suc[, features_success], method = c("center", "scale"))
+train_suc_scaled <- predict(preproc_suc, train_suc)
+test_suc_scaled <- predict(preproc_suc, test_suc)
+
+glm_suc <- glm(Success ~ .,
+               data = train_suc_scaled,
+               family = binomial(link = "logit"))
+```
+
+### Evaluation
+
+```{r binomial2-eval}
+pred_suc_prob <- predict(glm_suc, test_suc_scaled, type = "response")
+pred_suc <- ifelse(pred_suc_prob > 0.5, 1, 0)
+
+accuracy_suc <- mean(pred_suc == test_suc_scaled$Success)
+
+cat(sprintf("Accuracy: %.4f (%.2f%%)\n", accuracy_suc, accuracy_suc * 100))
+
+roc_suc <- roc(test_suc_scaled$Success, pred_suc_prob, quiet = TRUE)
+auc_suc <- auc(roc_suc)
+
+cat(sprintf("AUC-ROC: %.3f\n", auc_suc))
+```
+
+### Feature Importance
+
+```{r binomial2-importance, fig.height=10}
+coef_df_suc <- data.frame(
+  Feature = features_success,
+  Coefficient = coef(glm_suc)[-1],
+  Odds_Ratio = exp(coef(glm_suc)[-1])
+) %>%
+  arrange(desc(abs(Coefficient)))
+
+par(mar = c(5, 12, 4, 2))
+colors <- ifelse(coef_df_suc$Coefficient > 0, "green", "red")
+barplot(coef_df_suc$Coefficient,
+        names.arg = coef_df_suc$Feature,
+        horiz = TRUE,
+        las = 1,
+        col = adjustcolor(colors, alpha.f = 0.7),
+        xlab = "Coefficient (Log-Odds)",
+        main = "Predictors of Graduation")
+abline(v = 0, col = "black", lwd = 1)
+grid()
+```
+
+Green bars show factors that increase graduation likelihood; red bars indicate risk factors for dropout.
+
+```{r binomial2-interpretation}
+cat("\nTop 5 Predictors Interpretation:\n")
+for (i in 1:min(5, nrow(coef_df_suc))) {
+  row <- coef_df_suc[i, ]
+  if (row$Odds_Ratio > 1) {
+    pct_change <- (row$Odds_Ratio - 1) * 100
+    cat(sprintf("✓ %s: %.1f%% increase in graduation odds\n",
+                row$Feature, pct_change))
+  } else {
+    pct_change <- (1 - row$Odds_Ratio) * 100
+    cat(sprintf("✗ %s: %.1f%% decrease in graduation odds\n",
+                row$Feature, pct_change))
+  }
+}
+```
+
+---
+
+# Part 4: Generalized Additive Models (GAMs)
+
+GAMs extend GLMs by allowing non-linear relationships through smooth functions. Rather than assuming straight-line effects, GAMs let the data reveal curved patterns.
+
+## Model 1: Gaussian GAM for Grades
+
+### Data Preparation
+
+```{r gam1-prep}
+TARGET_GRADE <- 'Curricular.units.2nd.sem..grade.'
+
+features_grade <- c(
+  'Previous.qualification..grade.',
+  'Admission.grade',
+  'Age.at.enrollment',
+  'Scholarship.holder',
+  'Curricular.units.1st.sem..approved.',
+  'Curricular.units.1st.sem..grade.',
+  'Unemployment.rate',
+  'GDP'
+)
+
+df_grade <- df %>%
+  select(all_of(c(features_grade, TARGET_GRADE))) %>%
+  mutate(across(everything(), as.numeric)) %>%
+  na.omit() %>%
+  filter(!!sym(TARGET_GRADE) > 0)
+
+cat(sprintf("Dataset: %d students\n", nrow(df_grade)))
+```
+
+### Train-Test Split
+
+```{r gam1-split}
+set.seed(42)
+train_index_g <- createDataPartition(df_grade[[TARGET_GRADE]], p = 0.8, list = FALSE)
+train_g <- df_grade[train_index_g, ]
+test_g <- df_grade[-train_index_g, ]
+```
+
+### Model Training
+
+```{r gam1-train}
+gam_grade <- gam(
+  Curricular.units.2nd.sem..grade. ~
+    s(Previous.qualification..grade., bs = "cr", k = 10) +
+    s(Admission.grade, bs = "cr", k = 10) +
+    s(Age.at.enrollment, bs = "cr", k = 8) +
+    factor(Scholarship.holder) +
+    s(Curricular.units.1st.sem..approved., bs = "cr", k = 8) +
+    s(Curricular.units.1st.sem..grade., bs = "cr", k = 10) +
+    s(Unemployment.rate, bs = "cr", k = 8) +
+    s(GDP, bs = "cr", k = 8),
+  data = train_g,
+  method = "REML"
+)
+
+cat("\nGAM Summary:\n")
+print(summary(gam_grade))
+```
+
+The `s()` function creates smooth spline terms that automatically fit curved relationships.
+
+### Evaluation
+
+```{r gam1-eval}
+pred_test_g <- predict(gam_grade, test_g)
+
+test_r2_g <- cor(test_g[[TARGET_GRADE]], pred_test_g)^2
+test_rmse_g <- sqrt(mean((test_g[[TARGET_GRADE]] - pred_test_g)^2))
+test_mae_g <- mean(abs(test_g[[TARGET_GRADE]] - pred_test_g))
+
+cat(sprintf("\nGAM Performance:\n"))
+cat(sprintf("Test R²: %.4f | RMSE: %.4f | MAE: %.4f\n",
+            test_r2_g, test_rmse_g, test_mae_g))
+```
+
+### Comparison with Linear Model
+
+```{r gam1-comparison}
+lm_model <- lm(Curricular.units.2nd.sem..grade. ~ ., data = train_g)
+lm_pred <- predict(lm_model, test_g)
+lm_r2 <- cor(test_g[[TARGET_GRADE]], lm_pred)^2
+
+cat("\nGAM vs Linear GLM:\n")
+cat(sprintf("GAM R²:        %.4f\n", test_r2_g))
+cat(sprintf("Linear GLM R²: %.4f\n", lm_r2))
+cat(sprintf("Improvement:   %.2f percentage points\n", (test_r2_g - lm_r2) * 100))
+```
+
+The improvement demonstrates the value of capturing non-linear patterns.
+
+### Smooth Function Visualization
+
+```{r gam1-smooth, fig.height=8}
+par(mfrow = c(2, 4), mar = c(4, 4, 3, 1))
+plot(gam_grade, select = 1, shade = TRUE, col = "blue", shade.col = "lightblue",
+     main = "Previous Qualification", cex.main = 1.2)
+plot(gam_grade, select = 2, shade = TRUE, col = "blue", shade.col = "lightblue",
+     main = "Admission Grade", cex.main = 1.2)
+plot(gam_grade, select = 3, shade = TRUE, col = "blue", shade.col = "lightblue",
+     main = "Age at Enrollment", cex.main = 1.2)
+plot(gam_grade, select = 4, shade = TRUE, col = "blue", shade.col = "lightblue",
+     main = "1st Sem Approved", cex.main = 1.2)
+plot(gam_grade, select = 5, shade = TRUE, col = "blue", shade.col = "lightblue",
+     main = "1st Sem Grade", cex.main = 1.2)
+plot(gam_grade, select = 6, shade = TRUE, col = "blue", shade.col = "lightblue",
+     main = "Unemployment Rate", cex.main = 1.2)
+plot(gam_grade, select = 7, shade = TRUE, col = "blue", shade.col = "lightblue",
+     main = "GDP", cex.main = 1.2)
+```
+
+Each plot shows how the predicted outcome changes across the range of a predictor. Shaded regions represent confidence intervals. Curves reveal patterns linear models cannot capture.
+
+### Predictions
+
+```{r gam1-predictions}
+par(mfrow = c(1, 2))
+
+plot(test_g[[TARGET_GRADE]], pred_test_g,
+     pch = 16, col = rgb(0.5, 0, 0.5, 0.5),
+     xlab = "Actual Grade", ylab = "Predicted Grade",
+     main = sprintf("GAM Predictions (R² = %.4f)", test_r2_g),
+     cex.main = 1.3)
+abline(0, 1, col = "red", lwd = 2, lty = 2)
+grid()
+
+residuals_g <- test_g[[TARGET_GRADE]] - pred_test_g
+plot(pred_test_g, residuals_g,
+     pch = 16, col = rgb(0.5, 0, 0.5, 0.5),
+     xlab = "Predicted Grade", ylab = "Residuals",
+     main = "Residual Plot",
+     cex.main = 1.3)
+abline(h = 0, col = "red", lwd = 2, lty = 2)
+grid()
+```
+
+## Model 2: Logistic GAM for Graduation
+
+### Data Preparation and Training
+
+```{r gam2-prep}
+df_success <- df %>%
+  filter(Target %in% c('Graduate', 'Dropout')) %>%
+  mutate(Success = ifelse(Target == 'Graduate', 1, 0))
+
+features_success <- c(
+  'Admission.grade',
+  'Age.at.enrollment',
+  'Scholarship.holder',
+  'Tuition.fees.up.to.date',
+  'Curricular.units.1st.sem..approved.',
+  'Curricular.units.1st.sem..grade.',
+  'Unemployment.rate',
+  'GDP'
+)
+
+df_success_model <- df_success %>%
+  select(all_of(c(features_success, 'Success'))) %>%
+  mutate(across(everything(), as.numeric)) %>%
+  na.omit()
+
+set.seed(42)
+train_index_s <- createDataPartition(df_success_model$Success, p = 0.8, list = FALSE)
+train_s <- df_success_model[train_index_s, ]
+test_s <- df_success_model[-train_index_s, ]
+
+gam_success <- gam(
+  Success ~
+    s(Admission.grade, bs = "cr", k = 10) +
+    s(Age.at.enrollment, bs = "cr", k = 8) +
+    factor(Scholarship.holder) +
+    factor(Tuition.fees.up.to.date) +
+    s(Curricular.units.1st.sem..approved., bs = "cr", k = 8) +
+    s(Curricular.units.1st.sem..grade., bs = "cr", k = 10) +
+    s(Unemployment.rate, bs = "cr", k = 8) +
+    s(GDP, bs = "cr", k = 8),
+  data = train_s,
+  family = binomial(link = "logit"),
+  method = "REML"
+)
+```
+
+### Evaluation
+
+```{r gam2-eval}
+pred_proba_s <- predict(gam_success, test_s, type = "response")
+pred_s <- ifelse(pred_proba_s > 0.5, 1, 0)
+
+accuracy_s <- mean(pred_s == test_s$Success)
+roc_s <- roc(test_s$Success, pred_proba_s, quiet = TRUE)
+auc_s <- auc(roc_s)
+
+cat(sprintf("Accuracy: %.4f (%.2f%%)\n", accuracy_s, accuracy_s * 100))
+cat(sprintf("AUC-ROC: %.4f\n", auc_s))
+```
+
+### Comparison with Logistic Regression
+
+```{r gam2-comparison}
+log_reg <- glm(Success ~ ., data = train_s, family = binomial)
+log_pred_proba <- predict(log_reg, test_s, type = "response")
+log_roc <- roc(test_s$Success, log_pred_proba, quiet = TRUE)
+log_auc <- auc(log_roc)
+
+cat("\nLogistic GAM vs Logistic GLM:\n")
+cat(sprintf("GAM AUC:        %.4f\n", auc_s))
+cat(sprintf("Logistic GLM:   %.4f\n", log_auc))
+cat(sprintf("Improvement:    %.2f percentage points\n", (auc_s - log_auc) * 100))
+```
+
+### Smooth Functions
+
+```{r gam2-smooth, fig.height=8}
+par(mfrow = c(2, 3), mar = c(4, 4, 3, 1))
+plot(gam_success, select = 1, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
+     main = "Admission Grade", cex.main = 1.2, ylab = "Log-Odds of Graduation")
+plot(gam_success, select = 2, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
+     main = "Age at Enrollment", cex.main = 1.2, ylab = "Log-Odds of Graduation")
+plot(gam_success, select = 3, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
+     main = "1st Sem Approved", cex.main = 1.2, ylab = "Log-Odds of Graduation")
+plot(gam_success, select = 4, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
+     main = "1st Sem Grade", cex.main = 1.2, ylab = "Log-Odds of Graduation")
+plot(gam_success, select = 5, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
+     main = "Unemployment", cex.main = 1.2, ylab = "Log-Odds of Graduation")
+plot(gam_success, select = 6, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
+     main = "GDP", cex.main = 1.2, ylab = "Log-Odds of Graduation")
+```
+
+These curves show how graduation probability changes non-linearly. For instance, age may show a U-shape where very young and older students face different challenges.
+
+### ROC Curve
+
+```{r gam2-roc}
+plot(roc_s, col = "darkgreen", lwd = 2,
+     main = sprintf("ROC Curve - Logistic GAM (AUC = %.3f)", auc_s),
+     cex.main = 1.3)
+abline(a = 0, b = 1, lty = 2, lwd = 2, col = "black")
+legend("bottomright", legend = c("GAM", "Random"),
+       col = c("darkgreen", "black"), lwd = 2, lty = c(1, 2))
+grid()
+```
+
+## Model 3: Poisson GAM for Course Counts
+
+### Data Preparation and Training
+
+```{r gam3-prep}
+TARGET_COUNT <- 'Curricular.units.2nd.sem..approved.'
+
+features_count <- c(
+  'Admission.grade',
+  'Age.at.enrollment',
+  'Scholarship.holder',
+  'Tuition.fees.up.to.date',
+  'Curricular.units.1st.sem..approved.',
+  'Curricular.units.1st.sem..grade.',
+  'Curricular.units.2nd.sem..enrolled.'
+)
+
+df_count <- df %>%
+  select(all_of(c(features_count, TARGET_COUNT))) %>%
+  mutate(across(everything(), as.numeric)) %>%
+  na.omit()
+
+set.seed(42)
+train_index_c <- createDataPartition(df_count[[TARGET_COUNT]], p = 0.8, list = FALSE)
+train_c <- df_count[train_index_c, ]
+test_c <- df_count[-train_index_c, ]
+
+gam_count <- gam(
+  Curricular.units.2nd.sem..approved. ~
+    s(Admission.grade, bs = "cr", k = 10) +
+    s(Age.at.enrollment, bs = "cr", k = 8) +
+    factor(Scholarship.holder) +
+    factor(Tuition.fees.up.to.date) +
+    s(Curricular.units.1st.sem..approved., bs = "cr", k = 8) +
+    s(Curricular.units.1st.sem..grade., bs = "cr", k = 10) +
+    s(Curricular.units.2nd.sem..enrolled., bs = "cr", k = 8),
+  data = train_c,
+  family = poisson(link = "log"),
+  method = "REML"
+)
+```
+
+### Evaluation
+
+```{r gam3-eval}
+pred_test_c <- predict(gam_count, test_c, type = "response")
+
+test_rmse_c <- sqrt(mean((test_c[[TARGET_COUNT]] - pred_test_c)^2))
+test_mae_c <- mean(abs(test_c[[TARGET_COUNT]] - pred_test_c))
+test_r2_c <- cor(test_c[[TARGET_COUNT]], pred_test_c)^2
+
+cat(sprintf("Test R²: %.4f | RMSE: %.4f | MAE: %.4f\n",
+            test_r2_c, test_rmse_c, test_mae_c))
+```
+
+### Comparison with Poisson GLM
+
+```{r gam3-comparison}
+poisson_glm <- glm(Curricular.units.2nd.sem..approved. ~ .,
+                   data = train_c, family = poisson)
+glm_pred_c <- predict(poisson_glm, test_c, type = "response")
+glm_r2_c <- cor(test_c[[TARGET_COUNT]], glm_pred_c)^2
+
+cat("\nPoisson GAM vs Poisson GLM:\n")
+cat(sprintf("GAM R²:         %.4f\n", test_r2_c))
+cat(sprintf("Poisson GLM R²: %.4f\n", glm_r2_c))
+cat(sprintf("Improvement:    %.2f percentage points\n", (test_r2_c - glm_r2_c) * 100))
+```
+
+### Smooth Functions
+
+```{r gam3-smooth, fig.height=6}
+par(mfrow = c(2, 3), mar = c(4, 4, 3, 1))
+plot(gam_count, select = 1, shade = TRUE, col = "orange", shade.col = "lightyellow",
+     main = "Admission Grade", cex.main = 1.2, ylab = "Effect on Log(Count)")
+plot(gam_count, select = 2, shade = TRUE, col = "orange", shade.col = "lightyellow",
+     main = "Age at Enrollment", cex.main = 1.2, ylab = "Effect on Log(Count)")
+plot(gam_count, select = 3, shade = TRUE, col = "orange", shade.col = "lightyellow",
+     main = "1st Sem Approved", cex.main = 1.2, ylab = "Effect on Log(Count)")
+plot(gam_count, select = 4, shade = TRUE, col = "orange", shade.col = "lightyellow",
+     main = "1st Sem Grade", cex.main = 1.2, ylab = "Effect on Log(Count)")
+plot(gam_count, select = 5, shade = TRUE, col = "orange", shade.col = "lightyellow",
+     main = "2nd Sem Enrolled", cex.main = 1.2, ylab = "Effect on Log(Count)")
+```
+
+### Predictions
+
+```{r gam3-predictions}
+plot(test_c[[TARGET_COUNT]], pred_test_c,
+     pch = 16, col = rgb(1, 0.5, 0, 0.5),
+     xlab = "Actual Courses Approved", ylab = "Predicted Courses Approved",
+     main = sprintf("Poisson GAM (R² = %.4f)", test_r2_c),
+     cex.main = 1.3, cex.lab = 1.1)
+abline(0, 1, col = "red", lwd = 2, lty = 2)
+grid()
+```
+
+---
+
+# Summary and Conclusions
+
+## Model Performance Overview
+
+```{r summary-table}
+summary_df <- data.frame(
+  Model = c("Linear Regression", "Poisson GLM (1st Sem)", "Poisson GLM (2nd Sem)",
+            "Binomial GLM (Admission)", "Binomial GLM (Graduation)",
+            "Gaussian GAM", "Logistic GAM", "Poisson GAM"),
+  Outcome = c("Grades", "Course Count", "Course Count", "Classification",
+              "Classification", "Grades", "Classification", "Course Count"),
+  Metric = c(sprintf("R² = %.3f", test_r2),
+             sprintf("RMSE = %.3f", test_rmse1),
+             sprintf("RMSE = %.3f", test_rmse2),
+             sprintf("Acc = %.3f", accuracy_adm),
+             sprintf("AUC = %.3f", auc_suc),
+             sprintf("R² = %.3f", test_r2_g),
+             sprintf("AUC = %.3f", auc_s),
+             sprintf("R² = %.3f", test_r2_c))
+)
+
+knitr::kable(summary_df, caption = "Model Performance Summary")
+```
+
+## Key Findings
+
+### Model Selection Guidelines
+
+- **Continuous outcomes**: Use linear regression or Gaussian GAM
+- **Count data**: Use Poisson GLM/GAM to ensure non-negative predictions
+- **Binary classification**: Use binomial GLM/GAM for probability estimates
+- **Non-linear patterns**: GAMs consistently outperform standard GLMs
+
+### Important Predictors
+
+Across all models, the strongest predictors of academic success are:
+
+1. **First semester performance**: Most reliable indicator of future outcomes
+2. **Admission grades**: Initial academic preparation matters
+3. **Previous qualifications**: Educational background influences success
+4. **Financial factors**: Scholarships and tuition payment status affect outcomes
+5. **Economic conditions**: GDP and unemployment rates show systematic effects
+
+### Non-Linear Insights from GAMs
+
+GAMs revealed several non-linear patterns:
+
+- **Age effects**: U-shaped relationships where middle-aged students perform best
+- **Course load**: Optimal ranges exist; too few or too many courses both reduce success
+- **Grade effects**: Diminishing returns at high performance levels
+- **Economic thresholds**: Effects level off beyond certain GDP/unemployment values
+
+## Recommendations
+
+1. **Early intervention**: First semester performance is critical for predicting outcomes
+2. **Risk identification**: Use binomial models to identify at-risk students early
+3. **Resource allocation**: Target support to students with specific risk factor profiles
+4. **Course planning**: Consider non-linear course load effects when advising students
+5. **Policy evaluation**: Account for economic context when assessing program effectiveness
+
+---
+
+# Session Information
+
+```{r session-info}
+sessionInfo()
+```

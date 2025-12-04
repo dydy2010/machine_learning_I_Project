@@ -13,10 +13,9 @@ output: # output both html and pdf, need to check if both output aligns in the e
     toc_depth: 3
     code_folding: hide
 ---
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-  echo = TRUE,           # Show code by default (can be hidden with code_folding in HTML)
+  echo = FALSE,          # Hide code by default in output
   message = FALSE,       # Hide package loading messages
   warning = FALSE,       # Hide warnings
   fig.width = 10,
@@ -30,67 +29,127 @@ library(ggplot2)
 library(e1071)
 library(caret)
 ```
+```{r load-data, echo=FALSE}
+# Load the dataset from the project data folder
+student_data <- read_csv("../../data/preprocessed_data.csv")
+
+# Filter to keep only Dropout and Graduate (remove Enrolled)
+student_data <- student_data %>%
+  filter(Target %in% c("Dropout", "Graduate"))
+
+# Convert Target to factor with only 2 levels
+student_data$Target <- factor(student_data$Target, levels = c("Dropout", "Graduate"))
+```
 
 # Support Vector Machine Analysis
 
+We will now test different vector models to understand what is the best classifier for our student's performance. SVMs operate by identifying where the **margin** between different categories of data is the greatest.
+To classify our dataset, the model plots a separating line between the two outcome classes using a number of predictors - in order to keep it clear, we want to create a two-dimensional plane (two predictors).
+
+By applying different kernels—linear, radial, and polynomial— we assess how the shape of the decision boundary affects prediction accuracy and determine which kernel provides the most reliable classification for our dataset.
+
 ## Feature Selection
 
-The results indicate that grades and the amount of credits approved have the highest F-Values, suggesting they are the most significant predictors for predicting the success of graduating or not.
+For us to choose the best predictors, we will compute **F-statistic ANOVA** for every numeric feature in the dataset. The F-score tell us _how much_ the mean of each feature differs between the **two target groups** (graduated vs. not graduated). higher scores mean there is a bigger separation between classes, and a better cutoff between groups. 
+Results indicate that grades and the amount of credits approved have the highest F-Values, suggesting they are the most significant predictors for predicting the success of graduating or not.
 
-In this case, I want to choose the features of second semester marks and the amount of units passed to plot my model.
+In this case, we want to choose the features of **second semester marks** and the **amount of units passed** to plot our model.
+```{r fscore-top5, echo=FALSE}
+numeric_cols <- sapply(student_data, is.numeric)
+features <- names(student_data)[numeric_cols]
+# Remove Target if it's numeric
+features <- features[features != "Target"]
 
-## Data Loading & Preparation
-
-```{r load-data}
-data <- read.csv("../../data/preprocessed_data.csv")
-
-data$Target <- as.factor(data$Target)
-
-# Prepare the data frame
-marks <- data.frame(
-  x.1 = data$Curricular.units.2nd.sem..grade.,
-  x.2 = data$Curricular.units.2nd.sem..approved.,
-  y = as.factor(data$Target)
+results <- data.frame(
+  Feature = character(),
+  F_value = numeric(),
+  p_value = numeric(),
+  stringsAsFactors = FALSE
 )
 
-marks <- marks[complete.cases(marks), ]
-```
-
-## Exploratory Visualization
-
-```{r plot-data}
-# Plot 
-ggplot(data = marks, aes(x = x.2, y = x.1, color = y)) + 
-  geom_point(size = 2) + 
-  scale_color_manual(values = c("Dropout" = "#ff2000", 
-                                 "Enrolled" = "#828282", 
-                                 "Graduate" = "#2ecc71")) +
-  scale_y_continuous(limits = c(9, NA)) +
-  labs(
-    x = "2nd Semester Passed Units",
-    y = "2nd Semester Marks"
+for (feat in features) {
+  formula <- as.formula(paste(feat, "~ Target"))
+  anova_result <- aov(formula, data = student_data)
+  summary_anova <- summary(anova_result)
+  
+  results <- rbind(
+    results,
+    data.frame(
+      Feature = feat,
+      F_value = round(summary_anova[[1]]$`F value`[1], 2),
+      p_value = round(summary_anova[[1]]$`Pr(>F)`[1], 3)
+    )
   )
+}
+
+results <- results[order(-results$F_value), ]
+knitr::kable(head(results, 5), caption = "Top 5 Features by F-statistic")
 ```
+
+## Prepare Data for SVM
+
+Support Vector Machines require **predictors** (numerical variables) and a **target** (categorical: _Graduation_/_Dropout_) for classification. The data was then structured into a format suitable for SVM modeling. 
+The original dataset contained three academic outcomes: _Enrolled_, _Dropout_, and _Graduate_. Since the objective of this analysis is to distinguish students who ultimately graduate from those who drop out, **the Enrolled category was removed**. 
+This reduces the dataset size but produces a cleaner binary classification task that aligns directly with our modeling goal.
+```{r prepare-marks, echo=FALSE, results='hide'}
+# Get the top 2 features (excluding Target)
+top_feature_1 <- as.character(results$Feature[1])
+top_feature_2 <- as.character(results$Feature[2])
+
+# Create marks dataframe with selected features
+marks <- data.frame(
+  x.1 = student_data[[top_feature_1]],
+  x.2 = student_data[[top_feature_2]],
+  y = as.factor(student_data$Target)
+)
+
+# Remove rows with NA values if any exist
+marks <- na.omit(marks)
+```
+```{r prepare-marks-display, echo=FALSE}
+# Create summary table
+data_summary <- data.frame(
+  Metric = c("Total Observations", "Target Classes"),
+  Value = c(nrow(marks), paste(levels(marks$y), collapse=", "))
+)
+
+knitr::kable(data_summary, align = 'c', caption = "Dataset Summary")
+```
+## Exploratory Visualization
 
 ## Train/Test Split
 
-Now, I will split the data into training and testing sets, and then fit several SVM models to classify the students based on their marks.
-
-```{r train-test-split}
+Now, we will split the data into training and testing sets, and then fit several SVM models to classify the students based on their marks.
+```{r train-test-split, echo=FALSE, results='hide'}
 set.seed(123)
 trainIndex <- createDataPartition(marks$y, p = 0.8, list = FALSE)
 train_data <- marks[trainIndex, ]
 test_data <- marks[-trainIndex, ]
+```
+```{r train-test-split-display, echo=FALSE}
+# Create split summary table
+split_summary <- data.frame(
+  Dataset = c("Training", "Testing"),
+  Observations = c(nrow(train_data), nrow(test_data)),
+  Percentage = c(
+    paste0(round(nrow(train_data)/nrow(marks)*100, 1), "%"),
+    paste0(round(nrow(test_data)/nrow(marks)*100, 1), "%")
+  )
+)
 
-cat("Training set size:", nrow(train_data), "\n")
-cat("Test set size:", nrow(test_data), "\n")
+knitr::kable(split_summary, align = 'c', caption = "Train/Test Split")
 ```
 
 ## Model Training
 
-Now, I will fit the SVM model with a linear, a radial and a polynomial kernel.
+In our dataset, each student is described by academic features such as second-semester grades and credits passed. If the two groups—graduated and dropout— separate cleanly in a straight line, a linear SVM finds the optimal boundary that splits high-performing students from those with a higher risk of dropping out. But if the patterns are more complex, a non-linear kernel like the radial SVM transforms the data so the model can still draw a clear dividing boundary. This allows the SVM to classify students accurately even when the relationship between performance and graduation is not linear.
 
-```{r train-models}
+**Linear Kernel**: Creates a straight decision boundary to separate classes. This kernel is ideal when the data is linearly separable. In our student dropout analysis, a linear kernel would suggest that the relationship between academic performance metrics and graduation outcomes follows a straightforward, proportional pattern.
+
+**Radial Basis Function (RBF) Kernel**: Generates curved, non-linear decision boundaries by measuring the distance between data points. This flexible kernel works best at tracking irregular patterns in the data. For our dataset, the RBF kernel can identify students who may succeed despite lower grades in one metric if they compensate with higher performance in another.
+
+**Polynomial Kernel**: Produces curved boundaries with a specific degree of curve. In student performance prediction, a polynomial kernel might capture scenarios where moderate performance in both metrics leads to different outcomes than extreme performance in either direction, revealing threshold effects or interaction patterns between academic indicators.
+```{r train-models, echo=FALSE}
 svm_linear <- svm(y ~ x.1 + x.2, data = train_data, kernel = "linear", cost = 1)
 svm_radial <- svm(y ~ x.1 + x.2, data = train_data, kernel = "radial", cost = 10, gamma = 0.1)
 svm_poly <- svm(y ~ x.1 + x.2, data = train_data, kernel = "polynomial", cost = 1, degree = 3)
@@ -99,78 +158,186 @@ svm_poly <- svm(y ~ x.1 + x.2, data = train_data, kernel = "polynomial", cost = 
 ## Model Evaluation
 
 Predict and compare the models
-
-```{r predictions}
+```{r predictions, echo=FALSE}
 pred_linear <- predict(svm_linear, test_data)
 pred_radial <- predict(svm_radial, test_data)
 pred_poly <- predict(svm_poly, test_data)
 ```
 
 ### Linear Kernel Results
-
-```{r eval-linear}
-cat("\n Linear Kernel Result:\n")
+```{r eval-linear, echo=FALSE}
 cm_linear <- confusionMatrix(pred_linear, test_data$y)
-print(cm_linear)
+
+# Display confusion matrix as a table
+knitr::kable(cm_linear$table, 
+             caption = "Linear Kernel - Confusion Matrix",
+             align = 'c')
+
+# Display key metrics as a table
+metrics_linear <- data.frame(
+  Metric = c("Accuracy", "Sensitivity", "Specificity", "Kappa"),
+  Value = c(
+    round(cm_linear$overall['Accuracy'], 4),
+    round(cm_linear$byClass['Sensitivity'], 4),
+    round(cm_linear$byClass['Specificity'], 4),
+    round(cm_linear$overall['Kappa'], 4)
+  )
+)
+
+knitr::kable(metrics_linear, 
+             caption = "Linear Kernel - Performance Metrics",
+             align = 'c')
+```
+```{r plot-linear, fig.width=6, fig.height=5, fig.align='center', echo=FALSE}
+# Get predictions for the grid
+x1_range <- range(train_data$x.1)
+x2_range <- range(train_data$x.2)
+
+x1_seq <- seq(x1_range[1], x1_range[2], length.out = 200)
+x2_seq <- seq(x2_range[1], x2_range[2], length.out = 200)
+
+grid <- expand.grid(x.1 = x1_seq, x.2 = x2_seq)
+grid$pred <- predict(svm_linear, grid)
+
+# Create colors for binary classification (Yellow for Dropout, Blue for Graduate)
+cols <- c("#FFF9C4", "#B3E5FC")
+
+# Set up plot with smaller margins
+par(mar = c(4, 4, 2, 2))
+
+# Plot decision regions
+plot(grid$x.1, grid$x.2, col = cols[as.numeric(grid$pred)], pch = 15, cex = 0.3,
+     xlab = gsub("\\.", " ", top_feature_2),
+     ylab = gsub("\\.", " ", top_feature_1),
+     main = "",
+     cex.lab = 0.9, cex.axis = 0.8)
+
+# Add training points
+points(train_data$x.1, train_data$x.2, 
+       col = c("#FFA000", "#1976D2")[as.numeric(train_data$y)],
+       pch = 19, cex = 0.8)
+
+# Add simple legend
+legend("topright", 
+       legend = levels(train_data$y),
+       col = c("#FFA000", "#1976D2"),
+       pch = 19,
+       cex = 0.7,
+       bty = "n")
 ```
 
 ### Radial Kernel Results
-
-```{r eval-radial}
-cat("\n Radial Kernel Result:\n")
+```{r eval-radial, echo=FALSE}
 cm_radial <- confusionMatrix(pred_radial, test_data$y)
-print(cm_radial)
+
+# Display confusion matrix as a table
+knitr::kable(cm_radial$table, 
+             caption = "Radial Kernel - Confusion Matrix",
+             align = 'c')
+
+# Display key metrics as a table
+metrics_radial <- data.frame(
+  Metric = c("Accuracy", "Sensitivity", "Specificity", "Kappa"),
+  Value = c(
+    round(cm_radial$overall['Accuracy'], 4),
+    round(cm_radial$byClass['Sensitivity'], 4),
+    round(cm_radial$byClass['Specificity'], 4),
+    round(cm_radial$overall['Kappa'], 4)
+  )
+)
+
+knitr::kable(metrics_radial, 
+             caption = "Radial Kernel - Performance Metrics",
+             align = 'c')
+```
+```{r plot-radial, fig.width=6, fig.height=5, fig.align='center', echo=FALSE}
+# Get predictions for the grid
+grid$pred <- predict(svm_radial, grid)
+
+# Set up plot
+par(mar = c(4, 4, 2, 2))
+
+# Plot decision regions
+plot(grid$x.1, grid$x.2, col = cols[as.numeric(grid$pred)], pch = 15, cex = 0.3,
+     xlab = gsub("\\.", " ", top_feature_2),
+     ylab = gsub("\\.", " ", top_feature_1),
+     main = "",
+     cex.lab = 0.9, cex.axis = 0.8)
+
+# Add training points
+points(train_data$x.1, train_data$x.2, 
+       col = c("#FFA000", "#1976D2")[as.numeric(train_data$y)],
+       pch = 19, cex = 0.8)
+
+# Add legend
+legend("topright", 
+       legend = levels(train_data$y),
+       col = c("#FFA000", "#1976D2"),
+       pch = 19,
+       cex = 0.7,
+       bty = "n")
 ```
 
 ### Polynomial Kernel Results
-
-```{r eval-poly}
-cat("\n Polynomial Kernel Result:\n")
+```{r eval-poly, echo=FALSE}
 cm_poly <- confusionMatrix(pred_poly, test_data$y)
-print(cm_poly)
+
+# Display confusion matrix as a table
+knitr::kable(cm_poly$table, 
+             caption = "Polynomial Kernel - Confusion Matrix",
+             align = 'c')
+
+# Display key metrics as a table
+metrics_poly <- data.frame(
+  Metric = c("Accuracy", "Sensitivity", "Specificity", "Kappa"),
+  Value = c(
+    round(cm_poly$overall['Accuracy'], 4),
+    round(cm_poly$byClass['Sensitivity'], 4),
+    round(cm_poly$byClass['Specificity'], 4),
+    round(cm_poly$overall['Kappa'], 4)
+  )
+)
+
+knitr::kable(metrics_poly, 
+             caption = "Polynomial Kernel - Performance Metrics",
+             align = 'c')
+```
+```{r plot-poly, fig.width=6, fig.height=5, fig.align='center', echo=FALSE}
+# Get predictions for the grid
+grid$pred <- predict(svm_poly, grid)
+
+# Set up plot
+par(mar = c(4, 4, 2, 2))
+
+# Plot decision regions
+plot(grid$x.1, grid$x.2, col = cols[as.numeric(grid$pred)], pch = 15, cex = 0.3,
+     xlab = gsub("\\.", " ", top_feature_2),
+     ylab = gsub("\\.", " ", top_feature_1),
+     main = "",
+     cex.lab = 0.9, cex.axis = 0.8)
+
+# Add training points
+points(train_data$x.1, train_data$x.2, 
+       col = c("#FFA000", "#1976D2")[as.numeric(train_data$y)],
+       pch = 19, cex = 0.8)
+
+# Add legend
+legend("topright", 
+       legend = levels(train_data$y),
+       col = c("#FFA000", "#1976D2"),
+       pch = 19,
+       cex = 0.7,
+       bty = "n")
 ```
 
 ## Performance Comparison
-
-```{r comparison}
-results <- data.frame(
+```{r comparison, echo=FALSE}
+comparison_results <- data.frame(
   Model = c("Linear", "Radial", "Polynomial"),
   Accuracy = c(cm_linear$overall['Accuracy'],
                cm_radial$overall['Accuracy'],
                cm_poly$overall['Accuracy'])
 )
 
-knitr::kable(results, digits = 3)
-```
-
-## Decision Boundary Visualizations
-
-### Linear Kernel
-
-```{r plot-linear, fig.width=8, fig.height=6}
-plot(svm_linear, train_data, x.1 ~ x.2,
-     svSymbol = 1, dataSymbol = 16,
-     symbolPalette = c("#ff2000", "#828282", "#2ecc71"),
-     color.palette = terrain.colors)
-title("Linear Kernel SVM")
-```
-
-### Radial Kernel
-
-```{r plot-radial, fig.width=8, fig.height=6}
-plot(svm_radial, train_data, x.1 ~ x.2,
-     svSymbol = 1, dataSymbol = 16,
-     symbolPalette = c("#ff2000", "#828282", "#2ecc71"),
-     color.palette = terrain.colors)
-title("Radial Kernel SVM")
-```
-
-### Polynomial Kernel
-
-```{r plot-poly, fig.width=8, fig.height=6}
-plot(svm_poly, train_data, x.1 ~ x.2,
-     svSymbol = 1, dataSymbol = 16,
-     symbolPalette = c("#ff2000", "#828282", "#2ecc71"),
-     color.palette = terrain.colors)
-title("Polynomial Kernel SVM")
+knitr::kable(comparison_results, digits = 3, caption = "Model Accuracy Comparison")
 ```
