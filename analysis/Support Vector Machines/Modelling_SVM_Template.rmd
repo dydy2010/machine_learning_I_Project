@@ -2,17 +2,16 @@
 title: "Support Vector Machine Analysis - Student Dropout Prediction"
 subtitle: "Understanding the Pathways to Academic Achievement"
 date: "`r Sys.Date()`"
-output: # output both html and pdf, need to check if both output aligns in the end
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
+output:
   html_document:
     toc: true
     toc_float: true
     toc_depth: 3
     code_folding: hide
+    theme: cosmo
+    highlight: tango
 ---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   echo = FALSE,          # Hide code by default in output
@@ -50,7 +49,7 @@ By applying different kernels—linear, radial, and polynomial— we assess how 
 
 ## Feature Selection
 
-For us to choose the best predictors, we will compute **F-statistic ANOVA** for every numeric feature in the dataset. The F-score tell us _how much_ the mean of each feature differs between the **two target groups** (graduated vs. not graduated). higher scores mean there is a bigger separation between classes, and a better cutoff between groups. 
+For us to choose the best predictors, we will compute **F-statistic ANOVA** for every numeric feature in the dataset. The F-score tell us _how much_ the mean of each feature differs between the **two target groups** (_Graduation_/_Dropout_). higher scores mean there is a bigger separation between classes, and a better cutoff between groups. 
 Results indicate that grades and the amount of credits approved have the highest F-Values, suggesting they are the most significant predictors for predicting the success of graduating or not.
 
 In this case, we want to choose the features of **second semester marks** and the **amount of units passed** to plot our model.
@@ -77,7 +76,7 @@ for (feat in features) {
     data.frame(
       Feature = feat,
       F_value = round(summary_anova[[1]]$`F value`[1], 2),
-      p_value = round(summary_anova[[1]]$`Pr(>F)`[1], 3)
+      p_value = sprintf("%.3f", summary_anova[[1]]$`Pr(>F)`[1])
     )
   )
 }
@@ -90,7 +89,7 @@ knitr::kable(head(results, 5), caption = "Top 5 Features by F-statistic")
 
 Support Vector Machines require **predictors** (numerical variables) and a **target** (categorical: _Graduation_/_Dropout_) for classification. The data was then structured into a format suitable for SVM modeling. 
 The original dataset contained three academic outcomes: _Enrolled_, _Dropout_, and _Graduate_. Since the objective of this analysis is to distinguish students who ultimately graduate from those who drop out, **the Enrolled category was removed**. 
-This reduces the dataset size but produces a cleaner binary classification task that aligns directly with our modeling goal.
+This reduces the dataset size but produces a cleaner binary classification.
 ```{r prepare-marks, echo=FALSE, results='hide'}
 # Get the top 2 features (excluding Target)
 top_feature_1 <- as.character(results$Feature[1])
@@ -163,31 +162,8 @@ pred_linear <- predict(svm_linear, test_data)
 pred_radial <- predict(svm_radial, test_data)
 pred_poly <- predict(svm_poly, test_data)
 ```
-
 ### Linear Kernel Results
-```{r eval-linear, echo=FALSE}
-cm_linear <- confusionMatrix(pred_linear, test_data$y)
 
-# Display confusion matrix as a table
-knitr::kable(cm_linear$table, 
-             caption = "Linear Kernel - Confusion Matrix",
-             align = 'c')
-
-# Display key metrics as a table
-metrics_linear <- data.frame(
-  Metric = c("Accuracy", "Sensitivity", "Specificity", "Kappa"),
-  Value = c(
-    round(cm_linear$overall['Accuracy'], 4),
-    round(cm_linear$byClass['Sensitivity'], 4),
-    round(cm_linear$byClass['Specificity'], 4),
-    round(cm_linear$overall['Kappa'], 4)
-  )
-)
-
-knitr::kable(metrics_linear, 
-             caption = "Linear Kernel - Performance Metrics",
-             align = 'c')
-```
 ```{r plot-linear, fig.width=6, fig.height=5, fig.align='center', echo=FALSE}
 # Get predictions for the grid
 x1_range <- range(train_data$x.1)
@@ -226,30 +202,36 @@ legend("topright",
        bty = "n")
 ```
 
-### Radial Kernel Results
-```{r eval-radial, echo=FALSE}
-cm_radial <- confusionMatrix(pred_radial, test_data$y)
+```{r eval-linear, echo=FALSE}
+cm_linear <- confusionMatrix(pred_linear, test_data$y)
 
 # Display confusion matrix as a table
-knitr::kable(cm_radial$table, 
-             caption = "Radial Kernel - Confusion Matrix",
+knitr::kable(cm_linear$table, 
+             caption = "Linear Kernel - Confusion Matrix",
              align = 'c')
+```
+The confusion matrix shows that the linear kernel correctly classified **218 dropouts** and **416 graduates**. However, the model misclassified **66 students who dropped out as graduates** and **25 graduates as dropouts**, indicating some overlap between the two groups. Overall, the linear SVM achieved high accuracy with relatively balanced performance across both prediction categories.
 
-# Display key metrics as a table
-metrics_radial <- data.frame(
+#### Display key metrics as a table
+```{r metrics-linear, echo=FALSE}
+metrics_linear <- data.frame(
   Metric = c("Accuracy", "Sensitivity", "Specificity", "Kappa"),
   Value = c(
-    round(cm_radial$overall['Accuracy'], 4),
-    round(cm_radial$byClass['Sensitivity'], 4),
-    round(cm_radial$byClass['Specificity'], 4),
-    round(cm_radial$overall['Kappa'], 4)
+    round(cm_linear$overall['Accuracy'], 4),
+    round(cm_linear$byClass['Sensitivity'], 4),
+    round(cm_linear$byClass['Specificity'], 4),
+    round(cm_linear$overall['Kappa'], 4)
   )
 )
 
-knitr::kable(metrics_radial, 
-             caption = "Radial Kernel - Performance Metrics",
+knitr::kable(metrics_linear, 
+             caption = "Linear Kernel - Performance Metrics",
              align = 'c')
 ```
+The linear kernel achieved an accuracy of 87%, correctly classifying nearly 9 out of 10 students in the test set. The model demonstrates **high specificity (94%)**, meaning it excels at identifying graduates, but shows moderate **sensitivity (76%)**, indicating it sometimes misses students at risk of dropping out. The **Kappa score of 0.73** suggests substantial agreement beyond chance, confirming the model's reliability. These metrics indicate that while the linear SVM performs well overall, it is **especially strong at predicting graduation**, but could be improved for dropout detection.
+
+### Radial Kernel Results
+
 ```{r plot-radial, fig.width=6, fig.height=5, fig.align='center', echo=FALSE}
 # Get predictions for the grid
 grid$pred <- predict(svm_radial, grid)
@@ -277,6 +259,34 @@ legend("topright",
        cex = 0.7,
        bty = "n")
 ```
+
+```{r eval-radial, echo=FALSE}
+cm_radial <- confusionMatrix(pred_radial, test_data$y)
+
+# Display confusion matrix as a table
+knitr::kable(cm_radial$table, 
+             caption = "Radial Kernel - Confusion Matrix",
+             align = 'c')
+```
+The radial kernel shows improved performance over the linear model, correctly classifying **220 dropouts** and **416 graduates**. The model reduced misclassifications of at-risk students, while maintaining the same **25 graduates misclassified as dropouts**. This suggests the **radial function better captures the relationships** in the data, leading to slightly better detection of students at risk of dropping out.
+
+#### Display key metrics as a table
+```{r metrics-radial, echo=FALSE}
+metrics_radial <- data.frame(
+  Metric = c("Accuracy", "Sensitivity", "Specificity", "Kappa"),
+  Value = c(
+    round(cm_radial$overall['Accuracy'], 4),
+    round(cm_radial$byClass['Sensitivity'], 4),
+    round(cm_radial$byClass['Specificity'], 4),
+    round(cm_radial$overall['Kappa'], 4)
+  )
+)
+
+knitr::kable(metrics_radial, 
+             caption = "Radial Kernel - Performance Metrics",
+             align = 'c')
+```
+The radial kernel demonstrates a slight improvement in overall performance with an **accuracy of 87%** and **Kappa score of 0.7359**, both marginally better than the linear model. Notably, the **sensitivity increased to 77.46%**, showing improved ability to detect students at risk of dropping out. The **specificity holds steady at 94%**, maintaining excellent performance in identifying graduates. Overall, the radial kernel's performance is quite similar to the linear model, suggesting that the relationship between the features may be linear.
 
 ### Polynomial Kernel Results
 ```{r eval-poly, echo=FALSE}
@@ -340,4 +350,4 @@ comparison_results <- data.frame(
 )
 
 knitr::kable(comparison_results, digits = 3, caption = "Model Accuracy Comparison")
-```
+``` 
