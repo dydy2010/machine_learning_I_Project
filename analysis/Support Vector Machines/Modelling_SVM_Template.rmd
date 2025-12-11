@@ -212,7 +212,6 @@ knitr::kable(cm_linear$table,
 ```
 The confusion matrix shows that the linear kernel correctly classified **218 dropouts** and **416 graduates**. However, the model misclassified **66 students who dropped out as graduates** and **25 graduates as dropouts**, indicating some overlap between the two groups. Overall, the linear SVM achieved high accuracy with relatively balanced performance across both prediction categories.
 
-#### Display key metrics as a table
 ```{r metrics-linear, echo=FALSE}
 metrics_linear <- data.frame(
   Metric = c("Accuracy", "Sensitivity", "Specificity", "Kappa"),
@@ -228,7 +227,7 @@ knitr::kable(metrics_linear,
              caption = "Linear Kernel - Performance Metrics",
              align = 'c')
 ```
-The linear kernel achieved an accuracy of 87%, correctly classifying nearly 9 out of 10 students in the test set. The model demonstrates **high specificity (94%)**, meaning it excels at identifying graduates, but shows moderate **sensitivity (76%)**, indicating it sometimes misses students at risk of dropping out. The **Kappa score of 0.73** suggests substantial agreement beyond chance, confirming the model's reliability. These metrics indicate that while the linear SVM performs well overall, it is **especially strong at predicting graduation**, but could be improved for dropout detection.
+The linear kernel achieved an accuracy of 87.6%, correctly classifying nearly 9 out of 10 students in the test set. The model demonstrates **high specificity (94.3%)**, meaning it excels at identifying graduates, but shows moderate **sensitivity (76.7%)**, indicating it sometimes misses students at risk of dropping out. The **Kappa score of 0.73** suggests substantial agreement beyond chance, confirming the model's reliability. These metrics indicate that while the linear SVM performs well overall, it is **especially strong at predicting graduation**, but could be improved for dropout detection.
 
 ### Radial Kernel Results
 
@@ -270,7 +269,6 @@ knitr::kable(cm_radial$table,
 ```
 The radial kernel shows improved performance over the linear model, correctly classifying **220 dropouts** and **416 graduates**. The model reduced misclassifications of at-risk students, while maintaining the same **25 graduates misclassified as dropouts**. This suggests the **radial function better captures the relationships** in the data, leading to slightly better detection of students at risk of dropping out.
 
-#### Display key metrics as a table
 ```{r metrics-radial, echo=FALSE}
 metrics_radial <- data.frame(
   Metric = c("Accuracy", "Sensitivity", "Specificity", "Kappa"),
@@ -286,7 +284,7 @@ knitr::kable(metrics_radial,
              caption = "Radial Kernel - Performance Metrics",
              align = 'c')
 ```
-The radial kernel demonstrates a slight improvement in overall performance with an **accuracy of 87%** and **Kappa score of 0.7359**, both marginally better than the linear model. Notably, the **sensitivity increased to 77.46%**, showing improved ability to detect students at risk of dropping out. The **specificity holds steady at 94%**, maintaining excellent performance in identifying graduates. Overall, the radial kernel's performance is quite similar to the linear model, suggesting that the relationship between the features may be linear.
+The radial kernel demonstrates a slight improvement in overall performance with an **accuracy of 87.7%** and **Kappa score of 0.7359**, both marginally better than the linear model. Notably, the **sensitivity increased to 77.46%**, showing improved ability to detect students at risk of dropping out. The **specificity holds steady at 94%**, maintaining excellent performance in identifying graduates. Overall, the radial kernel's performance is quite similar to the linear model, suggesting that the relationship between the features may be linear.
 
 ### Polynomial Kernel Results
 ```{r eval-poly, echo=FALSE}
@@ -341,6 +339,8 @@ legend("topright",
 ```
 
 ## Performance Comparison
+
+After evaluating all three SVM kernels, the results show minimal performance differences across models. The **radial kernel** achieved the highest accuracy at 87.7%, followed closely by the **linear kernel** at 87.4%, while the **polynomial kernel** performed slightly lower at 84.1%. However, given the marginal improvement of only 0.3% between the linear and radial models, the **linear kernel is the preferred choice** for this classification task. It offers comparable predictive performance while maintaining greater interpretability and computational efficiency—critical factors when deploying models in educational settings where stakeholders need to understand and trust the decision-making process. The linear model's simplicity also makes it easier to explain to administrators and educators, making interventions for at-risk students without sacrificing meaningful accuracy.
 ```{r comparison, echo=FALSE}
 comparison_results <- data.frame(
   Model = c("Linear", "Radial", "Polynomial"),
