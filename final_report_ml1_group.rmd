@@ -15,6 +15,21 @@ output:
     toc: true
     toc_depth: 3
     number_sections: true
+header-includes:
+  - |
+    <style>
+      h1, h2, h3, h4, h5, h6 {
+        color: #222222;
+        font-weight: 600;
+      }
+      .caption, caption {
+        color: #222222;
+        font-weight: 600;
+      }
+      body {
+        color: #222222;
+      }
+    </style>
 ---
 
 ```{r setup, include=FALSE}
@@ -34,7 +49,6 @@ library(e1071)         # SVM
 library(caret)         # ML utilities
 library(kernlab)       # SVM kernels
 library(mgcv)          # GAM
-library(MASS)          # Additional statistical functions
 library(pROC)          # ROC curves
 library(gridExtra)     # Multiple plots
 library(corrplot)      # Correlation plots
@@ -270,7 +284,7 @@ ggplot(target_summary, aes(x = Target, y = count, fill = Target)) +
 first_sem_data <- df %>%
   filter(!is.na(Curricular.units.1st.sem..grade.) &
          Curricular.units.1st.sem..grade. > 0) %>%
-  dplyr::select(Target, Curricular.units.1st.sem..grade.,
+  select(Target, Curricular.units.1st.sem..grade.,
          Curricular.units.1st.sem..approved.)
 
 # Box plot for first semester grades
@@ -305,7 +319,7 @@ grid.arrange(p1, p2, ncol = 2)
 ```{r financial-factors, fig.height=5}
 # Prepare financial data
 financial_data <- df %>%
-  dplyr::select(Target, Tuition.fees.up.to.date, Scholarship.holder, Debtor) %>%
+  select(Target, Tuition.fees.up.to.date, Scholarship.holder, Debtor) %>%
   mutate(Tuition.fees.up.to.date = factor(Tuition.fees.up.to.date,
                                            levels = c(0, 1),
                                            labels = c("Not Current", "Current")),
@@ -432,7 +446,7 @@ FEATURES <- c(
 )
 
 df_model <- df %>%
-    dplyr::select(all_of(c(FEATURES, TARGET))) %>%
+    select(all_of(c(FEATURES, TARGET))) %>%
     mutate(across(everything(), ~ as.numeric(as.character(.)))) %>%
     drop_na() %>%
     filter(get(TARGET) > 0)
@@ -659,7 +673,7 @@ features_admission <- c(
 )
 
 df_admission <- df %>%
-  dplyr::select(all_of(c(features_admission, 'High_Admission'))) %>%
+  select(all_of(c(features_admission, 'High_Admission'))) %>%
   mutate(across(everything(), ~ as.numeric(as.character(.)))) %>%
   na.omit()
 
@@ -741,10 +755,10 @@ coef_df_adm <- data.frame(
   arrange(desc(abs(Coefficient)))
 
 odds_table_adm <- coef_df_adm %>%
-  dplyr::mutate(Abs_Coefficient = abs(Coefficient)) %>%
-  dplyr::arrange(desc(Abs_Coefficient)) %>%
-  dplyr::select(Feature, Coefficient, Odds_Ratio) %>%
-  utils::head(10)
+  mutate(Abs_Coefficient = abs(Coefficient)) %>%
+  arrange(desc(Abs_Coefficient)) %>%
+  select(Feature, Coefficient, Odds_Ratio) %>%
+  head(10)
 
 knitr::kable(odds_table_adm, caption = "Top 10 admission predictors (log-odds and odds ratio)")
 ```
@@ -782,7 +796,7 @@ features_success <- c(
 )
 
 df_success_model <- df_success %>%
-  dplyr::select(all_of(c(features_success, 'Success'))) %>%
+  select(all_of(c(features_success, 'Success'))) %>%
   mutate(across(everything(), as.numeric)) %>%
   na.omit()
 
@@ -853,10 +867,10 @@ for (i in 1:min(5, nrow(coef_df_suc))) {
 
 ```{r binomial2-odds-table, results="asis"}
 odds_table_suc <- coef_df_suc %>%
-  dplyr::mutate(Abs_Coefficient = abs(Coefficient)) %>%
-  dplyr::arrange(desc(Abs_Coefficient)) %>%
-  dplyr::select(Feature, Coefficient, Odds_Ratio) %>%
-  utils::head(10)
+  mutate(Abs_Coefficient = abs(Coefficient)) %>%
+  arrange(desc(Abs_Coefficient)) %>%
+  select(Feature, Coefficient, Odds_Ratio) %>%
+  head(10)
 
 knitr::kable(odds_table_suc, caption = "Top 10 graduation predictors (log-odds and odds ratio)")
 ```
@@ -903,7 +917,7 @@ FEATURES_1 <- c(
 )
 
 df_model1 <- df %>%
-    dplyr::select(all_of(c(FEATURES_1, TARGET_1))) %>%
+    select(all_of(c(FEATURES_1, TARGET_1))) %>%
     mutate(across(everything(), ~ as.numeric(as.character(.)))) %>%
     drop_na()
 
@@ -976,11 +990,11 @@ coef_df1 <- data.frame(
     Rate_Ratio = exp(coef_summary1[, "Estimate"]),
     P_value = coef_summary1[, "Pr(>|z|)"]
 ) %>%
-    dplyr::mutate(Abs_Coef = abs(Coefficient)) %>%
-    dplyr::arrange(desc(Abs_Coef))
+    mutate(Abs_Coef = abs(Coefficient)) %>%
+    arrange(desc(Abs_Coef))
 
 top_poisson_tbl <- coef_df1[, c("Feature", "Coefficient", "Rate_Ratio", "P_value")] %>%
-  utils::head(10)
+  head(10)
 
 knitr::kable(top_poisson_tbl, caption = "Top Poisson GLM predictors (coefficient and rate ratio)")
 ```
@@ -1046,7 +1060,7 @@ FEATURES_2 <- c(
 )
 
 df_model2 <- df %>%
-    dplyr::select(all_of(c(FEATURES_2, TARGET_2))) %>%
+    select(all_of(c(FEATURES_2, TARGET_2))) %>%
     mutate(across(everything(), ~ as.numeric(as.character(.)))) %>%
     drop_na()
 
@@ -1058,7 +1072,7 @@ For second semester approvals (count of courses passed), we again use a Poisson 
 ```{r poisson2-train, results="hide"}
 set.seed(42)
 
-X2 <- df_model2 %>% dplyr::select(all_of(FEATURES_2))
+X2 <- df_model2 %>% select(all_of(FEATURES_2))
 y2 <- df_model2[[TARGET_2]]
 
 trainIndex2 <- createDataPartition(y2, p = 0.8, list = FALSE)
@@ -1137,7 +1151,7 @@ features_grade <- c(
 )
 
 df_grade <- df %>%
-  dplyr::select(all_of(c(features_grade, TARGET_GRADE))) %>%
+  select(all_of(c(features_grade, TARGET_GRADE))) %>%
   mutate(across(everything(), as.numeric)) %>%
   na.omit() %>%
   filter(!!sym(TARGET_GRADE) > 0)
@@ -1354,7 +1368,7 @@ features_count <- c(
 )
 
 df_count <- df %>%
-  dplyr::select(all_of(c(features_count, TARGET_COUNT))) %>%
+  select(all_of(c(features_count, TARGET_COUNT))) %>%
   mutate(across(everything(), as.numeric)) %>%
   na.omit()
 
@@ -1578,8 +1592,7 @@ Several consistent patterns emerged:
 
 # Appendix:
 
-```{r session-info}
-text text text
+```{r session-info, eval=FALSE, include=FALSE}
 ```
 
 ------------------------------------------------------------------------
