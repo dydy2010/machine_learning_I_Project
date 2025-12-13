@@ -1576,10 +1576,10 @@ Several consistent patterns emerged:
 
 ------------------------------------------------------------------------
 
-# Appendix: Session Information
+# Appendix:
 
 ```{r session-info}
-sessionInfo()
+text text text
 ```
 
 ------------------------------------------------------------------------
