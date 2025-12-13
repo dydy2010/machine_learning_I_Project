@@ -48,11 +48,11 @@ options(warn = -1)
 
 # Summary
 
-**Problem Statement/Our Storyline:** Higher education institutions face significant challenges with student drop-outs. A fictional university has engaged our education consulting firm to diagnose why students drop out. The university wants to understand and improve students academic performance, and design interventions that reduce failed academic lives. Understanding which students are at risk of dropping out, and timely support that can change academic and life trajectories.
+**Problem Statement/Our Storyline:** Higher education institutions face significant challenges with **student drop-outs**. A fictional university has engaged our education consulting firm to diagnose why students drop out. The university wants to understand and improve students academic performance, and design **interventions** that reduce failed academic lives. Understanding which students are **at risk of dropping out**, and timely support that can change academic and life trajectories.
 
-**Our Data:** We have chosen a real case dataset from University of California, Irvine, to simulate the fictional case.
+**Our Data:** We have chosen a real case dataset from **University of California, Irvine (UCI)**, to simulate the fictional case.
 
-**Our Approach:** We analyzed 4,424 students from a Portuguese higher education institution using six complementary machine learning techniques to predict student outcomes (Dropout, Enrolled, Graduate) and understand the factors that drive academic success.
+**Our Approach:** We analyzed **4,424 students** from a Portuguese higher education institution using **six** complementary machine learning techniques to predict student outcomes (**Dropout**, **Enrolled**, **Graduate**) and understand the factors that drive academic success.
 
 ## Key Findings:
 
@@ -62,7 +62,7 @@ options(warn = -1)
 -   **GAMs consistently outperform traditional GLMs** by 2-5 percentage points, revealing curved relationships in the data
 -   **Model accuracy ranges from 75-90%** depending on the prediction task, with graduation prediction achieving the highest discrimination (AUC ≈ 0.87)
 
-**Business Impact:** These models enable institutions to identify at-risk students early, allocate resources efficiently, and implement targeted interventions that can improve graduation rates by 10-15%.
+**Business Impact:** These models enable institutions to identify **at-risk students early**, allocate resources efficiently, and implement **targeted interventions** that can improve graduation rates by **10-15%**.
 
 ------------------------------------------------------------------------
 
@@ -70,13 +70,13 @@ options(warn = -1)
 
 ## 1.1 Motivation
 
-Student dropout is a critical issue in higher education with consequences for:
+**Student dropout** is a critical issue in higher education with consequences for:
 
 -   **Students:** Lost time, financial burden, and psychological impact
 -   **Institutions:** Revenue loss, reduced graduation rates, reputational damage
 -   **Society:** Lost human capital and economic potential
 
-By predicting dropout risk early, institutions can intervene with:
+By predicting **dropout risk early**, institutions can intervene with:
 
 -   Academic support programs
 -   Financial aid counseling
@@ -320,10 +320,10 @@ Each model addresses specific questions:
 
 ## 3.3 Evaluation Strategy
 
--   **Training/Test Split:** 80/20 stratified split to maintain class balance
--   **Regression Metrics:** R², RMSE, MAE
--   **Classification Metrics:** Accuracy, AUC-ROC, Confusion Matrix
--   **Cross-Model Comparison:** Identify consistent predictors across methods
+-   **Training/Test Split:** **80/20 stratified split** to maintain class balance
+-   **Regression Metrics:** **R²**, **RMSE**, **MAE**
+-   **Classification Metrics:** **Accuracy**, **AUC-ROC**, **Confusion Matrix**
+-   **Cross-Model Comparison:** Identify **consistent predictors** across methods
 
 ------------------------------------------------------------------------
 
@@ -431,7 +431,7 @@ X_train_scaled <- predict(preProc, X_train)
 X_test_scaled <- predict(preProc, X_test)
 ```
 
-**Feature Scaling:** Standardization (z-score normalization) ensures all features contribute proportionally to the model regardless of their original scales.
+**Feature Scaling:** Standardization (**z-score normalization**) ensures all features contribute proportionally to the model regardless of their original scales.
 
 ```{r linear-train}
 train_data_scaled <- X_train_scaled
@@ -645,7 +645,7 @@ abline(a = 0, b = 1, lty = 2, col = "navy", lwd = 2)
 grid()
 ```
 
-**Understanding the ROC Curve:** The AUC of `r round(auc_adm, 3)` quantifies overall discrimination ability. AUC > 0.7 indicates acceptable discrimination, while AUC > 0.8 represents excellent performance.
+**Understanding the ROC Curve:** The **AUC** of `r round(auc_adm, 3)` quantifies overall discrimination ability. **AUC > 0.7** indicates acceptable discrimination, while **AUC > 0.8** represents excellent performance.
 
 ### Interpreting Odds Ratios
 
@@ -663,7 +663,7 @@ print(coef_df_adm, row.names = FALSE)
 
 ## 5.3 Model 2: Predicting Graduation vs Dropout
 
-This is our most actionable model—identifying students at risk of dropping out enables targeted interventions.
+This is our most actionable model—identifying students **at risk of dropping out** enables **targeted interventions**.
 
 ### Data Preparation
 
@@ -734,7 +734,7 @@ auc_suc <- auc(roc_suc)
 cat(sprintf("AUC-ROC: %.3f\n", auc_suc))
 ```
 
-With an AUC of `r round(auc_suc, 3)`, our model demonstrates strong ability to discriminate between students who will graduate and those at risk of dropping out.
+With an **AUC** of `r round(auc_suc, 3)`, our model demonstrates strong ability to discriminate between students who will graduate and those **at risk of dropping out**.
 
 ### Risk and Protective Factors
 
@@ -746,20 +746,6 @@ coef_df_suc <- data.frame(
 ) %>%
   arrange(desc(abs(Coefficient)))
 
-par(mar = c(5, 12, 4, 2))
-colors <- ifelse(coef_df_suc$Coefficient > 0, "green", "red")
-barplot(coef_df_suc$Coefficient,
-        names.arg = coef_df_suc$Feature,
-        horiz = TRUE,
-        las = 1,
-        col = adjustcolor(colors, alpha.f = 0.7),
-        xlab = "Coefficient (Log-Odds)",
-        main = "Predictors of Graduation Success")
-abline(v = 0, col = "black", lwd = 1)
-grid()
-```
-
-```{r binomial2-interpretation}
 cat("\nTop 5 Predictors Interpretation:\n")
 for (i in 1:min(5, nrow(coef_df_suc))) {
   row <- coef_df_suc[i, ]
@@ -775,7 +761,7 @@ for (i in 1:min(5, nrow(coef_df_suc))) {
 }
 ```
 
-**Actionable Insights:** First semester performance emerges as the dominant predictor. Financial factors (debtor status, tuition payment) also show strong effects, suggesting that financial aid could meaningfully impact retention.
+**Actionable Insights:** **First semester performance** emerges as the dominant predictor. **Financial factors** (debtor status, tuition payment) also show strong effects, suggesting that financial aid could meaningfully impact retention.
 
 ------------------------------------------------------------------------
 
@@ -894,7 +880,7 @@ print(head(coef_df1[, c("Feature", "Coefficient", "Rate_Ratio", "P_value")], 10)
       row.names = FALSE)
 ```
 
-**Interpreting Rate Ratios:** Rate ratios tell us how the expected count changes with a one-unit increase in the predictor. For example, a rate ratio of 1.3 means students complete 30% more courses on average.
+**Interpreting Rate Ratios:** **Rate ratios** tell us how the expected count changes with a one-unit increase in the predictor. For example, a rate ratio of **1.3** means students complete **30% more courses** on average.
 
 ### Visualization
 
@@ -1014,7 +1000,7 @@ cat(sprintf("\nLinear regression produced %d impossible negative predictions\n",
 cat("Poisson GLM ensures all predictions are valid (non-negative)\n")
 ```
 
-**Critical Advantage:** Poisson regression maintains logical constraints by preventing negative course counts, making it more suitable for decision-making.
+**Critical Advantage:** Poisson regression maintains **logical constraints** by preventing **negative course counts**, making it more suitable for decision-making.
 
 ------------------------------------------------------------------------
 
@@ -1022,7 +1008,7 @@ cat("Poisson GLM ensures all predictions are valid (non-negative)\n")
 
 ## 7.1 Beyond Linear Relationships
 
-All our previous models assumed linear relationships. But reality is rarely this simple. GAMs extend GLMs by replacing straight lines with smooth curves, allowing the model to discover non-linear patterns while maintaining interpretability.
+All our previous models assumed **linear relationships**. But reality is rarely this simple. **GAMs** extend **GLMs** by replacing straight lines with **smooth curves**, allowing the model to discover **non-linear patterns** while maintaining interpretability.
 
 The model structure: $Y = \beta_0 + f_1(X_1) + f_2(X_2) + ... + f_n(X_n) + \epsilon$, where $f_i$ are smooth, flexible functions learned from data.
 
@@ -1102,7 +1088,7 @@ cat(sprintf("Linear Model R²: %.4f\n", lm_r2))
 cat(sprintf("Improvement:     %.2f percentage points\n", (test_r2_g - lm_r2) * 100))
 ```
 
-The GAM achieves an R² of `r round(test_r2_g, 4)` versus `r round(lm_r2, 4)` for the linear model—demonstrating that non-linear relationships exist and capturing them improves predictions.
+The GAM achieves an **R²** of `r round(test_r2_g, 4)` versus `r round(lm_r2, 4)` for the linear model—demonstrating that **non-linear relationships** exist and capturing them improves predictions.
 
 ### Visualizing Non-Linear Effects
 
@@ -1215,7 +1201,7 @@ cat(sprintf("Logistic GLM:    %.4f\n", log_auc))
 cat(sprintf("Improvement:     %.2f percentage points\n", (auc_s - log_auc) * 100))
 ```
 
-The GAM's AUC of `r round(auc_s, 4)` versus `r round(log_auc, 4)` for standard logistic regression represents meaningful improvement for intervention decisions.
+The GAM's **AUC** of `r round(auc_s, 4)` versus `r round(log_auc, 4)` for standard logistic regression represents meaningful improvement for **intervention decisions**.
 
 ### Non-Linear Risk Patterns
 
@@ -1477,7 +1463,7 @@ Several consistent patterns emerged:
 -   Allocate intervention resources efficiently
 -   Improve graduation rates through data-driven strategies
 
-**Final Thought:** Machine learning cannot prevent dropout alone, but it can guide human interventions to the right students at the right time. The combination of predictive power and interpretability makes this a practical tool for real-world educational policy. By moving from prediction to prevention—identifying at-risk students early and providing targeted support—we can transform educational outcomes and change lives.
+**Final Thought:** Machine learning cannot prevent dropout alone, but it can guide **human interventions** to the right students at the right time. The combination of **predictive power** and **interpretability** makes this a practical tool for real-world educational policy. By moving from prediction to prevention—identifying **at-risk students early** and providing **targeted support**—we can transform educational outcomes and change lives.
 
 ------------------------------------------------------------------------
 
