@@ -129,12 +129,11 @@ for (col in numeric_cols) {
 }
 
 # Display basic structure
-cat("Dataset Dimensions:", nrow(df), "rows ×", ncol(df), "columns\n\n")
-
-cat("Target Variable Distribution:\n")
+cat(sprintf("Dataset: %d rows × %d columns\n", nrow(df), ncol(df)))
+cat("Target distribution (count):\n")
 print(table(df$Target))
-cat("\n")
-print(prop.table(table(df$Target)) * 100)
+cat("Target distribution (percent):\n")
+print(round(prop.table(table(df$Target)) * 100, 1))
 ```
 
 ## 1.3 Feature Categories and Data Suitability
@@ -370,9 +369,10 @@ df_model <- df %>%
     drop_na() %>%
     filter(get(TARGET) > 0)
 
-cat(sprintf("Modeling dataset: %d students\n", nrow(df_model)))
-cat(sprintf("\nTarget Variable Statistics (%s):\n", TARGET))
-summary(df_model[[TARGET]])
+cat(sprintf("Linear regression dataset: %d students | Target: %s\n", nrow(df_model), TARGET))
+cat(sprintf("Target summary: mean=%.2f | sd=%.2f | min=%.2f | max=%.2f\n",
+            mean(df_model[[TARGET]]), sd(df_model[[TARGET]]),
+            min(df_model[[TARGET]]), max(df_model[[TARGET]])))
 ```
 
 The dataset is filtered to exclude students with zero grades, as these typically represent withdrawals or incomplete coursework rather than actual performance. This ensures our model focuses on predicting outcomes for actively enrolled students.
@@ -383,8 +383,8 @@ The dataset is filtered to exclude students with zero grades, as these typically
 correlations <- cor(df_model[FEATURES], df_model[[TARGET]])
 correlations_sorted <- sort(correlations[,1], decreasing = TRUE)
 
-cat("\nTop 5 Correlations with Second Semester Grade:\n")
-print(head(correlations_sorted, 5))
+cat("Top 5 correlations with 2nd semester grade:\n")
+print(round(head(correlations_sorted, 5), 3))
 ```
 
 ### Feature Relationships
@@ -422,7 +422,7 @@ y_train <- train_data[[TARGET]]
 X_test <- test_data %>% dplyr::select(all_of(FEATURES))
 y_test <- test_data[[TARGET]]
 
-cat(sprintf("Training: %d | Testing: %d\n", nrow(train_data), nrow(test_data)))
+cat(sprintf("Train/Test split: %d training | %d testing\n", nrow(train_data), nrow(test_data)))
 ```
 
 ```{r linear-scale}
@@ -442,12 +442,12 @@ formula_obj <- as.formula(formula_str)
 
 model <- lm(formula_obj, data = train_data_scaled)
 
-cat("\nModel Coefficients:\n")
+cat("Linear regression coefficients (first 10):\n")
 coef_summary <- data.frame(
   Feature = names(coef(model)),
   Coefficient = coef(model)
 )
-print(coef_summary, row.names = FALSE)
+print(head(coef_summary, 10), row.names = FALSE)
 ```
 
 ## 4.6 Model Performance
@@ -464,10 +464,8 @@ test_r2 <- cor(y_test, y_test_pred)^2
 test_rmse <- sqrt(mean((y_test - y_test_pred)^2))
 test_mae <- mean(abs(y_test - y_test_pred))
 
-cat("\nModel Performance:\n")
-cat(sprintf("Training R²: %.4f | Test R²: %.4f\n", train_r2, test_r2))
-cat(sprintf("Training RMSE: %.4f | Test RMSE: %.4f\n", train_rmse, test_rmse))
-cat(sprintf("Training MAE: %.4f | Test MAE: %.4f\n", train_mae, test_mae))
+cat(sprintf("Linear regression performance | Train: R²=%.4f RMSE=%.4f MAE=%.4f | Test: R²=%.4f RMSE=%.4f MAE=%.4f\n",
+            train_r2, train_rmse, train_mae, test_r2, test_rmse, test_mae))
 ```
 
 **Performance Interpretation:** The R² score of `r round(test_r2, 4)` indicates that `r round(test_r2 * 100, 1)`% of variance in second semester grades can be explained by our selected features. The Mean Absolute Error (MAE) of `r round(test_mae, 2)` means our predictions are typically within `r round(test_mae, 2)` grade points of actual values.
@@ -560,15 +558,13 @@ Understanding what characteristics lead to high admission scores helps instituti
 ### Data Preparation
 
 ```{r binomial1-prep}
-cat("Checking Admission.grade column:\n")
-cat(sprintf("Total values: %d\n", length(df$Admission.grade)))
-cat(sprintf("Non-NA values: %d\n", sum(!is.na(df$Admission.grade))))
+cat(sprintf("Admission.grade check | total=%d | non-NA=%d\n",
+            length(df$Admission.grade), sum(!is.na(df$Admission.grade))))
 
 median_admission <- median(df$Admission.grade, na.rm = TRUE)
 df$High_Admission <- ifelse(df$Admission.grade >= median_admission, 1, 0)
 
-cat(sprintf("\nMedian admission grade: %.2f\n", median_admission))
-cat(sprintf("Low Admission: %d | High Admission: %d\n",
+cat(sprintf("Median admission grade: %.2f | Low admission: %d | High admission: %d\n",
             sum(df$High_Admission == 0, na.rm = TRUE),
             sum(df$High_Admission == 1, na.rm = TRUE)))
 
@@ -589,9 +585,9 @@ df_admission <- df %>%
   mutate(across(everything(), ~ as.numeric(as.character(.)))) %>%
   na.omit()
 
-cat(sprintf("\nFinal dataset: %d students\n", nrow(df_admission)))
+cat(sprintf("Binomial (Admission) dataset: %d students\n", nrow(df_admission)))
 if (nrow(df_admission) > 0) {
-  cat("High_Admission distribution:\n")
+  cat("High_Admission distribution (count):\n")
   print(table(df_admission$High_Admission))
 }
 ```
@@ -614,7 +610,7 @@ glm_adm <- glm(High_Admission ~ .,
                data = train_adm_scaled,
                family = binomial(link = "logit"))
 
-cat("Model Summary:\n")
+cat("Binomial GLM (Admission) summary:\n")
 print(summary(glm_adm))
 ```
 
@@ -626,7 +622,7 @@ pred_adm <- ifelse(pred_adm_prob > 0.5, 1, 0)
 
 accuracy_adm <- mean(pred_adm == test_adm_scaled$High_Admission)
 
-cat(sprintf("\nAccuracy: %.4f (%.2f%%)\n", accuracy_adm, accuracy_adm * 100))
+cat(sprintf("Binomial GLM (Admission) accuracy: %.4f (%.2f%%)\n", accuracy_adm, accuracy_adm * 100))
 
 cm_adm <- confusionMatrix(factor(pred_adm, levels = c(0, 1)),
                           factor(test_adm_scaled$High_Admission, levels = c(0, 1)))
@@ -657,7 +653,7 @@ coef_df_adm <- data.frame(
 ) %>%
   arrange(desc(abs(Coefficient)))
 
-cat("\nFeature Coefficients and Odds Ratios:\n")
+cat("Top coefficients (with odds ratios):\n")
 print(coef_df_adm, row.names = FALSE)
 ```
 
@@ -672,7 +668,7 @@ df_success <- df %>%
   filter(Target %in% c('Graduate', 'Dropout')) %>%
   mutate(Success = ifelse(Target == 'Graduate', 1, 0))
 
-cat(sprintf("Dropout: %d | Graduate: %d\n",
+cat(sprintf("Graduation dataset | Dropout=%d | Graduate=%d\n",
             sum(df_success$Success == 0),
             sum(df_success$Success == 1)))
 
@@ -698,7 +694,7 @@ df_success_model <- df_success %>%
   mutate(across(everything(), as.numeric)) %>%
   na.omit()
 
-cat(sprintf("Dataset: %d students\n", nrow(df_success_model)))
+cat(sprintf("Binomial (Graduation) dataset: %d students\n", nrow(df_success_model)))
 ```
 
 ### Model Training
@@ -726,12 +722,12 @@ pred_suc <- ifelse(pred_suc_prob > 0.5, 1, 0)
 
 accuracy_suc <- mean(pred_suc == test_suc_scaled$Success)
 
-cat(sprintf("Accuracy: %.4f (%.2f%%)\n", accuracy_suc, accuracy_suc * 100))
+cat(sprintf("Binomial GLM (Graduation) accuracy: %.4f (%.2f%%)\n", accuracy_suc, accuracy_suc * 100))
 
 roc_suc <- roc(test_suc_scaled$Success, pred_suc_prob, quiet = TRUE)
 auc_suc <- auc(roc_suc)
 
-cat(sprintf("AUC-ROC: %.3f\n", auc_suc))
+cat(sprintf("Binomial GLM (Graduation) AUC: %.3f\n", auc_suc))
 ```
 
 With an **AUC** of `r round(auc_suc, 3)`, our model demonstrates strong ability to discriminate between students who will graduate and those **at risk of dropping out**.
@@ -807,11 +803,11 @@ df_model1 <- df %>%
     mutate(across(everything(), ~ as.numeric(as.character(.)))) %>%
     drop_na()
 
-cat(sprintf("Dataset: %d students\n", nrow(df_model1)))
+cat(sprintf("Poisson (1st sem approvals) dataset: %d students\n", nrow(df_model1)))
 
-cat("\nTarget Distribution:\n")
+cat("Target distribution (first 10 counts):\n")
 print(head(table(df_model1[[TARGET_1]]), 10))
-cat(sprintf("Mean: %.2f | Variance: %.2f\n",
+cat(sprintf("Target mean=%.2f | variance=%.2f\n",
             mean(df_model1[[TARGET_1]]),
             var(df_model1[[TARGET_1]])))
 ```
@@ -831,7 +827,7 @@ X_test1 <- X1[-trainIndex1, ]
 y_train1 <- y1[trainIndex1]
 y_test1 <- y1[-trainIndex1]
 
-cat(sprintf("Training: %d | Testing: %d\n", length(y_train1), length(y_test1)))
+cat(sprintf("Train/Test split: %d training | %d testing\n", length(y_train1), length(y_test1)))
 ```
 
 ```{r poisson1-train}
@@ -842,7 +838,7 @@ formula_1 <- as.formula(paste(TARGET_1, "~", paste(FEATURES_1, collapse = " + ")
 
 poisson_model1 <- glm(formula_1, data = train_data1, family = poisson(link = "log"))
 
-cat("\nModel Summary:\n")
+cat("Poisson GLM summary:\n")
 print(summary(poisson_model1))
 ```
 
@@ -856,10 +852,8 @@ test_rmse1 <- sqrt(mean((y_test1 - y_pred_test1)^2))
 test_mae1 <- mean(abs(y_test1 - y_pred_test1))
 test_r2_1 <- cor(y_test1, y_pred_test1)^2
 
-cat("\nPerformance Metrics:\n")
-cat(sprintf("Test RMSE: %.4f courses\n", test_rmse1))
-cat(sprintf("Test MAE: %.4f courses\n", test_mae1))
-cat(sprintf("Test R²: %.4f\n", test_r2_1))
+cat(sprintf("Poisson GLM performance | Test: RMSE=%.4f MAE=%.4f R²=%.4f\n",
+            test_rmse1, test_mae1, test_r2_1))
 ```
 
 ### Understanding Rate Ratios
@@ -875,7 +869,7 @@ coef_df1 <- data.frame(
     mutate(Abs_Coef = abs(Coefficient)) %>%
     arrange(desc(Abs_Coef))
 
-cat("\nTop Predictors:\n")
+cat("Top predictors (Poisson GLM):\n")
 print(head(coef_df1[, c("Feature", "Coefficient", "Rate_Ratio", "P_value")], 10),
       row.names = FALSE)
 ```
@@ -945,7 +939,7 @@ df_model2 <- df %>%
     mutate(across(everything(), ~ as.numeric(as.character(.)))) %>%
     drop_na()
 
-cat(sprintf("Dataset: %d students\n", nrow(df_model2)))
+cat(sprintf("Poisson (2nd sem approvals) dataset: %d students\n", nrow(df_model2)))
 ```
 
 ```{r poisson2-train}
@@ -976,8 +970,7 @@ test_rmse2 <- sqrt(mean((y_test2 - y_pred_test2)^2))
 test_mae2 <- mean(abs(y_test2 - y_pred_test2))
 test_r2_2 <- cor(y_test2, y_pred_test2)^2
 
-cat("Performance Metrics:\n")
-cat(sprintf("Test RMSE: %.4f | MAE: %.4f | R²: %.4f\n",
+cat(sprintf("Performance Metrics: RMSE=%.4f MAE=%.4f R²=%.4f\n",
             test_rmse2, test_mae2, test_r2_2))
 ```
 
@@ -991,13 +984,11 @@ y_pred_lr <- predict(lr_model, newdata = X_test1)
 lr_rmse <- sqrt(mean((y_test1 - y_pred_lr)^2))
 lr_mae <- mean(abs(y_test1 - y_pred_lr))
 
-cat("\nModel Comparison:\n")
-cat(sprintf("Poisson GLM - RMSE: %.4f | MAE: %.4f\n", test_rmse1, test_mae1))
-cat(sprintf("Linear Reg  - RMSE: %.4f | MAE: %.4f\n", lr_rmse, lr_mae))
+cat(sprintf("Model comparison | Poisson GLM: RMSE=%.4f MAE=%.4f | Linear Reg: RMSE=%.4f MAE=%.4f\n",
+            test_rmse1, test_mae1, lr_rmse, lr_mae))
 
 n_negative <- sum(y_pred_lr < 0)
-cat(sprintf("\nLinear regression produced %d impossible negative predictions\n", n_negative))
-cat("Poisson GLM ensures all predictions are valid (non-negative)\n")
+cat(sprintf("Linear regression negative predictions: %d | Poisson GLM keeps predictions non-negative\n", n_negative))
 ```
 
 **Critical Advantage:** Poisson regression maintains **logical constraints** by preventing **negative course counts**, making it more suitable for decision-making.
@@ -1034,7 +1025,7 @@ df_grade <- df %>%
   na.omit() %>%
   filter(!!sym(TARGET_GRADE) > 0)
 
-cat(sprintf("Dataset: %d students\n", nrow(df_grade)))
+cat(sprintf("GAM (grade) dataset: %d students\n", nrow(df_grade)))
 ```
 
 ```{r gam1-split}
@@ -1059,7 +1050,7 @@ gam_grade <- gam(
   method = "REML"
 )
 
-cat("\nGAM Summary:\n")
+cat("GAM summary:\n")
 print(summary(gam_grade))
 ```
 
@@ -1070,8 +1061,7 @@ test_r2_g <- cor(test_g[[TARGET_GRADE]], pred_test_g)^2
 test_rmse_g <- sqrt(mean((test_g[[TARGET_GRADE]] - pred_test_g)^2))
 test_mae_g <- mean(abs(test_g[[TARGET_GRADE]] - pred_test_g))
 
-cat(sprintf("\nGAM Performance:\n"))
-cat(sprintf("Test R²: %.4f | RMSE: %.4f | MAE: %.4f\n",
+cat(sprintf("GAM performance: R²=%.4f RMSE=%.4f MAE=%.4f\n",
             test_r2_g, test_rmse_g, test_mae_g))
 ```
 
@@ -1082,10 +1072,8 @@ lm_model <- lm(Curricular.units.2nd.sem..grade. ~ ., data = train_g)
 lm_pred <- predict(lm_model, test_g)
 lm_r2 <- cor(test_g[[TARGET_GRADE]], lm_pred)^2
 
-cat("\nGAM vs Linear Model:\n")
-cat(sprintf("GAM R²:          %.4f\n", test_r2_g))
-cat(sprintf("Linear Model R²: %.4f\n", lm_r2))
-cat(sprintf("Improvement:     %.2f percentage points\n", (test_r2_g - lm_r2) * 100))
+cat(sprintf("GAM vs Linear | GAM R²=%.4f | Linear R²=%.4f | Improvement=%.2f pp\n",
+            test_r2_g, lm_r2, (test_r2_g - lm_r2) * 100))
 ```
 
 The GAM achieves an **R²** of `r round(test_r2_g, 4)` versus `r round(lm_r2, 4)` for the linear model—demonstrating that **non-linear relationships** exist and capturing them improves predictions.
