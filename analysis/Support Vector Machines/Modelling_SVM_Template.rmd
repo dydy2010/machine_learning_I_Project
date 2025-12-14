@@ -1,6 +1,6 @@
 ---
 title: "Support Vector Machine Analysis - Student Dropout Prediction"
-subtitle: "Understanding the Pathways to Academic Achievement"
+subtitle: "Early Warning System for Student Dropout Risk"
 date: "`r Sys.Date()`"
 output:
   html_document:
@@ -87,7 +87,7 @@ knitr::kable(head(results, 5), caption = "Top 5 Features by F-statistic")
 
 ## Prepare Data for SVM
 
-Support Vector Machines require **predictors** (numerical variables) and a **target** (categorical: _Graduation_/_Dropout_) for classification. The data was then structured into a format suitable for SVM modeling. 
+Support Vector Machines require **predictors** (numerical variables) and a **target** (categorical: _Graduate_/_Dropout_) for classification. The data was then structured into a format suitable for SVM modeling.
 The original dataset contained three academic outcomes: _Enrolled_, _Dropout_, and _Graduate_. Since the objective of this analysis is to distinguish students who ultimately graduate from those who drop out, **the Enrolled category was removed**. 
 This reduces the dataset size but produces a cleaner binary classification.
 ```{r prepare-marks, echo=FALSE, results='hide'}
