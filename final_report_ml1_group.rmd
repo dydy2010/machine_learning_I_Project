@@ -29,6 +29,13 @@ header-includes:
       body {
         color: #222222;
       }
+      /* Compact chunk toggle buttons */
+      .btn.btn-default.btn-xs.code-folding-btn {
+        padding: 2px 6px;
+        font-size: 10px;
+        line-height: 1.1;
+        margin: 2px 0 4px 0;
+      }
     </style>
 ---
 
@@ -98,11 +105,11 @@ options(warn = -1)
 
 # Summary
 
-**Problem Statement/Our Storyline:** Higher education institutions face significant challenges with **student drop-outs**. A fictional university has engaged our education consulting firm to diagnose why students drop out. The university wants to **understand and improve academic performance**, and design **interventions** that reduce failed academic lives. Understanding which students are **at risk of dropping out**, and timely support that can change academic and life trajectories.
+**Our Storyline:** Higher education institutions face significant challenges with **student drop-outs**. A fictional university has engaged our education consulting firm to diagnose why students drop out. The university wants to **understand and improve academic performance**, and design **interventions** that reduce failed academic lives. Understanding which students are **at risk of dropping out**, and timely support that can change academic and life trajectories.
 
-**Our Data:** We have chosen a real case dataset from **University of California, Irvine (UCI)**, to simulate the fictional case.
+**Our Data:** We have chosen a real case dataset from **University of California, Irvine (UCI)**, to simulate the fictional case. We found the dataset because the data repository website appeared once in our Machine Learning 1 lecture.
 
-**Our Approach:** We analyzed **4,424 students** from a Portuguese higher education institution using **six** complementary machine learning techniques to predict student outcomes (**Dropout**, **Enrolled**, **Graduate**) and **understand the factors that drive academic success**.
+**Our Approach:** We analyzed **4,424 students** from a Portuguese higher education institution using **six** machine learning models to predict student outcomes (**Dropout**, **Enrolled**, **Graduate**) and **understand the factors that drive academic success**.
 
 ## Key Findings:
 
@@ -141,21 +148,21 @@ Our goal for this project is to deliver a solid report while using it as an oppo
 
 We considered three main options. First, the Social Media Fact Sheet from PEW Research Center, which would have allowed us to analyze social media usage patterns. Second, medical quality service data in Switzerland from the Federal Office of Public Health (available through opendata.swiss). Third, student data for predicting dropout and academic success from the UC Irvine Machine Learning Repository.
 
-After careful consideration, we chose the third option from the UC Irvine repository. The **data structure and scope align well with our goal** of getting familiarized with machine learning concepts and practices while producing a solid report as our first attempt in the ML world. While the other two datasets were interesting to explore, their structure, diversity, and scope did not suit our learning objectives as well as the student success dataset.
+After careful consideration, we chose the third option from the UC Irvine repository. The **data structure and scope align well with our goal** of getting familiarized with machine learning concepts and practices while producing a solid report as our first attempt in the ML world. While the other two datasets were interesting to explore, their structure, diversity, and scope did not suit our learning objectives as well as the student success dataset. We didn't read any papers related to the dataset online while doing the project.
 
 ### Dataset Characteristics
 
 **Source:** UCI Machine Learning Repository - Predict Students' Dropout and Academic Success\
 **Institution:** Portuguese higher education institution\
 **Time Period:** Multiple academic years\
-**Sample Size:** 4,424 students across 37 variables
+**Sample Size:** 4,424 students with 37 variables (e.g., age, 1st-semester grades, credits completed)
 
-The dataset provides a comprehensive view of student characteristics and outcomes, making it well-suited for applying multiple machine learning techniques.
+The dataset provides a comprehensive view of student characteristics and outcomes, making it well-suited for applying multiple machine learning models.
 
 **Target Variable (3 factors):**
 
 -   **Dropout:** Students who left the program (1,421 students, 32%)
--   **Enrolled:** Students currently continuing (794 students, 18%)
+-   **Enrolled:** Students currently continuing (794 students, 18%), in some models counted as binary 'not-dropout'.
 -   **Graduate:** Students who completed successfully (2,209 students, 50%)
 
 The distribution shows a balanced dataset with a slight majority of graduates. It reflects the institution's overall success rate and provides sufficient samples across all outcome categories for model training.
@@ -178,12 +185,12 @@ for (col in numeric_cols) {
   }
 }
 ```
+## 1.3 Feature Categories and detailed variables
 
-## 1.3 Variable Overview (Key Fields)
+Our dataset includes **36 predictors** in the following categories: Demographic Information, Socioeconomic Factors, Academic Background, Academic Performance, Financial Indicators, and Macroeconomic Context.
+To make the business case and model results easier to follow, the table below summarizes the most important variables used.
 
-To make the business case and model results easier to follow, the table below summarizes the most important variables used throughout the report.
-
-```{r variable-overview-table, results="asis"}
+```{r variable-overview-table, results="asis", echo=FALSE}
 variable_overview <- data.frame(
   Variable = c(
     "Target",
@@ -194,17 +201,9 @@ variable_overview <- data.frame(
     "Scholarship.holder",
     "Debtor",
     "Tuition.fees.up.to.date",
-    "Mother.s.qualification",
-    "Father.s.qualification",
     "Curricular.units.1st.sem..enrolled.",
     "Curricular.units.1st.sem..approved.",
-    "Curricular.units.1st.sem..grade.",
-    "Curricular.units.2nd.sem..enrolled.",
-    "Curricular.units.2nd.sem..approved.",
-    "Curricular.units.2nd.sem..grade.",
-    "Unemployment.rate",
-    "Inflation.rate",
-    "GDP"
+    "Curricular.units.1st.sem..grade."
   ),
   Meaning = c(
     "Student outcome (Dropout / Enrolled / Graduate)",
@@ -215,17 +214,9 @@ variable_overview <- data.frame(
     "Whether the student holds a scholarship (0/1)",
     "Whether the student is classified as a debtor (0/1)",
     "Whether tuition fees are paid up to date (0/1)",
-    "Mother's education level (categorical code)",
-    "Father's education level (categorical code)",
     "Number of courses the student enrolled in (1st semester)",
     "Number of courses successfully passed (1st semester)",
-    "Average grade in the 1st semester (0–20 scale)",
-    "Number of courses the student enrolled in (2nd semester)",
-    "Number of courses successfully passed (2nd semester)",
-    "Average grade in the 2nd semester (0–20 scale)",
-    "National unemployment rate at enrollment time",
-    "Inflation rate at enrollment time",
-    "GDP indicator at enrollment time"
+    "Average grade in the 1st semester (0–20 scale)"
   ),
   Type = c(
     "Categorical (3 classes)",
@@ -236,39 +227,33 @@ variable_overview <- data.frame(
     "Binary (0/1)",
     "Binary (0/1)",
     "Binary (0/1)",
-    "Ordinal/categorical code",
-    "Ordinal/categorical code",
     "Count",
     "Count",
-    "Numeric",
-    "Count",
-    "Count",
-    "Numeric",
-    "Numeric",
-    "Numeric",
     "Numeric"
   ),
   stringsAsFactors = FALSE
 )
+rownames(variable_overview) <- NULL
 
-knitr::kable(variable_overview, caption = "Key dataset variables used in this report")
+# Use kableExtra if available; otherwise fall back to plain kable
+if (requireNamespace("kableExtra", quietly = TRUE)) {
+  knitr::kable(
+    variable_overview,
+    caption = "Key dataset variables (collapsed view)"
+  ) %>%
+    kableExtra::kable_styling(font_size = 10, bootstrap_options = c("striped")) %>%
+    kableExtra::column_spec(1, bold = TRUE, width = "12em") %>%
+    kableExtra::column_spec(2, width = "18em") %>%
+    kableExtra::column_spec(3, width = "10em")
+} else {
+  knitr::kable(
+    variable_overview,
+    caption = "Key dataset variables (collapsed view)",
+    align = c("l", "l", "c")
+  )
+}
 ```
 
-## 1.4 Feature Categories and Data Suitability
-
-Our dataset includes **36 predictors**, providing a rich set of variables for analysis:
-
-**1. Demographic Information:** Age at enrollment, gender, nationality, marital status
-
-**2. Socioeconomic Factors:** Parents' occupation and education levels, scholarship holder status
-
-**3. Academic Background:** Previous qualifications and grades, admission grade
-
-**4. Academic Performance:** Semester-by-semester grades, enrolled credits, completed evaluations, approved courses
-
-**5. Financial Indicators:** Tuition fee payment status, debtor status
-
-**6. Macroeconomic Context:** Unemployment rate, inflation rate, GDP at time of enrollment
 
 ### Why This Dataset Works for Our Analysis
 
@@ -549,7 +534,7 @@ X_test_scaled <- predict(preProc, X_test)
 
 **Feature Scaling:** Standardization (**z-score normalization**) ensures all features contribute proportionally to the model regardless of their original scales.
 
-```{r linear-train, results="hide"}
+```{r linear-train, results="asis", echo=FALSE}
 train_data_scaled <- X_train_scaled
 train_data_scaled[[TARGET]] <- y_train
 
@@ -561,17 +546,30 @@ coef_summary <- data.frame(
   Feature = names(coef(model)),
   Coefficient = coef(model)
 )
-```
-
-```{r linear-coef-table, results="asis"}
 coef_table <- coef_summary %>%
   dplyr::filter(Feature != "(Intercept)") %>%
   dplyr::mutate(Abs_Coefficient = abs(Coefficient)) %>%
   dplyr::arrange(desc(Abs_Coefficient)) %>%
   dplyr::select(Feature, Coefficient) %>%
-  utils::head(10)
+  utils::head(3)
 
-knitr::kable(coef_table, caption = "Top 10 linear regression coefficients (by absolute value)")
+rownames(coef_table) <- NULL
+
+if (requireNamespace("kableExtra", quietly = TRUE)) {
+  knitr::kable(
+    coef_table,
+    caption = "Top 3 linear regression coefficients (by absolute value)",
+    align = c("l", "r")
+  ) %>%
+    kableExtra::kable_styling(full_width = FALSE) %>%
+    kableExtra::column_spec(1, bold = TRUE)
+} else {
+  knitr::kable(
+    coef_table,
+    caption = "Top 3 linear regression coefficients (by absolute value)",
+    align = c("l", "r")
+  )
+}
 ```
 
 ## 4.6 Model Performance
@@ -676,9 +674,9 @@ This S-shaped curve ensures predictions stay within valid probability bounds whi
 
 Understanding what characteristics lead to high admission scores helps institutions identify strong candidates and understand enrollment patterns.
 
-### Data Preparation
+### Binomial GLM Pre-processing: High vs Low Admission
 
-```{r binomial1-prep, results="hide"}
+```{r binomial1-all, results="hide", echo=FALSE}
 cat(sprintf("Admission.grade check | total=%d | non-NA=%d\n",
             length(df$Admission.grade), sum(!is.na(df$Admission.grade))))
 
@@ -712,11 +710,7 @@ if (nrow(df_admission) > 0) {
   cat("High_Admission distribution (count):\n")
   print(table(df_admission$High_Admission))
 }
-```
-
-We convert `Admission.grade` into a binary target (**High** vs **Low** admission) using the median cutoff (**`r round(median_admission, 2)`**). After removing missing values, we model **`r nrow(df_admission)`** students.
-
-```{r binomial1-split}
+### binomial1-split
 set.seed(42)
 train_index_adm <- createDataPartition(df_admission$High_Admission, p = 0.8, list = FALSE)
 train_adm <- df_admission[train_index_adm, ]
@@ -725,11 +719,8 @@ test_adm <- df_admission[-train_index_adm, ]
 preproc_adm <- preProcess(train_adm[, features_admission], method = c("center", "scale"))
 train_adm_scaled <- predict(preproc_adm, train_adm)
 test_adm_scaled <- predict(preproc_adm, test_adm)
-```
 
 ### Model Training
-
-```{r binomial1-train, results="hide"}
 glm_adm <- glm(High_Admission ~ .,
                data = train_adm_scaled,
                family = binomial(link = "logit"))
@@ -737,6 +728,8 @@ glm_adm <- glm(High_Admission ~ .,
 cat("Binomial GLM (Admission) summary:\n")
 print(summary(glm_adm))
 ```
+
+We convert `Admission.grade` into a binary target (**High** vs **Low** admission) using the median cutoff (**`r round(median_admission, 2)`**). After removing missing values, we model **`r nrow(df_admission)`** students.
 
 ### Model Performance
 
@@ -751,18 +744,28 @@ cat(sprintf("Binomial GLM (Admission) accuracy: %.4f (%.2f%%)\n", accuracy_adm, 
 cm_adm <- confusionMatrix(factor(pred_adm, levels = c(0, 1)),
                           factor(test_adm_scaled$High_Admission, levels = c(0, 1)))
 print(cm_adm)
-```
 
-On the test set, the admission model achieves **accuracy = `r round(accuracy_adm, 3)`**.
+# Confusion matrix plot
+cm_plot_df <- as.data.frame(cm_adm$table)
+names(cm_plot_df) <- c("Prediction", "Reference", "Freq")
+cm_plot_df$Prediction <- factor(cm_plot_df$Prediction, levels = c("0", "1"))
+cm_plot_df$Reference <- factor(cm_plot_df$Reference, levels = c("0", "1"))
 
-```{r binomial1-cm-table, results="asis"}
-cm_adm_table <- as.data.frame(cm_adm$table)
-knitr::kable(cm_adm_table, caption = "Confusion matrix (High Admission vs Low Admission)")
+ggplot(cm_plot_df, aes(x = Prediction, y = Reference, fill = Freq)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = Freq), size = 4, fontface = "bold") +
+  scale_fill_gradient(low = "#e0f7fa", high = "#00838f") +
+  labs(title = "Confusion Matrix: High vs Low Admission", x = "Predicted", y = "Actual") +
+  theme_minimal(base_size = 10) +
+  theme(legend.position = "none",
+        plot.title = element_text(size = 10, face = "bold", hjust = 0.5))
 ```
+On the test set, the admission model achieves **accuracy = `r round(accuracy_adm, 3)`** (~70% correct classifications). This is better than random guessing but leaves room for improvement; it correctly flags most high/low admission cases, but about 3 in 10 are still misclassified.
+
 
 ### ROC Curve Analysis
 
-```{r binomial1-roc, fig.cap="ROC Curve - High Admission"}
+```{r binomial1-roc, fig.cap="ROC Curve - High Admission", fig.width=6.4, fig.height=4.8}
 roc_adm <- roc(test_adm_scaled$High_Admission, pred_adm_prob, quiet = TRUE)
 auc_adm <- auc(roc_adm)
 
@@ -797,9 +800,10 @@ knitr::kable(odds_table_adm, caption = "Top 10 admission predictors (log-odds an
 
 **This is our most actionable model**—identifying students **at risk of dropping out** enables **targeted interventions**.
 
-### Data Preparation
+### 5.3 Binomial GLM: Graduation vs Dropout
 
-```{r binomial2-prep, results="hide"}
+```{r binomial2-all, results="asis", echo=FALSE}
+# --- Data prep
 df_success <- df %>%
   filter(Target %in% c('Graduate', 'Dropout')) %>%
   mutate(Success = ifelse(Target == 'Graduate', 1, 0))
@@ -831,13 +835,8 @@ df_success_model <- df_success %>%
   na.omit()
 
 cat(sprintf("Binomial (Graduation) dataset: %d students\n", nrow(df_success_model)))
-```
 
-For the business question (retention), we focus on a **binary outcome**: **Graduate (1)** vs **Dropout (0)**. After filtering and removing missing values, we model **`r nrow(df_success_model)`** students.
-
-### Model Training
-
-```{r binomial2-train, results="hide"}
+# --- Train/test split + scaling
 set.seed(42)
 train_index_suc <- createDataPartition(df_success_model$Success, p = 0.8, list = FALSE)
 train_suc <- df_success_model[train_index_suc, ]
@@ -847,14 +846,12 @@ preproc_suc <- preProcess(train_suc[, features_success], method = c("center", "s
 train_suc_scaled <- predict(preproc_suc, train_suc)
 test_suc_scaled <- predict(preproc_suc, test_suc)
 
+# --- Model training
 glm_suc <- glm(Success ~ .,
                data = train_suc_scaled,
                family = binomial(link = "logit"))
-```
 
-### Model Performance
-
-```{r binomial2-eval, results="hide"}
+# --- Performance
 pred_suc_prob <- predict(glm_suc, test_suc_scaled, type = "response")
 pred_suc <- ifelse(pred_suc_prob > 0.5, 1, 0)
 
@@ -866,13 +863,8 @@ roc_suc <- roc(test_suc_scaled$Success, pred_suc_prob, quiet = TRUE)
 auc_suc <- auc(roc_suc)
 
 cat(sprintf("Binomial GLM (Graduation) AUC: %.3f\n", auc_suc))
-```
 
-With an **AUC** of `r round(auc_suc, 3)`, our model demonstrates strong ability to discriminate between students who will graduate and those **at risk of dropping out**.
-
-### Risk and Protective Factors
-
-```{r binomial2-importance, results="hide"}
+# --- Risk/protective factors
 coef_df_suc <- data.frame(
   Feature = features_success,
   Coefficient = coef(glm_suc)[-1],
@@ -893,17 +885,18 @@ for (i in 1:min(5, nrow(coef_df_suc))) {
                 row$Feature, pct_change))
   }
 }
-```
 
-```{r binomial2-odds-table, results="asis"}
+# --- Top predictors table
 odds_table_suc <- coef_df_suc %>%
   mutate(Abs_Coefficient = abs(Coefficient)) %>%
   arrange(desc(Abs_Coefficient)) %>%
   select(Feature, Coefficient, Odds_Ratio) %>%
-  head(10)
+  head(3)
 
-knitr::kable(odds_table_suc, caption = "Top 10 graduation predictors (log-odds and odds ratio)")
+knitr::kable(odds_table_suc, caption = "Top 3 graduation predictors (log-odds and odds ratio)")
 ```
+
+We model graduation vs dropout in one step: build the binary target, split/scale, train a binomial GLM, and summarize discrimination (AUC) plus odds ratios for the most influential features. The model delivers **AUC = `r round(auc_suc, 3)`**, showing strong abilit to predict graduates and dropouts. First-semester performance and financial factors are proven to be top factors.
 
 **Actionable Insights:** **First semester performance** emerges as the dominant predictor. **Financial factors** (debtor status, tuition payment) also show strong effects, suggesting that financial aid could meaningfully impact retention.
 
@@ -942,7 +935,6 @@ FEATURES_1 <- c(
     'Tuition.fees.up.to.date',
     'Curricular.units.1st.sem..enrolled.',
     'Unemployment.rate',
-    'Inflation.rate',
     'GDP'
 )
 
@@ -951,68 +943,41 @@ df_model1 <- df %>%
     mutate(across(everything(), ~ as.numeric(as.character(.)))) %>%
     drop_na()
 
-cat(sprintf("Poisson (1st sem approvals) dataset: %d students\n", nrow(df_model1)))
-
-cat("Target distribution (first 10 counts):\n")
-print(head(table(df_model1[[TARGET_1]]), 10))
-cat(sprintf("Target mean=%.2f | variance=%.2f\n",
-            mean(df_model1[[TARGET_1]]),
-            var(df_model1[[TARGET_1]])))
-```
-
-We model the number of approved courses (a **count outcome**) using Poisson regression. In this subset we have **`r nrow(df_model1)`** students; the average number of approvals is **`r round(mean(df_model1[[TARGET_1]]), 2)`**.
-
-### Model Training
-
-```{r poisson1-split, results="hide"}
+cat(sprintf("Poisson dataset (1st semester approvals): %d students\n", nrow(df_model1)))
 set.seed(42)
-
 X1 <- df_model1 %>% dplyr::select(all_of(FEATURES_1))
 y1 <- df_model1[[TARGET_1]]
 
-trainIndex1 <- createDataPartition(y1, p = 0.8, list = FALSE)
+train_idx1 <- createDataPartition(y1, p = 0.8, list = FALSE)
+X_train1 <- X1[train_idx1, ]
+X_test1  <- X1[-train_idx1, ]
+y_train1 <- y1[train_idx1]
+y_test1  <- y1[-train_idx1]
 
-X_train1 <- X1[trainIndex1, ]
-X_test1 <- X1[-trainIndex1, ]
-y_train1 <- y1[trainIndex1]
-y_test1 <- y1[-trainIndex1]
-
-cat(sprintf("Train/Test split: %d training | %d testing\n", length(y_train1), length(y_test1)))
-```
-
-We use an **80/20 split** for evaluation (**`r length(y_train1)`** train, **`r length(y_test1)`** test).
-
-```{r poisson1-train, results="hide"}
 train_data1 <- X_train1
 train_data1[[TARGET_1]] <- y_train1
 
-formula_1 <- as.formula(paste(TARGET_1, "~", paste(FEATURES_1, collapse = " + ")))
+poisson_model1 <- glm(
+  formula = as.formula(paste(TARGET_1, "~ .")),
+  family = poisson(link = "log"),
+  data = train_data1
+)
 
-poisson_model1 <- glm(formula_1, data = train_data1, family = poisson(link = "log"))
-
-cat("Poisson GLM summary:\n")
-print(summary(poisson_model1))
-```
-
-### Model Performance
-
-```{r poisson1-eval, results="hide"}
+# --- Performance
 y_pred_train1 <- predict(poisson_model1, newdata = X_train1, type = "response")
 y_pred_test1 <- predict(poisson_model1, newdata = X_test1, type = "response")
+
+train_rmse1 <- sqrt(mean((y_train1 - y_pred_train1)^2))
+train_mae1 <- mean(abs(y_train1 - y_pred_train1))
 
 test_rmse1 <- sqrt(mean((y_test1 - y_pred_test1)^2))
 test_mae1 <- mean(abs(y_test1 - y_pred_test1))
 test_r2_1 <- cor(y_test1, y_pred_test1)^2
 
-cat(sprintf("Poisson GLM performance | Test: RMSE=%.4f MAE=%.4f R²=%.4f\n",
-            test_rmse1, test_mae1, test_r2_1))
-```
+cat(sprintf("Poisson GLM performance | Train RMSE=%.4f MAE=%.4f | Test RMSE=%.4f MAE=%.4f R²=%.4f\n",
+            train_rmse1, train_mae1, test_rmse1, test_mae1, test_r2_1))
 
-For first semester course approvals, the test performance is **RMSE = `r round(test_rmse1, 3)`**, **MAE = `r round(test_mae1, 3)`**, and **R² = `r round(test_r2_1, 3)`**.
-
-### Understanding Rate Ratios
-
-```{r poisson1-ratios, results="asis"}
+# --- Rate ratios (top 3)
 coef_summary1 <- summary(poisson_model1)$coefficients
 coef_df1 <- data.frame(
     Feature = rownames(coef_summary1),
@@ -1024,14 +989,38 @@ coef_df1 <- data.frame(
     arrange(desc(Abs_Coef))
 
 top_poisson_tbl <- coef_df1[, c("Feature", "Coefficient", "Rate_Ratio", "P_value")] %>%
-  head(10)
+  head(3)
 
-knitr::kable(top_poisson_tbl, caption = "Top Poisson GLM predictors (coefficient and rate ratio)")
+knitr::kable(top_poisson_tbl, caption = "Top 3 Poisson GLM predictors (coefficient and rate ratio)")
+
+# --- Coefficient bar plot (inline, compact)
+coef_plot_df <- coef_df1 %>%
+    filter(Feature != "(Intercept)") %>%
+    head(10)
+
+par(mar = c(5, 10, 3, 2), cex = 0.8)
+colors <- ifelse(coef_plot_df$Coefficient > 0, "green", "red")
+barplot(coef_plot_df$Coefficient,
+        names.arg = coef_plot_df$Feature,
+        horiz = TRUE,
+        las = 1,
+        col = adjustcolor(colors, alpha.f = 0.7),
+        xlab = "Coefficient (Log Rate)",
+        main = "Feature Effects on Course Approvals")
+abline(v = 0, col = "black", lwd = 1)
+grid()
+
+# Store for plots below
+assign("coef_df1", coef_df1, envir = .GlobalEnv)
+assign("y_pred_train1", y_pred_train1, envir = .GlobalEnv)
+assign("y_pred_test1", y_pred_test1, envir = .GlobalEnv)
+assign("y_train1", y_train1, envir = .GlobalEnv)
+assign("y_test1", y_test1, envir = .GlobalEnv)
 ```
 
-**Interpreting Rate Ratios:** **Rate ratios** tell us how the expected count changes with a one-unit increase in the predictor. For example, a rate ratio of **1.3** means students complete **30% more courses** on average.
+**Interpreting Rate Ratios:** Rate ratios show how the expected course count changes per unit increase. For example, a rate ratio of **1.30** means **30% more courses** on average; **0.80** means **20% fewer**.
 
-### Visualization
+### Visualization of RMSE
 
 ```{r poisson1-plots, fig.cap="Model predictions for course approvals"}
 par(mfrow = c(1, 2))
@@ -1052,23 +1041,7 @@ abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2)
 grid()
 ```
 
-```{r poisson1-coef, fig.height=10, fig.cap="Feature effects on course completion rates"}
-coef_plot_df <- coef_df1 %>%
-    filter(Feature != "(Intercept)") %>%
-    head(13)
-
-par(mar = c(5, 12, 4, 2))
-colors <- ifelse(coef_plot_df$Coefficient > 0, "green", "red")
-barplot(coef_plot_df$Coefficient,
-        names.arg = coef_plot_df$Feature,
-        horiz = TRUE,
-        las = 1,
-        col = adjustcolor(colors, alpha.f = 0.7),
-        xlab = "Coefficient (Log Rate)",
-        main = "Feature Effects on Course Approvals")
-abline(v = 0, col = "black", lwd = 1)
-grid()
-```
+**RMSE reminder:** is the square-root of the average squared error; lower values mean predictions stay closer to actual course counts. Here the test RMSE shows the typical error distance (in courses) between predicted and actual approvals. The plots show a reasonable fit for common counts, but the model tends to underpredict for very high course approvals, so extreme tails are harder to capture.
 
 ## 6.3 Model 2: Second Semester Course Approvals
 
@@ -1094,7 +1067,7 @@ df_model2 <- df %>%
     mutate(across(everything(), ~ as.numeric(as.character(.)))) %>%
     drop_na()
 
-cat(sprintf("Poisson (2nd sem approvals) dataset: %d students\n", nrow(df_model2)))
+cat(sprintf("Poisson dataset (2nd semester approvals): %d students\n", nrow(df_model2)))
 ```
 
 For second semester approvals (count of courses passed), we again use a Poisson model on **`r nrow(df_model2)`** students.
@@ -1128,7 +1101,7 @@ test_mae2 <- mean(abs(y_test2 - y_pred_test2))
 test_r2_2 <- cor(y_test2, y_pred_test2)^2
 
 cat(sprintf("Performance Metrics: RMSE=%.4f MAE=%.4f R²=%.4f\n",
-            test_rmse2, test_mae2, test_r2_2))
+          test_rmse2, test_mae2, test_r2_2))
 ```
 
 The second semester Poisson model achieves **RMSE = `r round(test_rmse2, 3)`**, **MAE = `r round(test_mae2, 3)`**, and **R² = `r round(test_r2_2, 3)`** on the test set.
@@ -1166,7 +1139,7 @@ The model structure: $Y = \beta_0 + f_1(X_1) + f_2(X_2) + ... + f_n(X_n) + \epsi
 
 ## 7.2 Model 1: Gaussian GAM for Grade Prediction
 
-```{r gam1-prep}
+```{r gam1-all, results="hide"}
 TARGET_GRADE <- 'Curricular.units.2nd.sem..grade.'
 
 features_grade <- c(
@@ -1187,16 +1160,12 @@ df_grade <- df %>%
   filter(!!sym(TARGET_GRADE) > 0)
 
 cat(sprintf("GAM (grade) dataset: %d students\n", nrow(df_grade)))
-```
 
-```{r gam1-split}
 set.seed(42)
 train_index_g <- createDataPartition(df_grade[[TARGET_GRADE]], p = 0.8, list = FALSE)
 train_g <- df_grade[train_index_g, ]
 test_g <- df_grade[-train_index_g, ]
-```
 
-```{r gam1-train, results="hide"}
 gam_grade <- gam(
   Curricular.units.2nd.sem..grade. ~
     s(Previous.qualification..grade., bs = "cr", k = 10) +
@@ -1213,9 +1182,7 @@ gam_grade <- gam(
 
 cat("GAM summary:\n")
 print(summary(gam_grade))
-```
 
-```{r gam1-eval, results="hide"}
 pred_test_g <- predict(gam_grade, test_g)
 
 test_r2_g <- cor(test_g[[TARGET_GRADE]], pred_test_g)^2
@@ -1384,7 +1351,7 @@ grid()
 
 ## 7.4 Model 3: Poisson GAM for Course Counts
 
-```{r gam3-prep}
+```{r gam3-all, results="hide", echo=FALSE}
 TARGET_COUNT <- 'Curricular.units.2nd.sem..approved.'
 
 features_count <- c(
@@ -1420,9 +1387,7 @@ gam_count <- gam(
   family = poisson(link = "log"),
   method = "REML"
 )
-```
 
-```{r gam3-eval, results="hide"}
 pred_test_c <- predict(gam_count, test_c, type = "response")
 
 test_rmse_c <- sqrt(mean((test_c[[TARGET_COUNT]] - pred_test_c)^2))
@@ -1431,11 +1396,7 @@ test_r2_c <- cor(test_c[[TARGET_COUNT]], pred_test_c)^2
 
 cat(sprintf("Test R²: %.4f | RMSE: %.4f | MAE: %.4f\n",
             test_r2_c, test_rmse_c, test_mae_c))
-```
 
-For course count prediction, the Poisson GAM achieves **R² = `r round(test_r2_c, 3)`** with **RMSE = `r round(test_rmse_c, 3)`** on the test set.
-
-```{r gam3-comparison, results="hide"}
 poisson_glm <- glm(Curricular.units.2nd.sem..approved. ~ .,
                    data = train_c, family = poisson)
 glm_pred_c <- predict(poisson_glm, test_c, type = "response")
@@ -1446,6 +1407,8 @@ cat(sprintf("GAM R²:          %.4f\n", test_r2_c))
 cat(sprintf("Poisson GLM R²:  %.4f\n", glm_r2_c))
 cat(sprintf("Improvement:     %.2f percentage points\n", (test_r2_c - glm_r2_c) * 100))
 ```
+
+For course count prediction, the Poisson GAM achieves **R² = `r round(test_r2_c, 3)`** with **RMSE = `r round(test_rmse_c, 3)`** on the test set.
 
 ### Course Load Dynamics
 
@@ -1578,7 +1541,7 @@ Following `ANN_Lab2_Iris_v1.Rmd`, we use `neuralnet` with a deeper architecture 
 
 In this run, Model B uses a **2-5-2** hidden-layer setup (2 neurons → 5 neurons → 2 neurons). We also set `threshold = 0.8` mainly to keep runtime manageable while we debug and iterate. A **larger** threshold usually stops earlier (faster), but it can also stop before the model has learned enough.
 
-```{r nn-train-model-B, results="hide"}
+```{r nn-train-model-B, results="hide", cache=TRUE}
 # One-hot encode predictors for neuralnet (Lab 2 approach)
 dummies <- dummyVars(Target ~ ., data = train_nn)
 train_matrix <- as.data.frame(predict(dummies, newdata = train_nn))
@@ -1986,6 +1949,7 @@ for (feat in features) {
 }
 
 results <- results[order(-results$F_value), ]
+rownames(results) <- NULL
 knitr::kable(head(results, 5), caption = "Top 5 Features by F-statistic")
 ```
 
@@ -2125,6 +2089,7 @@ metrics_linear <- data.frame(
     round(cm_linear$overall['Kappa'], 4)
   )
 )
+rownames(metrics_linear) <- NULL
 
 knitr::kable(metrics_linear, 
              caption = "Linear Kernel - Performance Metrics",
@@ -2182,6 +2147,7 @@ metrics_radial <- data.frame(
     round(cm_radial$overall['Kappa'], 4)
   )
 )
+rownames(metrics_radial) <- NULL
 
 knitr::kable(metrics_radial, 
              caption = "Radial Kernel - Performance Metrics",
@@ -2190,6 +2156,30 @@ knitr::kable(metrics_radial,
 The radial kernel demonstrates a slight improvement in overall performance with an **accuracy of 87.7%** and **Kappa score of 0.7359**, both marginally better than the linear model. Notably, the **sensitivity increased to 77.46%**, showing improved ability to detect students at risk of dropping out. The **specificity holds steady at 94%**, maintaining excellent performance in identifying graduates. Overall, the radial kernel's performance is quite similar to the linear model, suggesting that the relationship between the features may be linear.
 
 ### Polynomial Kernel Results
+```{r svm-eval-poly, echo=FALSE}
+cm_poly <- confusionMatrix(pred_poly, test_data$y)
+
+# Display confusion matrix as a table
+knitr::kable(cm_poly$table, 
+             caption = "Polynomial Kernel - Confusion Matrix",
+             align = 'c')
+
+# Display key metrics as a table
+metrics_poly <- data.frame(
+  Metric = c("Accuracy", "Sensitivity", "Specificity", "Kappa"),
+  Value = c(
+    round(cm_poly$overall['Accuracy'], 4),
+    round(cm_poly$byClass['Sensitivity'], 4),
+    round(cm_poly$byClass['Specificity'], 4),
+    round(cm_poly$overall['Kappa'], 4)
+  )
+)
+rownames(metrics_poly) <- NULL
+
+knitr::kable(metrics_poly, 
+             caption = "Polynomial Kernel - Performance Metrics",
+             align = 'c')
+```
 ```{r svm-plot-poly, fig.width=6, fig.height=5, fig.align='center', echo=FALSE}
 # Get predictions for the grid
 grid$pred <- predict(svm_poly, grid)
@@ -2255,6 +2245,7 @@ comparison_results <- data.frame(
                cm_radial$overall['Accuracy'],
                cm_poly$overall['Accuracy'])
 )
+rownames(comparison_results) <- NULL
 
 knitr::kable(comparison_results, digits = 3, caption = "Model Accuracy Comparison")
 
@@ -2406,6 +2397,25 @@ The high predictive performance achieved using only academic metrics suggests th
 
 This project demonstrates that machine learning methods can achieve strong predictive performance for student retention challenges using readily available academic data. More importantly, the models provide specific, actionable thresholds that translate statistical predictions into decision rules. By implementing the three immediate actions outlined above, student supervisors can establish a data-driven early warning system that identifies at-risk students with approximately 80% accuracy while maintaining low false alarm rates. The combination of predictive power and practical implementation guidance positions these findings for immediate deployment in higher education retention efforts.
 
+## Generative AI Declaration & Guidelines
+
+Generative AI was used as a supplementary tool on top of the assisting material provided in the Machine Learning1 lecture.
+
+### Guidelines for Responsible and Effective Usage of Gen-AI
+1. **Human-in-the-loop verification:** All AI-suggested content was treated as a draft. Text, code, or sources delivered by AI had to be critically reviewed and tested before inclusion.
+2. **Emphasis on learning:** Gen-AI functioned as a learning companion rather than an automated code generator. After receiving suggestions, team members engaged in follow-up questions to grasp the underlying logic and method.
+3. **Transparency:** The team openly acknowledged where and how AI was used in the workflow so the benefits and quality safeguards remained clear.
+
+### Use Cases of AI Tools in the DBM Course Context
+AI-based assistants were applied in the following specific cases:
+1. **Brainstorming:** Elaborating initial ideas, structuring thoughts, and outlining coding approaches.
+2. **Debugging & optimization:** Explaining error messages and helping improve self-developed scripts to raise efficiency.
+3. **Proofreading:** Accelerating grammar and typo checks during documentation.
+4. **Information acquisition:** Searching for methodological references or code documentation for R Markdown, or machine learning methods (always followed by human verification of credibility).
+
+### Benefits and Challenges in Using Generative AI Tools
+1. **Benefits:** Faster debugging (e.g., resolving R Markdown knitting errors or debugging issues), on-demand tutoring for advanced questions, and more time spent on analytical reasoning instead of routine fixes.
+2. **Challenges:** The ease of getting answers can create a temptation to trust outputs blindly. The "human-in-the-loop" guideline ensured the team retained ownership, validating every AI-assisted contribution.
 ------------------------------------------------------------------------
 
 ------------------------------------------------------------------------
