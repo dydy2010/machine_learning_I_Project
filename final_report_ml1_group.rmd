@@ -744,16 +744,8 @@ cat(sprintf("Binomial GLM (Admission) accuracy: %.4f (%.2f%%)\n", accuracy_adm, 
 cm_adm <- confusionMatrix(factor(pred_adm, levels = c(0, 1)),
                           factor(test_adm_scaled$High_Admission, levels = c(0, 1)))
 print(cm_adm)
-```
 
-On the test set, the admission model achieves **accuracy = `r round(accuracy_adm, 3)`**.
-
-```{r binomial1-cm-table, results="asis"}
-cm_adm_table <- as.data.frame(cm_adm$table)
-knitr::kable(cm_adm_table, caption = "Confusion matrix (High Admission vs Low Admission)")
-```
-
-```{r binomial1-cm-plot, fig.width=4, fig.height=3, echo=FALSE}
+# Confusion matrix plot
 cm_plot_df <- as.data.frame(cm_adm$table)
 names(cm_plot_df) <- c("Prediction", "Reference", "Freq")
 cm_plot_df$Prediction <- factor(cm_plot_df$Prediction, levels = c("0", "1"))
@@ -768,6 +760,8 @@ ggplot(cm_plot_df, aes(x = Prediction, y = Reference, fill = Freq)) +
   theme(legend.position = "none",
         plot.title = element_text(size = 10, face = "bold", hjust = 0.5))
 ```
+On the test set, the admission model achieves **accuracy = `r round(accuracy_adm, 3)`** (~70% correct classifications). This is better than random guessing but leaves room for improvement; it correctly flags most high/low admission cases, but about 3 in 10 are still misclassified.
+
 
 ### ROC Curve Analysis
 
@@ -806,9 +800,10 @@ knitr::kable(odds_table_adm, caption = "Top 10 admission predictors (log-odds an
 
 **This is our most actionable model**—identifying students **at risk of dropping out** enables **targeted interventions**.
 
-### Data Preparation
+### 5.3 Binomial GLM: Graduation vs Dropout
 
-```{r binomial2-prep, results="hide"}
+```{r binomial2-all, results="asis", echo=FALSE}
+# --- Data prep
 df_success <- df %>%
   filter(Target %in% c('Graduate', 'Dropout')) %>%
   mutate(Success = ifelse(Target == 'Graduate', 1, 0))
@@ -840,13 +835,8 @@ df_success_model <- df_success %>%
   na.omit()
 
 cat(sprintf("Binomial (Graduation) dataset: %d students\n", nrow(df_success_model)))
-```
 
-For the business question (retention), we focus on a **binary outcome**: **Graduate (1)** vs **Dropout (0)**. After filtering and removing missing values, we model **`r nrow(df_success_model)`** students.
-
-### Model Training
-
-```{r binomial2-train, results="hide"}
+# --- Train/test split + scaling
 set.seed(42)
 train_index_suc <- createDataPartition(df_success_model$Success, p = 0.8, list = FALSE)
 train_suc <- df_success_model[train_index_suc, ]
@@ -856,14 +846,12 @@ preproc_suc <- preProcess(train_suc[, features_success], method = c("center", "s
 train_suc_scaled <- predict(preproc_suc, train_suc)
 test_suc_scaled <- predict(preproc_suc, test_suc)
 
+# --- Model training
 glm_suc <- glm(Success ~ .,
                data = train_suc_scaled,
                family = binomial(link = "logit"))
-```
 
-### Model Performance
-
-```{r binomial2-eval, results="hide"}
+# --- Performance
 pred_suc_prob <- predict(glm_suc, test_suc_scaled, type = "response")
 pred_suc <- ifelse(pred_suc_prob > 0.5, 1, 0)
 
@@ -875,13 +863,8 @@ roc_suc <- roc(test_suc_scaled$Success, pred_suc_prob, quiet = TRUE)
 auc_suc <- auc(roc_suc)
 
 cat(sprintf("Binomial GLM (Graduation) AUC: %.3f\n", auc_suc))
-```
 
-With an **AUC** of `r round(auc_suc, 3)`, our model demonstrates strong ability to discriminate between students who will graduate and those **at risk of dropping out**.
-
-### Risk and Protective Factors
-
-```{r binomial2-importance, results="hide"}
+# --- Risk/protective factors
 coef_df_suc <- data.frame(
   Feature = features_success,
   Coefficient = coef(glm_suc)[-1],
@@ -902,9 +885,8 @@ for (i in 1:min(5, nrow(coef_df_suc))) {
                 row$Feature, pct_change))
   }
 }
-```
 
-```{r binomial2-odds-table, results="asis"}
+# --- Top predictors table
 odds_table_suc <- coef_df_suc %>%
   mutate(Abs_Coefficient = abs(Coefficient)) %>%
   arrange(desc(Abs_Coefficient)) %>%
@@ -913,6 +895,8 @@ odds_table_suc <- coef_df_suc %>%
 
 knitr::kable(odds_table_suc, caption = "Top 10 graduation predictors (log-odds and odds ratio)")
 ```
+
+We model graduation vs dropout in one step: build the binary target, split/scale, train a binomial GLM, and summarize discrimination (AUC) plus odds ratios for the most influential features. The model delivers **AUC = `r round(auc_suc, 3)`**, showing strong abilit to predict graduates and dropouts. First-semester performance and financial factors are proven to be top factors.
 
 **Actionable Insights:** **First semester performance** emerges as the dominant predictor. **Financial factors** (debtor status, tuition payment) also show strong effects, suggesting that financial aid could meaningfully impact retention.
 
