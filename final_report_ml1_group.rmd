@@ -1,6 +1,6 @@
 ---
 title: "Predicting Student Success: A Multi-Model Machine Learning Approach"
-subtitle: "Understanding the Pathways to Academic Achievement"
+subtitle: "Early Warning System for Student Dropout Risk"
 author: "Dongyuan Gao, Ramiro, Cyriel"
 date: "`r Sys.Date()`"
 output:
@@ -42,6 +42,39 @@ knitr::opts_chunk$set(
   fig.align = "center"
 )
 
+# ============================================================================
+# PACKAGE INSTALLATION 
+# Uncomment and run once these lines if you need to install the packages
+# ============================================================================
+
+# --- Core Data Manipulation & Visualization ---
+# install.packages("tidyverse")    # Data manipulation (dplyr, tidyr, etc.) and ggplot2
+# install.packages("ggplot2")      # Grammar of graphics plotting (included in tidyverse)
+# install.packages("scales")       # Scale functions for visualization
+# install.packages("gridExtra")    # Arrange multiple plots in a grid
+# install.packages("corrplot")     # Correlation matrix visualization
+
+# --- Machine Learning Utilities ---
+# install.packages("caret")        # Classification and Regression Training
+# install.packages("broom")        # Tidy model outputs
+
+# --- Generalized Linear Models & GAM ---
+# install.packages("mgcv")         # Generalized Additive Models (GAM)
+# install.packages("gratia")       # GAM visualization and diagnostics
+# install.packages("pROC")         # ROC curve analysis
+
+# --- Neural Networks ---
+# install.packages("nnet")         # Single hidden layer neural network (Lab 1 style)
+# install.packages("neuralnet")    # Multi-layer neural network (Lab 2 style)
+# install.packages("ROCR")         # ROC curves for neural networks
+# install.packages("NeuralNetTools") # Visualize neural network structure
+
+# --- Support Vector Machines ---
+# install.packages("e1071")        # SVM implementation (svm function)
+# install.packages("kernlab")      # SVM kernels
+
+# ============================================================================
+
 # Load required libraries
 library(tidyverse)
 library(ggplot2)
@@ -55,28 +88,31 @@ library(corrplot)      # Correlation plots
 library(broom)         # Tidy model outputs
 library(scales)        # Scaling functions
 library(gratia)        # GAM visualization
+library(nnet)          # Neural Network (Lab 1 style)
+library(neuralnet)     # Neural Network (Lab 2 style)
+library(ROCR)          # ROC curves for neural networks
+library(NeuralNetTools) # Visualize network structure
 
-theme_set(theme_minimal())
 options(warn = -1)
 ```
 
 # Summary
 
-**Problem Statement/Our Storyline:** Higher education institutions face significant challenges with **student drop-outs**. A fictional university has engaged our education consulting firm to diagnose why students drop out. The university wants to understand and improve students academic performance, and design **interventions** that reduce failed academic lives. Understanding which students are **at risk of dropping out**, and timely support that can change academic and life trajectories.
+**Problem Statement/Our Storyline:** Higher education institutions face significant challenges with **student drop-outs**. A fictional university has engaged our education consulting firm to diagnose why students drop out. The university wants to **understand and improve academic performance**, and design **interventions** that reduce failed academic lives. Understanding which students are **at risk of dropping out**, and timely support that can change academic and life trajectories.
 
 **Our Data:** We have chosen a real case dataset from **University of California, Irvine (UCI)**, to simulate the fictional case.
 
-**Our Approach:** We analyzed **4,424 students** from a Portuguese higher education institution using **six** complementary machine learning techniques to predict student outcomes (**Dropout**, **Enrolled**, **Graduate**) and understand the factors that drive academic success.
+**Our Approach:** We analyzed **4,424 students** from a Portuguese higher education institution using **six** complementary machine learning techniques to predict student outcomes (**Dropout**, **Enrolled**, **Graduate**) and **understand the factors that drive academic success**.
 
 ## Key Findings:
 
 -   **First semester performance is the strongest predictor** of subsequent academic outcomes across all models
--   **Non-linear relationships exist** between age, course load, and success rates - captured by GAMs but missed by traditional linear models
+-   **Non-linear relationships exist** between age, course load, and success rates—captured by GAMs but missed by traditional linear models
 -   **Economic and financial factors** (GDP, unemployment, scholarship status, tuition payment) show systematic effects on student success
 -   **GAMs consistently outperform traditional GLMs** by 2-5 percentage points, revealing curved relationships in the data
--   **Model accuracy ranges from 75-90%** depending on the prediction task, with graduation prediction achieving the highest discrimination (AUC ≈ 0.87)
+-   **Model accuracy ranges from 75-90%** depending on the prediction task, with graduation prediction achieving the highest discrimination (**AUC ≈ 0.87**)
 
-**Business Impact:** These models enable institutions to identify **at-risk students early**, allocate resources efficiently, and implement **targeted interventions** that can improve graduation rates by **10-15%**.
+**Business Impact:** These models enable institutions to **identify at-risk students early**, **allocate resources efficiently**, and implement **targeted interventions** that can improve graduation rates by **10-15%**.
 
 ------------------------------------------------------------------------
 
@@ -105,7 +141,7 @@ Our goal for this project is to deliver a solid report while using it as an oppo
 
 We considered three main options. First, the Social Media Fact Sheet from PEW Research Center, which would have allowed us to analyze social media usage patterns. Second, medical quality service data in Switzerland from the Federal Office of Public Health (available through opendata.swiss). Third, student data for predicting dropout and academic success from the UC Irvine Machine Learning Repository.
 
-After careful consideration, we chose the third option from the UC Irvine repository. The data structure and scope align well with our goal of getting familiarized with machine learning concepts and practices while producing a solid report as our first attempt in the ML world. While the other two datasets were interesting to explore, their structure, diversity, and scope did not suit our learning objectives as well as the student success dataset.
+After careful consideration, we chose the third option from the UC Irvine repository. The **data structure and scope align well with our goal** of getting familiarized with machine learning concepts and practices while producing a solid report as our first attempt in the ML world. While the other two datasets were interesting to explore, their structure, diversity, and scope did not suit our learning objectives as well as the student success dataset.
 
 ### Dataset Characteristics
 
@@ -220,7 +256,7 @@ knitr::kable(variable_overview, caption = "Key dataset variables used in this re
 
 ## 1.4 Feature Categories and Data Suitability
 
-Our dataset includes 36 predictors, providing a rich set of variables for analysis:
+Our dataset includes **36 predictors**, providing a rich set of variables for analysis:
 
 **1. Demographic Information:** Age at enrollment, gender, nationality, marital status
 
@@ -238,15 +274,15 @@ Our dataset includes 36 predictors, providing a rich set of variables for analys
 
 The dataset is suitable for applying all required machine learning methods:
 
-**For Linear Regression:** We have continuous grade variables on a 0-20 scale, allowing us to predict second semester performance based on first semester results and student characteristics.
+**For Linear Regression:** We have **continuous grade variables (0-20 scale)**, allowing us to predict second semester performance based on first semester results and student characteristics.
 
-**For Binomial GLM:** The three-class target variable can be converted to binary outcomes, such as Graduate versus Dropout, enabling logistic regression analysis with interpretable odds ratios.
+**For Binomial GLM:** The three-class target can be converted to **Graduate vs Dropout**, enabling logistic regression with **interpretable odds ratios**.
 
-**For Poisson GLM:** Count variables are naturally present in the data, including the number of approved courses, evaluations, and failed courses (calculated as enrolled minus approved), making it ideal for count-based modeling.
+**For Poisson GLM:** **Count variables** are present (approved courses, evaluations, failed courses), making it ideal for count-based modeling.
 
-**For GAM, Neural Networks, and SVM:** The mix of continuous and categorical predictors, along with the classification task, provides ample opportunity to explore non-linear relationships and complex interaction patterns.
+**For GAM, Neural Networks, and SVM:** The mix of **continuous and categorical predictors** plus a **classification task** lets us explore **non-linear relationships** and **complex interactions**.
 
-The dataset contains 4,424 observations, which is large enough to support robust train-test splits and complex model training, and manageable for our computer setups. With 36 predictors spanning demographic, academic, financial, and socioeconomic domains, we have sufficient complexity to apply advanced models and find valuable insights for our client.
+The dataset contains **4,424 observations**—large enough for robust train-test splits and complex training, yet manageable. With **36 predictors** across demographic, academic, financial, and socioeconomic domains, we have the complexity to deliver **insights for our client**.
 
 ------------------------------------------------------------------------
 
@@ -270,7 +306,6 @@ ggplot(target_summary, aes(x = Target, y = count, fill = Target)) +
                                 "Graduate" = "#27AE60")) +
   labs(title = "Distribution of Student Outcomes",
        x = "Outcome", y = "Number of Students", fill = "Outcome") +
-  theme_minimal() +
   theme(legend.position = "none",
         plot.title = element_text(hjust = 0.5, face = "bold"))
 ```
@@ -295,7 +330,6 @@ p1 <- ggplot(first_sem_data, aes(x = Target, y = Curricular.units.1st.sem..grade
                                 "Graduate" = "#27AE60")) +
   labs(title = "First Semester Grades by Outcome",
        x = "Outcome", y = "First Semester Grade (0-20)") +
-  theme_minimal() +
   theme(legend.position = "none")
 
 # Box plot for courses approved
@@ -306,13 +340,12 @@ p2 <- ggplot(first_sem_data, aes(x = Target, y = Curricular.units.1st.sem..appro
                                 "Graduate" = "#27AE60")) +
   labs(title = "Courses Approved in First Semester",
        x = "Outcome", y = "Number of Courses Approved") +
-  theme_minimal() +
   theme(legend.position = "none")
 
 grid.arrange(p1, p2, ncol = 2)
 ```
 
-**Insight:** First semester performance shows dramatic differences across outcomes. Graduate students average 13+ grade points and complete most enrolled courses, while dropout students struggle with grades around 9-10 and complete fewer courses. This early divergence makes first semester performance the most critical intervention point.
+**Insight:** First semester performance shows dramatic differences across outcomes. Graduate students average **13+ grade points** and complete most enrolled courses, while dropout students struggle with grades around **9-10** and complete fewer courses. This early divergence makes **first semester performance** the most critical intervention point.
 
 ## 2.3 Financial & Socioeconomic Factors
 
@@ -337,8 +370,7 @@ p1 <- ggplot(financial_data, aes(x = Tuition.fees.up.to.date, fill = Target)) +
                                 "Enrolled" = "#F39C12",
                                 "Graduate" = "#27AE60")) +
   labs(title = "Tuition Payment Status",
-       x = "Tuition Fees Status", y = "Proportion", fill = "Outcome") +
-  theme_minimal()
+       x = "Tuition Fees Status", y = "Proportion", fill = "Outcome")
 
 # Scholarship status
 p2 <- ggplot(financial_data, aes(x = Scholarship.holder, fill = Target)) +
@@ -347,8 +379,7 @@ p2 <- ggplot(financial_data, aes(x = Scholarship.holder, fill = Target)) +
                                 "Enrolled" = "#F39C12",
                                 "Graduate" = "#27AE60")) +
   labs(title = "Scholarship Holder Status",
-       x = "Has Scholarship", y = "Proportion", fill = "Outcome") +
-  theme_minimal()
+       x = "Has Scholarship", y = "Proportion", fill = "Outcome")
 
 grid.arrange(p1, p2, ncol = 2)
 ```
@@ -365,7 +396,6 @@ ggplot(df, aes(x = Age.at.enrollment, fill = Target)) +
                                 "Graduate" = "#27AE60")) +
   labs(title = "Age Distribution by Student Outcome",
        x = "Age at Enrollment", y = "Density", fill = "Outcome") +
-  theme_minimal() +
   theme(legend.position = "bottom")
 ```
 
@@ -392,12 +422,12 @@ We employ six modeling techniques, each with distinct strengths:
 
 Each model addresses specific questions:
 
-1.  **Linear Regression:** How do student characteristics linearly predict second semester grades?
-2.  **GLM (Binomial):** What factors distinguish graduates from dropouts in probabilistic terms?
-3.  **GLM (Poisson):** What predicts the count of approved courses in each semester?
-4.  **GAM:** Are there non-linear relationships that traditional linear models miss?
-5.  **Neural Networks:** Can deep learning uncover hidden interaction patterns?
-6.  **SVM:** Can we build a robust classifier that maximizes the margin between success and failure?
+1.  **Linear Regression:** How do student characteristics linearly predict **second semester grades**?
+2.  **GLM (Binomial):** What factors distinguish **graduates from dropouts** in probabilistic terms?
+3.  **GLM (Poisson):** What predicts the **count of approved courses** in each semester?
+4.  **GAM:** Are there **non-linear relationships** that traditional linear models miss?
+5.  **Neural Networks:** Can **deep learning** uncover **hidden interaction patterns**?
+6.  **SVM:** Can we build a **robust classifier** that maximizes the margin between success and failure?
 
 ## 3.3 Evaluation Strategy
 
@@ -452,9 +482,9 @@ df_model <- df %>%
     filter(get(TARGET) > 0)
 ```
 
-After filtering missing values and excluding zero grades, the linear regression model uses **`r nrow(df_model)` students**. The target variable (**2nd semester grade**) has mean **`r round(mean(df_model[[TARGET]]), 2)`** and standard deviation **`r round(sd(df_model[[TARGET]]), 2)`**.
+After filtering missing values and excluding zero grades, the linear regression model uses **`r nrow(df_model)` students**. The target variable (**2nd semester grade**) has **mean** **`r round(mean(df_model[[TARGET]]), 2)`** and **standard deviation** **`r round(sd(df_model[[TARGET]]), 2)`**.
 
-The dataset is filtered to exclude students with zero grades, as these typically represent withdrawals or incomplete coursework rather than actual performance. This ensures our model focuses on predicting outcomes for actively enrolled students.
+The dataset is filtered to **exclude students with zero grades**, as these typically represent withdrawals or incomplete coursework rather than actual performance. This ensures our model focuses on **predicting outcomes for actively enrolled students**.
 
 ## 4.4 Exploratory Analysis
 
@@ -488,7 +518,7 @@ corrplot(correlation_matrix,
          mar = c(0, 0, 2, 0))
 ```
 
-**Key Observations:** Strong positive correlations are evident between first semester performance metrics and second semester grades, suggesting that prior academic success is highly predictive. This finding supports the importance of early intervention programs targeting first-semester students.
+**Key Observations:** Strong positive correlations are evident between **first semester performance metrics** and **second semester grades**, suggesting that prior academic success is highly predictive. This finding supports the importance of **early intervention programs** targeting first-semester students.
 
 ## 4.5 Model Development
 
@@ -765,7 +795,7 @@ knitr::kable(odds_table_adm, caption = "Top 10 admission predictors (log-odds an
 
 ## 5.3 Model 2: Predicting Graduation vs Dropout
 
-This is our most actionable model—identifying students **at risk of dropping out** enables **targeted interventions**.
+**This is our most actionable model**—identifying students **at risk of dropping out** enables **targeted interventions**.
 
 ### Data Preparation
 
@@ -803,7 +833,7 @@ df_success_model <- df_success %>%
 cat(sprintf("Binomial (Graduation) dataset: %d students\n", nrow(df_success_model)))
 ```
 
-For the business question (retention), we focus on a binary outcome: **Graduate (1)** vs **Dropout (0)**. After filtering and removing missing values, we model **`r nrow(df_success_model)`** students.
+For the business question (retention), we focus on a **binary outcome**: **Graduate (1)** vs **Dropout (0)**. After filtering and removing missing values, we model **`r nrow(df_success_model)`** students.
 
 ### Model Training
 
@@ -1447,7 +1477,458 @@ grid()
 
 # 8. Neural Network Analysis
 
-[Section to be completed by team member]
+We use neural networks as an **early warning system** to predict whether a student is at risk of **dropping out** (**Dropout vs NotDropout**) based on early academic performance and financial indicators. Here, **NotDropout** means the student is either **still enrolled** or has **graduated**. The goal is not only accuracy, but also **actionability**: the model should highlight which signals (grades, approved courses, tuition status) are most associated with dropout risk.
+
+## 8.1 Objective
+
+We want our neural network to play the role of an early-warning system: predict **Dropout vs NotDropout** by learning the messy, non-linear patterns hidden in the data.
+
+## 8.2 Feature Selection
+
+We focus on three feature blocks from the preprocessed dataset:
+
+1. **Early academic performance:** 1st- and 2nd-semester grades plus approved credits showed the highest F-values in our ANOVA screening during preprocessing, making them the strongest predictors of the target variable.
+2. **Financial pressure/support:** Tuition fees up to date, debtor status, and scholarship holder indicate whether financial stress may affect the student.
+3. **Entry profile:** Admission grade and age at enrollment provide baseline information about the student's starting point.
+
+## 8.3 Data Preprocessing for Neural Networks
+
+```{r nn-load-data, include=FALSE}
+# Create binary target: Dropout vs NotDropout (Enrolled + Graduate)
+df_nn <- df
+df_nn$Target <- ifelse(df_nn$Target == "Dropout", "Dropout", "NotDropout")
+df_nn$Target <- factor(df_nn$Target, levels = c("Dropout", "NotDropout"))
+
+# Selected features for neural network
+nn_features <- c(
+  "Curricular.units.1st.sem..approved.",
+  "Curricular.units.1st.sem..grade.",
+  "Curricular.units.2nd.sem..approved.",
+  "Curricular.units.2nd.sem..grade.",
+  "Tuition.fees.up.to.date",
+  "Scholarship.holder",
+  "Age.at.enrollment",
+  "Admission.grade",
+  "Debtor"
+)
+
+# Create modeling dataset
+nn_model_data <- df_nn %>%
+  select(all_of(nn_features), Target) %>%
+  na.omit()
+
+# Scaling (important for neural networks)
+numeric_cols <- sapply(nn_model_data, is.numeric)
+nn_model_data[, numeric_cols] <- scale(nn_model_data[, numeric_cols])
+```
+
+```{r nn-data-overview, fig.height=4, results="hide"}
+target_counts <- nn_model_data %>%
+  count(Target) %>%
+  mutate(Percent = n / sum(n) * 100)
+
+ggplot(target_counts, aes(x = Target, y = n, fill = Target)) +
+  geom_col(alpha = 0.85) +
+  geom_text(aes(label = paste0(n, " (", round(Percent, 1), "%)")), vjust = -0.3, size = 4) +
+  scale_fill_manual(values = c("Dropout" = "#E74C3C", "NotDropout" = "#27AE60")) +
+  labs(
+    title = "Target distribution in the neural network dataset",
+    x = NULL,
+    y = "Number of students"
+  ) +
+  theme(legend.position = "none")
+```
+
+This modeling subset contains **`r nrow(nn_model_data)`** students after removing missing values. The chart above shows the class balance.
+
+## 8.4 Train/Test Split
+
+```{r nn-train-test-split, results="hide"}
+set.seed(123)
+train_idx <- createDataPartition(nn_model_data$Target, p = 0.8, list = FALSE)
+train_nn <- nn_model_data[train_idx, ]
+test_nn <- nn_model_data[-train_idx, ]
+```
+
+We use an **80/20 split**: training = **`r nrow(train_nn)`**, test = **`r nrow(test_nn)`**.
+
+## 8.5 Model Training
+
+We train two neural networks to compare Lab 1 and Lab 2 approaches.
+
+### Model A: Single Hidden Layer (Lab 1 - nnet)
+
+Following `ANN_Lab1_GermanCredit_v1.Rmd`, we use `nnet` with one hidden layer and weight decay.
+
+```{r nn-train-model-A, results="hide"}
+# Model A: nnet with single hidden layer (Lab 1 style)
+model_A <- nnet(
+  Target ~ .,
+  data = train_nn,
+  size = 10,        # 10 hidden neurons in one layer
+  decay = 0.01,     # Weight decay: small penalty on large weights to prevent overfitting
+  maxit = 500,      # Maximum training iterations
+  trace = FALSE     # Suppress training progress output
+)
+```
+
+### Model B: Three Hidden Layers (Lab 2 - neuralnet)
+
+Following `ANN_Lab2_Iris_v1.Rmd`, we use `neuralnet` with a deeper architecture using **three hidden layers**. This requires numeric inputs and numeric output columns, so we build 0/1 columns for our binary target.
+
+In this run, Model B uses a **2-5-2** hidden-layer setup (2 neurons → 5 neurons → 2 neurons). We also set `threshold = 0.8` mainly to keep runtime manageable while we debug and iterate. A **larger** threshold usually stops earlier (faster), but it can also stop before the model has learned enough.
+
+```{r nn-train-model-B, results="hide"}
+# One-hot encode predictors for neuralnet (Lab 2 approach)
+dummies <- dummyVars(Target ~ ., data = train_nn)
+train_matrix <- as.data.frame(predict(dummies, newdata = train_nn))
+test_matrix <- as.data.frame(predict(dummies, newdata = test_nn))
+
+# Create dummy columns for binary target (neuralnet needs numeric output)
+train_matrix$Target_Dropout <- as.numeric(train_nn$Target == "Dropout")
+train_matrix$Target_NotDropout <- as.numeric(train_nn$Target == "NotDropout")
+
+# Build formula: output columns ~ input columns
+input_names <- names(train_matrix)[!grepl("Target", names(train_matrix))]
+output_names <- c("Target_Dropout", "Target_NotDropout")
+formula_B <- as.formula(paste(
+  paste(output_names, collapse = " + "), "~",
+  paste(input_names, collapse = " + ")
+))
+
+# Model B: neuralnet with three hidden layers (Lab 2 style)
+model_B <- neuralnet(
+  formula_B,
+  data = train_matrix,
+  hidden = c(2,5,2),   
+  linear.output = FALSE,
+  threshold = 0.8, 
+  stepmax = 3e5      # enough iterations without being too slow
+)
+```
+
+## 8.6 Model Evaluation
+
+We generate predictions and confusion matrices for both models.
+
+```{r nn-evaluate-both-models, results="hide"}
+# --- Model A predictions (nnet) ---
+pred_A_class <- predict(model_A, newdata = test_nn, type = "class")
+pred_A_class <- factor(pred_A_class, levels = levels(test_nn$Target))
+conf_matrix_A <- confusionMatrix(pred_A_class, test_nn$Target)
+
+# --- Model B predictions (neuralnet) ---
+# compute() runs the network on new data and returns raw output values
+# Must convert to matrix (neuralnet requires numeric matrix, not data.frame)
+pred_B_raw <- compute(model_B, as.matrix(test_matrix[, input_names]))$net.result
+# Pick the class with highest output value for each student
+pred_B_class <- factor(
+  c("Dropout", "NotDropout")[apply(pred_B_raw, 1, which.max)],
+  levels = c("Dropout", "NotDropout")
+)
+conf_matrix_B <- confusionMatrix(pred_B_class, test_nn$Target)
+```
+
+## 8.7 Performance Metrics Summary
+
+We report common classification metrics for both models. In the binary setting, we treat **Dropout** as the "positive" class (this matches the business goal of flagging students who may need support).
+
+```{r nn-performance-summary, results="hide"}
+nn_metrics_df <- tibble(
+  Model = c("Model A: nnet (1 hidden layer)", "Model B: neuralnet (3 hidden layers)"),
+  Accuracy = c(
+    as.numeric(conf_matrix_A$overall["Accuracy"]),
+    as.numeric(conf_matrix_B$overall["Accuracy"])
+  ),
+  Precision = c(
+    as.numeric(conf_matrix_A$byClass["Pos Pred Value"]),
+    as.numeric(conf_matrix_B$byClass["Pos Pred Value"])
+  ),
+  Recall = c(
+    as.numeric(conf_matrix_A$byClass["Sensitivity"]),
+    as.numeric(conf_matrix_B$byClass["Sensitivity"])
+  )
+)
+```
+
+```{r nn-performance-dashboard, fig.height=4, fig.width=12}
+nn_metrics_long <- nn_metrics_df %>%
+  pivot_longer(cols = c(Accuracy, Precision, Recall), names_to = "Metric", values_to = "Value") %>%
+  mutate(
+    Metric = recode(
+      Metric,
+      Accuracy = "Accuracy",
+      Precision = "Precision (Dropout)",
+      Recall = "Recall (Dropout)"
+    )
+  )
+
+ggplot(nn_metrics_long, aes(x = Metric, y = Value, fill = Model)) +
+  geom_col(position = position_dodge(width = 0.75), width = 0.65, alpha = 0.9) +
+  geom_text(
+    aes(label = sprintf("%.3f", Value)),
+    position = position_dodge(width = 0.75),
+    vjust = -0.4,
+    size = 4
+  ) +
+  scale_y_continuous(limits = c(0, 1), labels = scales::percent_format(accuracy = 1)) +
+  scale_fill_manual(values = c("#5DADE2", "#48C9B0")) +
+  labs(
+    title = "Neural network performance on the test set",
+    x = NULL,
+    y = "Score",
+    fill = "Model"
+  ) +
+  theme(legend.position = "top")
+```
+
+Model A (1 layer) still delivers the strongest result on the test set. The deeper Model B (hidden layers: 2-5-2) does not automatically outperform the simpler Model A. This mirrors the lecture message that more layers are not automatically better for structured tabular data.
+
+## 8.8 Confusion Matrix Comparison
+
+Side-by-side heatmaps comparing both models. X-axis (top) = Predicted, Y-axis = True labels.
+
+```{r nn-confusion-matrix-comparison, fig.width=12, fig.height=5}
+# Helper function to create confusion matrix plot
+nn_plot_confusion_matrix <- function(conf_matrix, title) {
+  cm_df <- as.data.frame(conf_matrix$table)
+  names(cm_df) <- c("Predicted", "True", "Count")
+  
+  ggplot(cm_df, aes(x = Predicted, y = True, fill = Count)) +
+    geom_tile(color = "white", linewidth = 1) +
+    geom_text(aes(label = Count), size = 5, fontface = "bold", color = "white") +
+    scale_fill_gradient(low = "#3498DB", high = "#E74C3C", name = "Count") +
+    scale_x_discrete(position = "top") +
+    scale_y_discrete(limits = rev(c("Dropout", "NotDropout"))) +
+    labs(title = title, x = "Predicted Class", y = "True Class") +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 13),
+      axis.text = element_text(size = 10),
+      legend.position = "right"
+    )
+}
+
+# Create plots for both models
+plot_A <- nn_plot_confusion_matrix(conf_matrix_A, "Model A: nnet (1 hidden layer)")
+plot_B <- nn_plot_confusion_matrix(conf_matrix_B, "Model B: neuralnet (3 hidden layers)")
+
+# Display side by side
+grid.arrange(plot_A, plot_B, ncol = 2)
+```
+
+## 8.9 ROC Curve Comparison
+
+We compare ROC curves for **Dropout** (Dropout vs NotDropout) across both models using `ROCR`.
+
+```{r nn-roc-comparison, results="hide"}
+# --- Model A ROC (nnet) ---
+prob_A <- predict(model_A, newdata = test_nn, type = "raw")
+
+# Safety: nnet with binary target outputs P(Class 2), which is NotDropout.
+# We need P(Dropout).
+if (is.null(dim(prob_A)) || ncol(prob_A) == 1) {
+  prob_A_drop <- 1 - as.numeric(prob_A)
+} else if ("Dropout" %in% colnames(prob_A)) {
+  prob_A_drop <- prob_A[, "Dropout"]
+} else {
+  prob_A_drop <- prob_A[, 1]
+}
+
+pred_A_drop <- ROCR::prediction(prob_A_drop, test_nn$Target == "Dropout")
+perf_A_drop <- ROCR::performance(pred_A_drop, "tpr", "fpr")
+auc_A <- round(ROCR::performance(pred_A_drop, "auc")@y.values[[1]], 3)
+
+# --- Model B ROC (neuralnet) ---
+if (is.null(dim(pred_B_raw))) {
+  prob_B_drop <- as.numeric(pred_B_raw)
+} else {
+  prob_B_drop <- pred_B_raw[, 1]
+}
+pred_B_drop <- ROCR::prediction(prob_B_drop, test_nn$Target == "Dropout")
+perf_B_drop <- ROCR::performance(pred_B_drop, "tpr", "fpr")
+auc_B <- round(ROCR::performance(pred_B_drop, "auc")@y.values[[1]], 3)
+```
+
+```{r nn-roc-comparison-plot, fig.height=4.5, fig.width=8}
+roc_A_df <- data.frame(
+  FPR = perf_A_drop@x.values[[1]],
+  TPR = perf_A_drop@y.values[[1]],
+  Model = sprintf("Model A (AUC=%.3f)", auc_A)
+)
+roc_B_df <- data.frame(
+  FPR = perf_B_drop@x.values[[1]],
+  TPR = perf_B_drop@y.values[[1]],
+  Model = sprintf("Model B (AUC=%.3f)", auc_B)
+)
+roc_df <- bind_rows(roc_A_df, roc_B_df)
+
+ggplot(roc_df, aes(x = FPR, y = TPR, color = Model)) +
+  geom_line(linewidth = 1.2) +
+  geom_abline(slope = 1, intercept = 0, linetype = 2, color = "gray50") +
+  scale_color_manual(values = c("#2ecc71", "#3498db")) +
+  labs(
+    title = "ROC curve (Dropout vs NotDropout)",
+    x = "False Positive Rate",
+    y = "True Positive Rate",
+    color = NULL
+  ) +
+  theme(legend.position = "bottom")
+```
+
+**AUC interpretation:** higher AUC means better separation of Dropout vs NotDropout. Here, Model A has AUC **`r auc_A`** and Model B has AUC **`r auc_B`**. But **the difference is minimal**.
+
+## 8.10 Feature Importance (Permutation)
+
+Permutation importance (same spirit as Lab 1's "what-if" checks) measures how much each *model's accuracy* drops when we randomly shuffle one predictor at a time. Bigger drops mean the learner *relied heavily on that feature*. It shows that **second semester grades are a very important factor**. It is interesting that at HSLU, we also feel like the **second semester is the hardest** and requires a lot of **effort and attention**.
+
+```{r nn-permutation-importance, message=FALSE, results="hide"}
+# Helper to compute accuracy drop for a single feature and model
+permute_feature <- function(model_type, var_name) {
+  permuted <- test_nn
+  permuted[[var_name]] <- sample(permuted[[var_name]])
+  
+  if (model_type == "Model A: nnet (1 layer)") {
+    baseline <- mean(predict(model_A, newdata = test_nn, type = "class") == test_nn$Target)
+    perm_acc <- mean(predict(model_A, newdata = permuted, type = "class") == test_nn$Target)
+  } else {
+    permuted_matrix <- as.data.frame(predict(dummies, newdata = permuted))
+    permuted_matrix[] <- lapply(permuted_matrix, as.numeric)
+    class_map <- c("Dropout", "NotDropout")
+    baseline <- mean(pred_B_class == test_nn$Target)
+    perm_raw <- compute(model_B, as.matrix(permuted_matrix[, input_names]))$net.result
+    perm_class <- factor(class_map[apply(perm_raw, 1, which.max)], levels = class_map)
+    perm_acc <- mean(perm_class == test_nn$Target)
+  }
+  
+  tibble(
+    Model = model_type,
+    Feature = var_name,
+    AccuracyDrop = baseline - perm_acc
+  )
+}
+
+perm_results <- map_dfr(
+  nn_features,
+  ~bind_rows(
+    permute_feature("Model A: nnet (1 layer)", .x),
+    permute_feature("Model B: neuralnet (3 layers)", .x)
+  )
+)
+
+# Friendlier labels for the plot
+feature_labels <- c(
+  "Curricular.units.1st.sem..approved." = "1st Sem Credits Approved",
+  "Curricular.units.1st.sem..grade." = "1st Sem Grade",
+  "Curricular.units.2nd.sem..approved." = "2nd Sem Credits Approved",
+  "Curricular.units.2nd.sem..grade." = "2nd Sem Grade",
+  "Tuition.fees.up.to.date" = "Tuition Fees Up to Date",
+  "Scholarship.holder" = "Scholarship Holder",
+  "Age.at.enrollment" = "Age at Enrollment",
+  "Admission.grade" = "Admission Grade",
+  "Debtor" = "Debtor Status"
+)
+
+perm_results <- perm_results %>%
+  mutate(Feature = recode(Feature, !!!feature_labels)) %>%
+  group_by(Model) %>%
+  mutate(Feature = fct_reorder(Feature, AccuracyDrop)) %>%
+  ungroup()
+
+ggplot(perm_results, aes(x = AccuracyDrop, y = Feature, fill = Model)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~Model, scales = "free_y") +
+  labs(
+    title = "Permutation Importance (Accuracy Drop when Shuffled)",
+    x = "Accuracy Drop",
+    y = "Feature"
+  ) +
+  scale_fill_manual(values = c("#5DADE2", "#48C9B0"))
+```
+
+```{r nn-permutation-importance-table, results="asis"}
+perm_top <- perm_results %>%
+  group_by(Model) %>%
+  slice_max(order_by = AccuracyDrop, n = 5, with_ties = FALSE) %>%
+  ungroup() %>%
+  mutate(AccuracyDropPctPoints = round(AccuracyDrop * 100, 2)) %>%
+  select(Model, Feature, AccuracyDropPctPoints)
+
+knitr::kable(
+  perm_top,
+  caption = "Top 5 permutation importances (how many accuracy percentage points we lose when we shuffle the feature)"
+)
+```
+
+## 8.11 Business Use: Early Warning and Intervention
+
+This neural network can be used as an **early warning system**:
+
+1. At the end of the 1st/2nd semester, we collect the same inputs (grades, approved units, tuition status, scholarship, debtor status).
+2. The model outputs a **dropout risk score** for each student (the model's predicted output/probability for the **Dropout** class).
+3. The university can then **target limited support resources** to students with the highest predicted risk.
+
+Examples of interventions (linked to our most important features):
+
+- **Academic performance signals (grades, approved units):** provide tutoring, mentoring, and early academic advising.
+- **Financial stress signals (tuition up to date, debtor):** proactive outreach about payment plans and financial aid options.
+- **Support signals (scholarship holder):** consider expanding support programs for similar students who are not currently covered.
+
+Important caution:
+
+- The model helps us **prioritize** students for support, but it should not be the only decision tool.
+- The safest process is to combine model predictions with human review (advisors) before taking action.
+
+## 8.12 Neural Network Architecture Visualization
+
+`NeuralNetTools::plotnet()` turns the fitted networks into diagrams that show layers, neurons, and connection strengths (thicker lines = larger absolute weights).
+
+```{r nn-visualization, fig.width=12, fig.height=6}
+short_labels <- c("1st\nCredits", "1st\nGrade", "2nd\nCredits", "2nd\nGrade",
+                  "Tuition\nOK", "Scholar", "Age", "Adm\nGrade", "Debtor")
+output_labels_B <- c("Dropout", "NotDropout")
+
+par(mfrow = c(1, 2), mar = c(2, 2, 2, 2))
+NeuralNetTools::plotnet(
+  model_A,
+  alpha = 0.7,
+  circle_col = list("steelblue", "skyblue"),
+  x_names = short_labels,
+  max_sp = TRUE,
+  cex_val = 0.9,
+  line_lwd = 0.8
+)
+NeuralNetTools::plotnet(
+  model_B,
+  alpha = 0.7,
+  circle_col = list("darkseagreen", "palegreen"),
+  x_names = short_labels,
+  y_names = output_labels_B,
+  max_sp = TRUE,
+  cex_val = 0.9,
+  line_lwd = 0.8
+)
+par(mfrow = c(1, 1))
+```
+
+## 8.13 Findings & Interpretation
+
+**Model A (nnet):** 9 inputs - 10 hidden neurons - 1 output (P(NotDropout)). **Simple, fast**, handles factors directly and reaches strong test performance.
+
+**Model B (neuralnet):** 9 inputs - 2 - 5 - 2 neurons - 2 outputs. Shows Lab 2's deeper setup but **does not automatically outperform the simpler Model A**.
+
+**Strengths observed:** Neural networks capture non-linear interaction between grades, tuition status, and scholarships.
+
+**Limitations observed:**
+
+- Deeper networks remain sensitive to hyperparameters and can overfit small samples.
+- Interpretability is limited compared to GLM/GAM coefficients.
+- Because we combine **Enrolled + Graduate** into **NotDropout**, this target cannot distinguish "still studying" from "already graduated". This is acceptable for an early-warning dropout use case, but it matters if the business question is specifically "who will graduate".
+
+## 8.14 Neural Network Conclusions
+
+1. Both neural networks predict **dropout risk** reasonably well, but the single hidden layer (Model A) provides the best balance of accuracy and stability on this dataset.
+2. Adding more layers (Model B: 2-5-2) does not automatically outperform the simpler architecture; this reinforces the lab insight that "deeper" is not automatically "better" for structured tabular data.
+3. Standard preprocessing steps (scaling numeric features, stratified train/test split) remain essential for consistent results.
 
 ------------------------------------------------------------------------
 
@@ -1491,7 +1972,7 @@ Across all models and outcome types, first semester performance emerged as the d
 -   **Multiple indicators matter**: Both grades and course completion rates predict future outcomes
 -   **Momentum effects exist**: Early success or struggle tends to compound over time
 
-**Recommendation**: Institutions should implement robust first-semester monitoring systems with automatic flagging of students whose performance falls below critical thresholds.
+**Recommendation**: Institutions should implement robust **first-semester monitoring systems** with automatic flagging of students whose performance falls below critical thresholds.
 
 ### 2. Non-Linear Relationships Matter
 
@@ -1501,7 +1982,7 @@ GAMs consistently outperformed their linear counterparts, revealing that relatio
 -   **Course load optima exist**: Sweet spots where students succeed; too few or too many courses both reduce performance
 -   **Grade thresholds matter**: The impact of improving grades varies dramatically depending on current performance level
 
-**Recommendation**: Use GAMs for risk prediction systems to capture these nuances and improve identification of at-risk students.
+**Recommendation**: Use **GAMs** for risk prediction systems to capture these nuances and improve identification of **at-risk students**.
 
 ### 3. Socioeconomic and Financial Factors
 
@@ -1511,7 +1992,7 @@ Several consistent patterns emerged:
 -   **Financial status**: Scholarship holders and students current on tuition show better outcomes
 -   **Economic context**: Macro-economic conditions show systematic but modest effects
 
-**Recommendation**: Financial aid programs appear justified by their positive impact on outcomes. Institutions should ensure financial barriers don't prevent student success.
+**Recommendation**: Financial aid programs appear justified by their positive impact on outcomes. Institutions should ensure **financial barriers don't prevent student success**.
 
 ### 4. Model Selection Guidelines
 
@@ -1529,26 +2010,26 @@ Several consistent patterns emerged:
 ## 11.1 For Academic Advisors
 
 1.  **First Semester Monitoring**: Flag students whose first semester grades fall below critical thresholds or who complete fewer than expected courses
-2.  **Course Load Guidance**: Use GAM-derived optimal ranges when advising students on semester enrollment
-3.  **Personalized Risk Assessment**: Apply graduation prediction models to identify students needing additional support
+2.  **Course Load Guidance**: Use **GAM-derived optimal ranges** when advising students on semester enrollment
+3.  **Personalized Risk Assessment**: Apply **graduation prediction models** to identify students needing additional support
 
 ## 11.2 For Financial Aid Offices
 
 1.  **Prioritize Retention**: Financial factors significantly impact outcomes—consider this when allocating aid
-2.  **Early Disbursement**: Ensure aid arrives before the first semester, when impact appears greatest
-3.  **Emergency Funds**: Maintain flexibility to address mid-semester financial crises that might derail students
+2.  **Early Disbursement**: Ensure aid arrives **before the first semester**, when impact appears greatest
+3.  **Emergency Funds**: Maintain flexibility to address **mid-semester financial crises** that might derail students
 
 ## 11.3 For Institutional Research
 
 1.  **Continuous Monitoring**: Update models annually as new cohorts graduate
-2.  **Intervention Evaluation**: Use holdout groups to assess whether interventions informed by these models actually improve outcomes
-3.  **Subgroup Analysis**: Examine whether model performance and predictor importance vary across demographic groups
+2.  **Intervention Evaluation**: Use **holdout groups** to assess whether interventions informed by these models actually improve outcomes
+3.  **Subgroup Analysis**: Examine whether model performance and predictor importance vary across **demographic groups**
 
 ## 11.4 For Policy Makers
 
 1.  **Economic Context Matters**: While individual factors dominate, macro-economic conditions show measurable effects on student success
-2.  **Early Intervention ROI**: The dominant role of first semester performance suggests early intervention programs offer high return on investment
-3.  **Holistic Support**: Success depends on academic preparation, financial stability, and family background—no single intervention suffices
+2.  **Early Intervention ROI**: The dominant role of first semester performance suggests early intervention programs offer **high return on investment**
+3.  **Holistic Support**: Success depends on academic preparation, financial stability, and family background—**no single intervention suffices**
 
 ------------------------------------------------------------------------
 
@@ -1563,11 +2044,10 @@ Several consistent patterns emerged:
 
 ## 12.2 Future Research Directions
 
-1.  **Incorporate Behavioral Data**: Integrate LMS usage, library access, tutoring center visits
-2.  **Text Analysis**: Mine course evaluations, advisor notes, application essays
-3.  **Temporal Models**: Use time-series approaches to model how trajectories evolve
-4.  **Causal Inference**: Apply methods like propensity score matching to estimate intervention effects
-5.  **Algorithmic Fairness**: Ensure models don't perpetuate or amplify existing inequities
+1.  **Add study-behavior data**: Add library visits, and tutoring center check-ins.
+2.  **Use text signals**: Look at course evaluations, advisor notes, or short essays for extra context.
+3.  **Track over time**: Try simple time-series approaches to see how risk changes semester by semester.
+5.  **Fairness checks**: Regularly test that the model isn’t reinforcing gaps between student groups.
 
 ------------------------------------------------------------------------
 
@@ -1575,24 +2055,19 @@ Several consistent patterns emerged:
 
 **Summary:** We successfully built and compared multiple machine learning models to predict student dropout risk. The analysis reveals that:
 
-1.  **First semester performance is the strongest predictor** across all models—early intervention is critical
-2.  **Non-linear relationships exist** and GAMs capture them better than traditional linear models
-3.  **Financial factors matter significantly**—scholarship programs and tuition payment flexibility can change trajectories
+1.  **First/second semester performance is the strongest predictor** across all models—early intervention is critical
+2.  **Non-linear relationships exist** and GAMs/neural network capture them better than traditional linear models
+3.  **Financial factors matter significantly**—scholarship programs and tuition payment flexibility can change outcomes
 4.  **Model accuracy ranges from 75-90%** depending on the prediction task, sufficient for operational deployment
 
 **Impact:** By implementing these models, institutions can:
 
--   Identify at-risk students with 80-90% accuracy
--   Allocate intervention resources efficiently
--   Improve graduation rates through data-driven strategies
+-   **Identify at-risk students with 75-90% accuracy**
+-   **Allocate intervention resources efficiently**
+-   **Improve graduation rates through data-driven strategies**
 
 **Final Thought:** Machine learning cannot prevent dropout alone, but it can guide **human interventions** to the right students at the right time. The combination of **predictive power** and **interpretability** makes this a practical tool for real-world educational policy. By moving from prediction to prevention—identifying **at-risk students early** and providing **targeted support**—we can transform educational outcomes and change lives.
 
 ------------------------------------------------------------------------
-
-# Appendix:
-
-```{r session-info, eval=FALSE, include=FALSE}
-```
 
 ------------------------------------------------------------------------
