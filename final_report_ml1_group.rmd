@@ -2397,6 +2397,7 @@ The high predictive performance achieved using only academic metrics suggests th
 
 This project demonstrates that machine learning methods can achieve strong predictive performance for student retention challenges using readily available academic data. More importantly, the models provide specific, actionable thresholds that translate statistical predictions into decision rules. By implementing the three immediate actions outlined above, student supervisors can establish a data-driven early warning system that identifies at-risk students with approximately 80% accuracy while maintaining low false alarm rates. The combination of predictive power and practical implementation guidance positions these findings for immediate deployment in higher education retention efforts.
 
+
 ## Generative AI Declaration & Guidelines
 
 Generative AI was used as a supplementary tool on top of the assisting material provided in the Machine Learning1 lecture.
