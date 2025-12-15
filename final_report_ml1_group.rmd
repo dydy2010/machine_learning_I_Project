@@ -29,6 +29,13 @@ header-includes:
       body {
         color: #222222;
       }
+      /* Compact chunk toggle buttons */
+      .btn.btn-default.btn-xs.code-folding-btn {
+        padding: 2px 6px;
+        font-size: 10px;
+        line-height: 1.1;
+        margin: 2px 0 4px 0;
+      }
     </style>
 ---
 
@@ -527,7 +534,7 @@ X_test_scaled <- predict(preProc, X_test)
 
 **Feature Scaling:** Standardization (**z-score normalization**) ensures all features contribute proportionally to the model regardless of their original scales.
 
-```{r linear-train, results="hide"}
+```{r linear-train, results="asis", echo=FALSE}
 train_data_scaled <- X_train_scaled
 train_data_scaled[[TARGET]] <- y_train
 
@@ -539,17 +546,30 @@ coef_summary <- data.frame(
   Feature = names(coef(model)),
   Coefficient = coef(model)
 )
-```
-
-```{r linear-coef-table, results="asis"}
 coef_table <- coef_summary %>%
   dplyr::filter(Feature != "(Intercept)") %>%
   dplyr::mutate(Abs_Coefficient = abs(Coefficient)) %>%
   dplyr::arrange(desc(Abs_Coefficient)) %>%
   dplyr::select(Feature, Coefficient) %>%
-  utils::head(10)
+  utils::head(3)
 
-knitr::kable(coef_table, caption = "Top 10 linear regression coefficients (by absolute value)")
+rownames(coef_table) <- NULL
+
+if (requireNamespace("kableExtra", quietly = TRUE)) {
+  knitr::kable(
+    coef_table,
+    caption = "Top 3 linear regression coefficients (by absolute value)",
+    align = c("l", "r")
+  ) %>%
+    kableExtra::kable_styling(full_width = FALSE) %>%
+    kableExtra::column_spec(1, bold = TRUE)
+} else {
+  knitr::kable(
+    coef_table,
+    caption = "Top 3 linear regression coefficients (by absolute value)",
+    align = c("l", "r")
+  )
+}
 ```
 
 ## 4.6 Model Performance
@@ -654,9 +674,9 @@ This S-shaped curve ensures predictions stay within valid probability bounds whi
 
 Understanding what characteristics lead to high admission scores helps institutions identify strong candidates and understand enrollment patterns.
 
-### Data Preparation
+### Binomial GLM Pre-processing: High vs Low Admission
 
-```{r binomial1-prep, results="hide"}
+```{r binomial1-all, results="hide", echo=FALSE}
 cat(sprintf("Admission.grade check | total=%d | non-NA=%d\n",
             length(df$Admission.grade), sum(!is.na(df$Admission.grade))))
 
@@ -690,11 +710,7 @@ if (nrow(df_admission) > 0) {
   cat("High_Admission distribution (count):\n")
   print(table(df_admission$High_Admission))
 }
-```
-
-We convert `Admission.grade` into a binary target (**High** vs **Low** admission) using the median cutoff (**`r round(median_admission, 2)`**). After removing missing values, we model **`r nrow(df_admission)`** students.
-
-```{r binomial1-split}
+### binomial1-split
 set.seed(42)
 train_index_adm <- createDataPartition(df_admission$High_Admission, p = 0.8, list = FALSE)
 train_adm <- df_admission[train_index_adm, ]
@@ -703,11 +719,8 @@ test_adm <- df_admission[-train_index_adm, ]
 preproc_adm <- preProcess(train_adm[, features_admission], method = c("center", "scale"))
 train_adm_scaled <- predict(preproc_adm, train_adm)
 test_adm_scaled <- predict(preproc_adm, test_adm)
-```
 
 ### Model Training
-
-```{r binomial1-train, results="hide"}
 glm_adm <- glm(High_Admission ~ .,
                data = train_adm_scaled,
                family = binomial(link = "logit"))
@@ -715,6 +728,8 @@ glm_adm <- glm(High_Admission ~ .,
 cat("Binomial GLM (Admission) summary:\n")
 print(summary(glm_adm))
 ```
+
+We convert `Admission.grade` into a binary target (**High** vs **Low** admission) using the median cutoff (**`r round(median_admission, 2)`**). After removing missing values, we model **`r nrow(df_admission)`** students.
 
 ### Model Performance
 
@@ -738,9 +753,25 @@ cm_adm_table <- as.data.frame(cm_adm$table)
 knitr::kable(cm_adm_table, caption = "Confusion matrix (High Admission vs Low Admission)")
 ```
 
+```{r binomial1-cm-plot, fig.width=4, fig.height=3, echo=FALSE}
+cm_plot_df <- as.data.frame(cm_adm$table)
+names(cm_plot_df) <- c("Prediction", "Reference", "Freq")
+cm_plot_df$Prediction <- factor(cm_plot_df$Prediction, levels = c("0", "1"))
+cm_plot_df$Reference <- factor(cm_plot_df$Reference, levels = c("0", "1"))
+
+ggplot(cm_plot_df, aes(x = Prediction, y = Reference, fill = Freq)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = Freq), size = 4, fontface = "bold") +
+  scale_fill_gradient(low = "#e0f7fa", high = "#00838f") +
+  labs(title = "Confusion Matrix: High vs Low Admission", x = "Predicted", y = "Actual") +
+  theme_minimal(base_size = 10) +
+  theme(legend.position = "none",
+        plot.title = element_text(size = 10, face = "bold", hjust = 0.5))
+```
+
 ### ROC Curve Analysis
 
-```{r binomial1-roc, fig.cap="ROC Curve - High Admission"}
+```{r binomial1-roc, fig.cap="ROC Curve - High Admission", fig.width=6.4, fig.height=4.8}
 roc_adm <- roc(test_adm_scaled$High_Admission, pred_adm_prob, quiet = TRUE)
 auc_adm <- auc(roc_adm)
 
@@ -1144,7 +1175,7 @@ The model structure: $Y = \beta_0 + f_1(X_1) + f_2(X_2) + ... + f_n(X_n) + \epsi
 
 ## 7.2 Model 1: Gaussian GAM for Grade Prediction
 
-```{r gam1-prep}
+```{r gam1-all, results="hide"}
 TARGET_GRADE <- 'Curricular.units.2nd.sem..grade.'
 
 features_grade <- c(
@@ -1165,16 +1196,12 @@ df_grade <- df %>%
   filter(!!sym(TARGET_GRADE) > 0)
 
 cat(sprintf("GAM (grade) dataset: %d students\n", nrow(df_grade)))
-```
 
-```{r gam1-split}
 set.seed(42)
 train_index_g <- createDataPartition(df_grade[[TARGET_GRADE]], p = 0.8, list = FALSE)
 train_g <- df_grade[train_index_g, ]
 test_g <- df_grade[-train_index_g, ]
-```
 
-```{r gam1-train, results="hide"}
 gam_grade <- gam(
   Curricular.units.2nd.sem..grade. ~
     s(Previous.qualification..grade., bs = "cr", k = 10) +
@@ -1191,9 +1218,7 @@ gam_grade <- gam(
 
 cat("GAM summary:\n")
 print(summary(gam_grade))
-```
 
-```{r gam1-eval, results="hide"}
 pred_test_g <- predict(gam_grade, test_g)
 
 test_r2_g <- cor(test_g[[TARGET_GRADE]], pred_test_g)^2
@@ -1362,7 +1387,7 @@ grid()
 
 ## 7.4 Model 3: Poisson GAM for Course Counts
 
-```{r gam3-prep}
+```{r gam3-all, results="hide", echo=FALSE}
 TARGET_COUNT <- 'Curricular.units.2nd.sem..approved.'
 
 features_count <- c(
@@ -1398,9 +1423,7 @@ gam_count <- gam(
   family = poisson(link = "log"),
   method = "REML"
 )
-```
 
-```{r gam3-eval, results="hide"}
 pred_test_c <- predict(gam_count, test_c, type = "response")
 
 test_rmse_c <- sqrt(mean((test_c[[TARGET_COUNT]] - pred_test_c)^2))
@@ -1409,11 +1432,7 @@ test_r2_c <- cor(test_c[[TARGET_COUNT]], pred_test_c)^2
 
 cat(sprintf("Test R²: %.4f | RMSE: %.4f | MAE: %.4f\n",
             test_r2_c, test_rmse_c, test_mae_c))
-```
 
-For course count prediction, the Poisson GAM achieves **R² = `r round(test_r2_c, 3)`** with **RMSE = `r round(test_rmse_c, 3)`** on the test set.
-
-```{r gam3-comparison, results="hide"}
 poisson_glm <- glm(Curricular.units.2nd.sem..approved. ~ .,
                    data = train_c, family = poisson)
 glm_pred_c <- predict(poisson_glm, test_c, type = "response")
@@ -1424,6 +1443,8 @@ cat(sprintf("GAM R²:          %.4f\n", test_r2_c))
 cat(sprintf("Poisson GLM R²:  %.4f\n", glm_r2_c))
 cat(sprintf("Improvement:     %.2f percentage points\n", (test_r2_c - glm_r2_c) * 100))
 ```
+
+For course count prediction, the Poisson GAM achieves **R² = `r round(test_r2_c, 3)`** with **RMSE = `r round(test_rmse_c, 3)`** on the test set.
 
 ### Course Load Dynamics
 
