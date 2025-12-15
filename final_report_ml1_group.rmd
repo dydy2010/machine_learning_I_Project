@@ -178,10 +178,10 @@ for (col in numeric_cols) {
   }
 }
 ```
+## 1.3 Feature Categories and detailed variables
 
-## 1.3 Variable Overview (Key Fields)
-
-To make the business case and model results easier to follow, the table below summarizes the most important variables used throughout the report.
+Our dataset includes **36 predictors** in the following categories: Demographic Information, Socioeconomic Factors, Academic Background, Academic Performance, Financial Indicators, and Macroeconomic Context.
+To make the business case and model results easier to follow, the table below summarizes the most important variables used.
 
 ```{r variable-overview-table, results="asis", echo=FALSE}
 variable_overview <- data.frame(
@@ -194,17 +194,9 @@ variable_overview <- data.frame(
     "Scholarship.holder",
     "Debtor",
     "Tuition.fees.up.to.date",
-    "Mother.s.qualification",
-    "Father.s.qualification",
     "Curricular.units.1st.sem..enrolled.",
     "Curricular.units.1st.sem..approved.",
-    "Curricular.units.1st.sem..grade.",
-    "Curricular.units.2nd.sem..enrolled.",
-    "Curricular.units.2nd.sem..approved.",
-    "Curricular.units.2nd.sem..grade.",
-    "Unemployment.rate",
-    "Inflation.rate",
-    "GDP"
+    "Curricular.units.1st.sem..grade."
   ),
   Meaning = c(
     "Student outcome (Dropout / Enrolled / Graduate)",
@@ -215,17 +207,9 @@ variable_overview <- data.frame(
     "Whether the student holds a scholarship (0/1)",
     "Whether the student is classified as a debtor (0/1)",
     "Whether tuition fees are paid up to date (0/1)",
-    "Mother's education level (categorical code)",
-    "Father's education level (categorical code)",
     "Number of courses the student enrolled in (1st semester)",
     "Number of courses successfully passed (1st semester)",
-    "Average grade in the 1st semester (0–20 scale)",
-    "Number of courses the student enrolled in (2nd semester)",
-    "Number of courses successfully passed (2nd semester)",
-    "Average grade in the 2nd semester (0–20 scale)",
-    "National unemployment rate at enrollment time",
-    "Inflation rate at enrollment time",
-    "GDP indicator at enrollment time"
+    "Average grade in the 1st semester (0–20 scale)"
   ),
   Type = c(
     "Categorical (3 classes)",
@@ -236,16 +220,8 @@ variable_overview <- data.frame(
     "Binary (0/1)",
     "Binary (0/1)",
     "Binary (0/1)",
-    "Ordinal/categorical code",
-    "Ordinal/categorical code",
     "Count",
     "Count",
-    "Numeric",
-    "Count",
-    "Count",
-    "Numeric",
-    "Numeric",
-    "Numeric",
     "Numeric"
   ),
   stringsAsFactors = FALSE
@@ -271,21 +247,6 @@ if (requireNamespace("kableExtra", quietly = TRUE)) {
 }
 ```
 
-## 1.4 Feature Categories and Data Suitability
-
-Our dataset includes **36 predictors**, providing a rich set of variables for analysis:
-
-**1. Demographic Information:** Age at enrollment, gender, nationality, marital status
-
-**2. Socioeconomic Factors:** Parents' occupation and education levels, scholarship holder status
-
-**3. Academic Background:** Previous qualifications and grades, admission grade
-
-**4. Academic Performance:** Semester-by-semester grades, enrolled credits, completed evaluations, approved courses
-
-**5. Financial Indicators:** Tuition fee payment status, debtor status
-
-**6. Macroeconomic Context:** Unemployment rate, inflation rate, GDP at time of enrollment
 
 ### Why This Dataset Works for Our Analysis
 
