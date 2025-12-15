@@ -183,7 +183,7 @@ for (col in numeric_cols) {
 
 To make the business case and model results easier to follow, the table below summarizes the most important variables used throughout the report.
 
-```{r variable-overview-table, results="asis"}
+```{r variable-overview-table, results="asis", echo=FALSE}
 variable_overview <- data.frame(
   Variable = c(
     "Target",
@@ -250,8 +250,25 @@ variable_overview <- data.frame(
   ),
   stringsAsFactors = FALSE
 )
+rownames(variable_overview) <- NULL
 
-knitr::kable(variable_overview, caption = "Key dataset variables used in this report")
+# Use kableExtra if available; otherwise fall back to plain kable
+if (requireNamespace("kableExtra", quietly = TRUE)) {
+  knitr::kable(
+    variable_overview,
+    caption = "Key dataset variables (collapsed view)"
+  ) %>%
+    kableExtra::kable_styling(font_size = 10, bootstrap_options = c("striped")) %>%
+    kableExtra::column_spec(1, bold = TRUE, width = "12em") %>%
+    kableExtra::column_spec(2, width = "18em") %>%
+    kableExtra::column_spec(3, width = "10em")
+} else {
+  knitr::kable(
+    variable_overview,
+    caption = "Key dataset variables (collapsed view)",
+    align = c("l", "l", "c")
+  )
+}
 ```
 
 ## 1.4 Feature Categories and Data Suitability
@@ -1578,7 +1595,7 @@ Following `ANN_Lab2_Iris_v1.Rmd`, we use `neuralnet` with a deeper architecture 
 
 In this run, Model B uses a **2-5-2** hidden-layer setup (2 neurons → 5 neurons → 2 neurons). We also set `threshold = 0.8` mainly to keep runtime manageable while we debug and iterate. A **larger** threshold usually stops earlier (faster), but it can also stop before the model has learned enough.
 
-```{r nn-train-model-B, results="hide"}
+```{r nn-train-model-B, results="hide", cache=TRUE}
 # One-hot encode predictors for neuralnet (Lab 2 approach)
 dummies <- dummyVars(Target ~ ., data = train_nn)
 train_matrix <- as.data.frame(predict(dummies, newdata = train_nn))

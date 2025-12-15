@@ -2990,189 +2990,121 @@ training.</p>
 <p>To make the business case and model results easier to follow, the
 table below summarizes the most important variables used throughout the
 report.</p>
-<pre class="r"><code>variable_overview &lt;- data.frame(
-  Variable = c(
-    &quot;Target&quot;,
-    &quot;Admission.grade&quot;,
-    &quot;Previous.qualification..grade.&quot;,
-    &quot;Age.at.enrollment&quot;,
-    &quot;Gender&quot;,
-    &quot;Scholarship.holder&quot;,
-    &quot;Debtor&quot;,
-    &quot;Tuition.fees.up.to.date&quot;,
-    &quot;Mother.s.qualification&quot;,
-    &quot;Father.s.qualification&quot;,
-    &quot;Curricular.units.1st.sem..enrolled.&quot;,
-    &quot;Curricular.units.1st.sem..approved.&quot;,
-    &quot;Curricular.units.1st.sem..grade.&quot;,
-    &quot;Curricular.units.2nd.sem..enrolled.&quot;,
-    &quot;Curricular.units.2nd.sem..approved.&quot;,
-    &quot;Curricular.units.2nd.sem..grade.&quot;,
-    &quot;Unemployment.rate&quot;,
-    &quot;Inflation.rate&quot;,
-    &quot;GDP&quot;
-  ),
-  Meaning = c(
-    &quot;Student outcome (Dropout / Enrolled / Graduate)&quot;,
-    &quot;Admission exam/entry score used for program entry&quot;,
-    &quot;Grade from the previous qualification (prior education)&quot;,
-    &quot;Student age when enrolling in the program&quot;,
-    &quot;Student gender (coded numerically in the dataset)&quot;,
-    &quot;Whether the student holds a scholarship (0/1)&quot;,
-    &quot;Whether the student is classified as a debtor (0/1)&quot;,
-    &quot;Whether tuition fees are paid up to date (0/1)&quot;,
-    &quot;Mother&#39;s education level (categorical code)&quot;,
-    &quot;Father&#39;s education level (categorical code)&quot;,
-    &quot;Number of courses the student enrolled in (1st semester)&quot;,
-    &quot;Number of courses successfully passed (1st semester)&quot;,
-    &quot;Average grade in the 1st semester (0–20 scale)&quot;,
-    &quot;Number of courses the student enrolled in (2nd semester)&quot;,
-    &quot;Number of courses successfully passed (2nd semester)&quot;,
-    &quot;Average grade in the 2nd semester (0–20 scale)&quot;,
-    &quot;National unemployment rate at enrollment time&quot;,
-    &quot;Inflation rate at enrollment time&quot;,
-    &quot;GDP indicator at enrollment time&quot;
-  ),
-  Type = c(
-    &quot;Categorical (3 classes)&quot;,
-    &quot;Numeric&quot;,
-    &quot;Numeric&quot;,
-    &quot;Numeric&quot;,
-    &quot;Categorical (coded)&quot;,
-    &quot;Binary (0/1)&quot;,
-    &quot;Binary (0/1)&quot;,
-    &quot;Binary (0/1)&quot;,
-    &quot;Ordinal/categorical code&quot;,
-    &quot;Ordinal/categorical code&quot;,
-    &quot;Count&quot;,
-    &quot;Count&quot;,
-    &quot;Numeric&quot;,
-    &quot;Count&quot;,
-    &quot;Count&quot;,
-    &quot;Numeric&quot;,
-    &quot;Numeric&quot;,
-    &quot;Numeric&quot;,
-    &quot;Numeric&quot;
-  ),
-  stringsAsFactors = FALSE
-)
-
-knitr::kable(variable_overview, caption = &quot;Key dataset variables used in this report&quot;)</code></pre>
 <table>
-<caption>Key dataset variables used in this report</caption>
+<caption>Key dataset variables (collapsed view)</caption>
 <colgroup>
 <col width="30%" />
-<col width="48%" />
+<col width="47%" />
 <col width="21%" />
 </colgroup>
 <thead>
 <tr class="header">
 <th align="left">Variable</th>
 <th align="left">Meaning</th>
-<th align="left">Type</th>
+<th align="center">Type</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td align="left">Target</td>
 <td align="left">Student outcome (Dropout / Enrolled / Graduate)</td>
-<td align="left">Categorical (3 classes)</td>
+<td align="center">Categorical (3 classes)</td>
 </tr>
 <tr class="even">
 <td align="left">Admission.grade</td>
 <td align="left">Admission exam/entry score used for program entry</td>
-<td align="left">Numeric</td>
+<td align="center">Numeric</td>
 </tr>
 <tr class="odd">
 <td align="left">Previous.qualification..grade.</td>
 <td align="left">Grade from the previous qualification (prior
 education)</td>
-<td align="left">Numeric</td>
+<td align="center">Numeric</td>
 </tr>
 <tr class="even">
 <td align="left">Age.at.enrollment</td>
 <td align="left">Student age when enrolling in the program</td>
-<td align="left">Numeric</td>
+<td align="center">Numeric</td>
 </tr>
 <tr class="odd">
 <td align="left">Gender</td>
 <td align="left">Student gender (coded numerically in the dataset)</td>
-<td align="left">Categorical (coded)</td>
+<td align="center">Categorical (coded)</td>
 </tr>
 <tr class="even">
 <td align="left">Scholarship.holder</td>
 <td align="left">Whether the student holds a scholarship (0/1)</td>
-<td align="left">Binary (0/1)</td>
+<td align="center">Binary (0/1)</td>
 </tr>
 <tr class="odd">
 <td align="left">Debtor</td>
 <td align="left">Whether the student is classified as a debtor
 (0/1)</td>
-<td align="left">Binary (0/1)</td>
+<td align="center">Binary (0/1)</td>
 </tr>
 <tr class="even">
 <td align="left">Tuition.fees.up.to.date</td>
 <td align="left">Whether tuition fees are paid up to date (0/1)</td>
-<td align="left">Binary (0/1)</td>
+<td align="center">Binary (0/1)</td>
 </tr>
 <tr class="odd">
 <td align="left">Mother.s.qualification</td>
 <td align="left">Mother’s education level (categorical code)</td>
-<td align="left">Ordinal/categorical code</td>
+<td align="center">Ordinal/categorical code</td>
 </tr>
 <tr class="even">
 <td align="left">Father.s.qualification</td>
 <td align="left">Father’s education level (categorical code)</td>
-<td align="left">Ordinal/categorical code</td>
+<td align="center">Ordinal/categorical code</td>
 </tr>
 <tr class="odd">
 <td align="left">Curricular.units.1st.sem..enrolled.</td>
 <td align="left">Number of courses the student enrolled in (1st
 semester)</td>
-<td align="left">Count</td>
+<td align="center">Count</td>
 </tr>
 <tr class="even">
 <td align="left">Curricular.units.1st.sem..approved.</td>
 <td align="left">Number of courses successfully passed (1st
 semester)</td>
-<td align="left">Count</td>
+<td align="center">Count</td>
 </tr>
 <tr class="odd">
 <td align="left">Curricular.units.1st.sem..grade.</td>
 <td align="left">Average grade in the 1st semester (0–20 scale)</td>
-<td align="left">Numeric</td>
+<td align="center">Numeric</td>
 </tr>
 <tr class="even">
 <td align="left">Curricular.units.2nd.sem..enrolled.</td>
 <td align="left">Number of courses the student enrolled in (2nd
 semester)</td>
-<td align="left">Count</td>
+<td align="center">Count</td>
 </tr>
 <tr class="odd">
 <td align="left">Curricular.units.2nd.sem..approved.</td>
 <td align="left">Number of courses successfully passed (2nd
 semester)</td>
-<td align="left">Count</td>
+<td align="center">Count</td>
 </tr>
 <tr class="even">
 <td align="left">Curricular.units.2nd.sem..grade.</td>
 <td align="left">Average grade in the 2nd semester (0–20 scale)</td>
-<td align="left">Numeric</td>
+<td align="center">Numeric</td>
 </tr>
 <tr class="odd">
 <td align="left">Unemployment.rate</td>
 <td align="left">National unemployment rate at enrollment time</td>
-<td align="left">Numeric</td>
+<td align="center">Numeric</td>
 </tr>
 <tr class="even">
 <td align="left">Inflation.rate</td>
 <td align="left">Inflation rate at enrollment time</td>
-<td align="left">Numeric</td>
+<td align="center">Numeric</td>
 </tr>
 <tr class="odd">
 <td align="left">GDP</td>
 <td align="left">GDP indicator at enrollment time</td>
-<td align="left">Numeric</td>
+<td align="center">Numeric</td>
 </tr>
 </tbody>
 </table>
