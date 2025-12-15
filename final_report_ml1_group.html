@@ -11,7 +11,7 @@
 
 <meta name="author" content="Dongyuan Gao, Ramiro, Cyriel" />
 
-<meta name="date" content="2025-12-14" />
+<meta name="date" content="2025-12-15" />
 
 <title>Predicting Student Success: A Multi-Model Machine Learning Approach</title>
 
@@ -2860,31 +2860,32 @@ border-radius: 0px;
 Machine Learning Approach</h1>
 <h3 class="subtitle">Early Warning System for Student Dropout Risk</h3>
 <h4 class="author">Dongyuan Gao, Ramiro, Cyriel</h4>
-<h4 class="date">2025-12-14</h4>
+<h4 class="date">2025-12-15</h4>
 
 </div>
 
 
 <div id="summary" class="section level1">
 <h1>Summary</h1>
-<p><strong>Problem Statement/Our Storyline:</strong> Higher education
-institutions face significant challenges with <strong>student
-drop-outs</strong>. A fictional university has engaged our education
-consulting firm to diagnose why students drop out. The university wants
-to <strong>understand and improve academic performance</strong>, and
-design <strong>interventions</strong> that reduce failed academic lives.
+<p><strong>Our Storyline:</strong> Higher education institutions face
+significant challenges with <strong>student drop-outs</strong>. A
+fictional university has engaged our education consulting firm to
+diagnose why students drop out. The university wants to
+<strong>understand and improve academic performance</strong>, and design
+<strong>interventions</strong> that reduce failed academic lives.
 Understanding which students are <strong>at risk of dropping
 out</strong>, and timely support that can change academic and life
 trajectories.</p>
 <p><strong>Our Data:</strong> We have chosen a real case dataset from
 <strong>University of California, Irvine (UCI)</strong>, to simulate the
-fictional case.</p>
+fictional case. We found the dataset because the data repository website
+appeared once in our Machine Learning 1 lecture.</p>
 <p><strong>Our Approach:</strong> We analyzed <strong>4,424
 students</strong> from a Portuguese higher education institution using
-<strong>six</strong> complementary machine learning techniques to
-predict student outcomes (<strong>Dropout</strong>,
-<strong>Enrolled</strong>, <strong>Graduate</strong>) and
-<strong>understand the factors that drive academic success</strong>.</p>
+<strong>six</strong> machine learning models to predict student outcomes
+(<strong>Dropout</strong>, <strong>Enrolled</strong>,
+<strong>Graduate</strong>) and <strong>understand the factors that drive
+academic success</strong>.</p>
 <div id="key-findings" class="section level2">
 <h2>Key Findings:</h2>
 <ul>
@@ -2954,7 +2955,8 @@ our goal</strong> of getting familiarized with machine learning concepts
 and practices while producing a solid report as our first attempt in the
 ML world. While the other two datasets were interesting to explore,
 their structure, diversity, and scope did not suit our learning
-objectives as well as the student success dataset.</p>
+objectives as well as the student success dataset. We didn’t read any
+papers related to the dataset online while doing the project.</p>
 </div>
 <div id="dataset-characteristics" class="section level3">
 <h3>Dataset Characteristics</h3>
@@ -2963,16 +2965,17 @@ Students’ Dropout and Academic Success<br />
 <strong>Institution:</strong> Portuguese higher education
 institution<br />
 <strong>Time Period:</strong> Multiple academic years<br />
-<strong>Sample Size:</strong> 4,424 students across 37 variables</p>
+<strong>Sample Size:</strong> 4,424 students with 37 variables (e.g.,
+age, 1st-semester grades, credits completed)</p>
 <p>The dataset provides a comprehensive view of student characteristics
 and outcomes, making it well-suited for applying multiple machine
-learning techniques.</p>
+learning models.</p>
 <p><strong>Target Variable (3 factors):</strong></p>
 <ul>
 <li><strong>Dropout:</strong> Students who left the program (1,421
 students, 32%)</li>
 <li><strong>Enrolled:</strong> Students currently continuing (794
-students, 18%)</li>
+students, 18%), in some models counted as binary ‘not-dropout’.</li>
 <li><strong>Graduate:</strong> Students who completed successfully
 (2,209 students, 50%)</li>
 </ul>
@@ -5444,7 +5447,6 @@ to plot our model.</p>
 <caption>Top 5 Features by F-statistic</caption>
 <thead>
 <tr class="header">
-<th align="left"></th>
 <th align="left">Feature</th>
 <th align="right">F_value</th>
 <th align="left">p_value</th>
@@ -5452,31 +5454,26 @@ to plot our model.</p>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">31</td>
 <td align="left">Curricular.units.2nd.sem..approved.</td>
 <td align="right">2711.44</td>
 <td align="left">0.000</td>
 </tr>
 <tr class="even">
-<td align="left">32</td>
 <td align="left">Curricular.units.2nd.sem..grade.</td>
 <td align="right">2098.45</td>
 <td align="left">0.000</td>
 </tr>
 <tr class="odd">
-<td align="left">25</td>
 <td align="left">Curricular.units.1st.sem..approved.</td>
 <td align="right">1613.96</td>
 <td align="left">0.000</td>
 </tr>
 <tr class="even">
-<td align="left">26</td>
 <td align="left">Curricular.units.1st.sem..grade.</td>
 <td align="right">1344.07</td>
 <td align="left">0.000</td>
 </tr>
 <tr class="odd">
-<td align="left">17</td>
 <td align="left">Tuition.fees.up.to.date</td>
 <td align="right">881.55</td>
 <td align="left">0.000</td>
@@ -5615,29 +5612,24 @@ performance across both prediction categories.</p>
 <caption>Linear Kernel - Performance Metrics</caption>
 <thead>
 <tr class="header">
-<th align="left"></th>
 <th align="center">Metric</th>
 <th align="center">Value</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">Accuracy</td>
 <td align="center">Accuracy</td>
 <td align="center">0.8745</td>
 </tr>
 <tr class="even">
-<td align="left">Sensitivity</td>
 <td align="center">Sensitivity</td>
 <td align="center">0.7676</td>
 </tr>
 <tr class="odd">
-<td align="left">Specificity</td>
 <td align="center">Specificity</td>
 <td align="center">0.9433</td>
 </tr>
 <tr class="even">
-<td align="left">Kappa</td>
 <td align="center">Kappa</td>
 <td align="center">0.7297</td>
 </tr>
@@ -5690,29 +5682,24 @@ better detection of students at risk of dropping out.</p>
 <caption>Radial Kernel - Performance Metrics</caption>
 <thead>
 <tr class="header">
-<th align="left"></th>
 <th align="center">Metric</th>
 <th align="center">Value</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">Accuracy</td>
 <td align="center">Accuracy</td>
 <td align="center">0.8772</td>
 </tr>
 <tr class="even">
-<td align="left">Sensitivity</td>
 <td align="center">Sensitivity</td>
 <td align="center">0.7746</td>
 </tr>
 <tr class="odd">
-<td align="left">Specificity</td>
 <td align="center">Specificity</td>
 <td align="center">0.9433</td>
 </tr>
 <tr class="even">
-<td align="left">Kappa</td>
 <td align="center">Kappa</td>
 <td align="center">0.7359</td>
 </tr>
@@ -5756,29 +5743,24 @@ relationship between the features may be linear.</p>
 <caption>Polynomial Kernel - Performance Metrics</caption>
 <thead>
 <tr class="header">
-<th align="left"></th>
 <th align="center">Metric</th>
 <th align="center">Value</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">Accuracy</td>
 <td align="center">Accuracy</td>
 <td align="center">0.8414</td>
 </tr>
 <tr class="even">
-<td align="left">Sensitivity</td>
 <td align="center">Sensitivity</td>
 <td align="center">0.6549</td>
 </tr>
 <tr class="odd">
-<td align="left">Specificity</td>
 <td align="center">Specificity</td>
 <td align="center">0.9615</td>
 </tr>
 <tr class="even">
-<td align="left">Kappa</td>
 <td align="center">Kappa</td>
 <td align="center">0.6493</td>
 </tr>
@@ -6124,8 +6106,53 @@ makes this a practical tool for real-world educational policy. By moving
 from prediction to prevention—identifying <strong>at-risk students
 early</strong> and providing <strong>targeted support</strong>—we can
 transform educational outcomes and change lives.</p>
+<div id="generative-ai-declaration-guidelines" class="section level2">
+<h2>Generative AI Declaration &amp; Guidelines</h2>
+<p>Generative AI was used as a supplementary tool on top of the
+assisting material provided in the Machine Learning1 lecture.</p>
+<div id="guidelines-for-responsible-and-effective-usage-of-gen-ai" class="section level3">
+<h3>Guidelines for Responsible and Effective Usage of Gen-AI</h3>
+<ol style="list-style-type: decimal">
+<li><strong>Human-in-the-loop verification:</strong> All AI-suggested
+content was treated as a draft. Text, code, or sources delivered by AI
+had to be critically reviewed and tested before inclusion.</li>
+<li><strong>Emphasis on learning:</strong> Gen-AI functioned as a
+learning companion rather than an automated code generator. After
+receiving suggestions, team members engaged in follow-up questions to
+grasp the underlying logic and method.</li>
+<li><strong>Transparency:</strong> The team openly acknowledged where
+and how AI was used in the workflow so the benefits and quality
+safeguards remained clear.</li>
+</ol>
+</div>
+<div id="use-cases-of-ai-tools-in-the-dbm-course-context" class="section level3">
+<h3>Use Cases of AI Tools in the DBM Course Context</h3>
+<p>AI-based assistants were applied in the following specific cases: 1.
+<strong>Brainstorming:</strong> Elaborating initial ideas, structuring
+thoughts, and outlining coding approaches. 2. <strong>Debugging &amp;
+optimization:</strong> Explaining error messages and helping improve
+self-developed scripts to raise efficiency. 3.
+<strong>Proofreading:</strong> Accelerating grammar and typo checks
+during documentation. 4. <strong>Information acquisition:</strong>
+Searching for methodological references or code documentation for R
+Markdown, or machine learning methods (always followed by human
+verification of credibility).</p>
+</div>
+<div id="benefits-and-challenges-in-using-generative-ai-tools" class="section level3">
+<h3>Benefits and Challenges in Using Generative AI Tools</h3>
+<ol style="list-style-type: decimal">
+<li><strong>Benefits:</strong> Faster debugging (e.g., resolving R
+Markdown knitting errors or debugging issues), on-demand tutoring for
+advanced questions, and more time spent on analytical reasoning instead
+of routine fixes.</li>
+<li><h2 id="challenges-the-ease-of-getting-answers-can-create-a-temptation-to-trust-outputs-blindly.-the-human-in-the-loop-guideline-ensured-the-team-retained-ownership-validating-every-ai-assisted-contribution."><strong>Challenges:</strong>
+The ease of getting answers can create a temptation to trust outputs
+blindly. The “human-in-the-loop” guideline ensured the team retained
+ownership, validating every AI-assisted contribution.</h2></li>
+</ol>
 <hr />
-<hr />
+</div>
+</div>
 </div>
 
 

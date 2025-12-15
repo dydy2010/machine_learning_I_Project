@@ -98,11 +98,11 @@ options(warn = -1)
 
 # Summary
 
-**Problem Statement/Our Storyline:** Higher education institutions face significant challenges with **student drop-outs**. A fictional university has engaged our education consulting firm to diagnose why students drop out. The university wants to **understand and improve academic performance**, and design **interventions** that reduce failed academic lives. Understanding which students are **at risk of dropping out**, and timely support that can change academic and life trajectories.
+**Our Storyline:** Higher education institutions face significant challenges with **student drop-outs**. A fictional university has engaged our education consulting firm to diagnose why students drop out. The university wants to **understand and improve academic performance**, and design **interventions** that reduce failed academic lives. Understanding which students are **at risk of dropping out**, and timely support that can change academic and life trajectories.
 
-**Our Data:** We have chosen a real case dataset from **University of California, Irvine (UCI)**, to simulate the fictional case.
+**Our Data:** We have chosen a real case dataset from **University of California, Irvine (UCI)**, to simulate the fictional case. We found the dataset because the data repository website appeared once in our Machine Learning 1 lecture.
 
-**Our Approach:** We analyzed **4,424 students** from a Portuguese higher education institution using **six** complementary machine learning techniques to predict student outcomes (**Dropout**, **Enrolled**, **Graduate**) and **understand the factors that drive academic success**.
+**Our Approach:** We analyzed **4,424 students** from a Portuguese higher education institution using **six** machine learning models to predict student outcomes (**Dropout**, **Enrolled**, **Graduate**) and **understand the factors that drive academic success**.
 
 ## Key Findings:
 
@@ -141,21 +141,21 @@ Our goal for this project is to deliver a solid report while using it as an oppo
 
 We considered three main options. First, the Social Media Fact Sheet from PEW Research Center, which would have allowed us to analyze social media usage patterns. Second, medical quality service data in Switzerland from the Federal Office of Public Health (available through opendata.swiss). Third, student data for predicting dropout and academic success from the UC Irvine Machine Learning Repository.
 
-After careful consideration, we chose the third option from the UC Irvine repository. The **data structure and scope align well with our goal** of getting familiarized with machine learning concepts and practices while producing a solid report as our first attempt in the ML world. While the other two datasets were interesting to explore, their structure, diversity, and scope did not suit our learning objectives as well as the student success dataset.
+After careful consideration, we chose the third option from the UC Irvine repository. The **data structure and scope align well with our goal** of getting familiarized with machine learning concepts and practices while producing a solid report as our first attempt in the ML world. While the other two datasets were interesting to explore, their structure, diversity, and scope did not suit our learning objectives as well as the student success dataset. We didn't read any papers related to the dataset online while doing the project.
 
 ### Dataset Characteristics
 
 **Source:** UCI Machine Learning Repository - Predict Students' Dropout and Academic Success\
 **Institution:** Portuguese higher education institution\
 **Time Period:** Multiple academic years\
-**Sample Size:** 4,424 students across 37 variables
+**Sample Size:** 4,424 students with 37 variables (e.g., age, 1st-semester grades, credits completed)
 
-The dataset provides a comprehensive view of student characteristics and outcomes, making it well-suited for applying multiple machine learning techniques.
+The dataset provides a comprehensive view of student characteristics and outcomes, making it well-suited for applying multiple machine learning models.
 
 **Target Variable (3 factors):**
 
 -   **Dropout:** Students who left the program (1,421 students, 32%)
--   **Enrolled:** Students currently continuing (794 students, 18%)
+-   **Enrolled:** Students currently continuing (794 students, 18%), in some models counted as binary 'not-dropout'.
 -   **Graduate:** Students who completed successfully (2,209 students, 50%)
 
 The distribution shows a balanced dataset with a slight majority of graduates. It reflects the institution's overall success rate and provides sufficient samples across all outcome categories for model training.
@@ -1986,6 +1986,7 @@ for (feat in features) {
 }
 
 results <- results[order(-results$F_value), ]
+rownames(results) <- NULL
 knitr::kable(head(results, 5), caption = "Top 5 Features by F-statistic")
 ```
 
@@ -2126,6 +2127,7 @@ metrics_linear <- data.frame(
     round(cm_linear$overall['Kappa'], 4)
   )
 )
+rownames(metrics_linear) <- NULL
 
 knitr::kable(metrics_linear, 
              caption = "Linear Kernel - Performance Metrics",
@@ -2183,6 +2185,7 @@ metrics_radial <- data.frame(
     round(cm_radial$overall['Kappa'], 4)
   )
 )
+rownames(metrics_radial) <- NULL
 
 knitr::kable(metrics_radial, 
              caption = "Radial Kernel - Performance Metrics",
@@ -2209,6 +2212,7 @@ metrics_poly <- data.frame(
     round(cm_poly$overall['Kappa'], 4)
   )
 )
+rownames(metrics_poly) <- NULL
 
 knitr::kable(metrics_poly, 
              caption = "Polynomial Kernel - Performance Metrics",
@@ -2252,6 +2256,7 @@ comparison_results <- data.frame(
                cm_radial$overall['Accuracy'],
                cm_poly$overall['Accuracy'])
 )
+rownames(comparison_results) <- NULL
 
 knitr::kable(comparison_results, digits = 3, caption = "Model Accuracy Comparison")
 
@@ -2394,6 +2399,25 @@ Several consistent patterns emerged:
 
 **Final Thought:** Machine learning cannot prevent dropout alone, but it can guide **human interventions** to the right students at the right time. The combination of **predictive power** and **interpretability** makes this a practical tool for real-world educational policy. By moving from prediction to prevention—identifying **at-risk students early** and providing **targeted support**—we can transform educational outcomes and change lives.
 
+## Generative AI Declaration & Guidelines
+
+Generative AI was used as a supplementary tool on top of the assisting material provided in the Machine Learning1 lecture.
+
+### Guidelines for Responsible and Effective Usage of Gen-AI
+1. **Human-in-the-loop verification:** All AI-suggested content was treated as a draft. Text, code, or sources delivered by AI had to be critically reviewed and tested before inclusion.
+2. **Emphasis on learning:** Gen-AI functioned as a learning companion rather than an automated code generator. After receiving suggestions, team members engaged in follow-up questions to grasp the underlying logic and method.
+3. **Transparency:** The team openly acknowledged where and how AI was used in the workflow so the benefits and quality safeguards remained clear.
+
+### Use Cases of AI Tools in the DBM Course Context
+AI-based assistants were applied in the following specific cases:
+1. **Brainstorming:** Elaborating initial ideas, structuring thoughts, and outlining coding approaches.
+2. **Debugging & optimization:** Explaining error messages and helping improve self-developed scripts to raise efficiency.
+3. **Proofreading:** Accelerating grammar and typo checks during documentation.
+4. **Information acquisition:** Searching for methodological references or code documentation for R Markdown, or machine learning methods (always followed by human verification of credibility).
+
+### Benefits and Challenges in Using Generative AI Tools
+1. **Benefits:** Faster debugging (e.g., resolving R Markdown knitting errors or debugging issues), on-demand tutoring for advanced questions, and more time spent on analytical reasoning instead of routine fixes.
+2. **Challenges:** The ease of getting answers can create a temptation to trust outputs blindly. The "human-in-the-loop" guideline ensured the team retained ownership, validating every AI-assisted contribution.
 ------------------------------------------------------------------------
 
 ------------------------------------------------------------------------
