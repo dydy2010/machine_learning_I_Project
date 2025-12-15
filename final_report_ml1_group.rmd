@@ -891,9 +891,9 @@ odds_table_suc <- coef_df_suc %>%
   mutate(Abs_Coefficient = abs(Coefficient)) %>%
   arrange(desc(Abs_Coefficient)) %>%
   select(Feature, Coefficient, Odds_Ratio) %>%
-  head(10)
+  head(3)
 
-knitr::kable(odds_table_suc, caption = "Top 10 graduation predictors (log-odds and odds ratio)")
+knitr::kable(odds_table_suc, caption = "Top 3 graduation predictors (log-odds and odds ratio)")
 ```
 
 We model graduation vs dropout in one step: build the binary target, split/scale, train a binomial GLM, and summarize discrimination (AUC) plus odds ratios for the most influential features. The model delivers **AUC = `r round(auc_suc, 3)`**, showing strong abilit to predict graduates and dropouts. First-semester performance and financial factors are proven to be top factors.
