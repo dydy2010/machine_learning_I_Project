@@ -2060,7 +2060,6 @@ svm_poly <- svm(y ~ x.1 + x.2, data = train_data, kernel = "polynomial", cost = 
 
 ## Model Evaluation
 
-Predict and compare the models
 ```{r svm-predictions, echo=FALSE}
 pred_linear <- predict(svm_linear, test_data)
 pred_radial <- predict(svm_radial, test_data)
@@ -2191,29 +2190,6 @@ knitr::kable(metrics_radial,
 The radial kernel demonstrates a slight improvement in overall performance with an **accuracy of 87.7%** and **Kappa score of 0.7359**, both marginally better than the linear model. Notably, the **sensitivity increased to 77.46%**, showing improved ability to detect students at risk of dropping out. The **specificity holds steady at 94%**, maintaining excellent performance in identifying graduates. Overall, the radial kernel's performance is quite similar to the linear model, suggesting that the relationship between the features may be linear.
 
 ### Polynomial Kernel Results
-```{r svm-eval-poly, echo=FALSE}
-cm_poly <- confusionMatrix(pred_poly, test_data$y)
-
-# Display confusion matrix as a table
-knitr::kable(cm_poly$table, 
-             caption = "Polynomial Kernel - Confusion Matrix",
-             align = 'c')
-
-# Display key metrics as a table
-metrics_poly <- data.frame(
-  Metric = c("Accuracy", "Sensitivity", "Specificity", "Kappa"),
-  Value = c(
-    round(cm_poly$overall['Accuracy'], 4),
-    round(cm_poly$byClass['Sensitivity'], 4),
-    round(cm_poly$byClass['Specificity'], 4),
-    round(cm_poly$overall['Kappa'], 4)
-  )
-)
-
-knitr::kable(metrics_poly, 
-             caption = "Polynomial Kernel - Performance Metrics",
-             align = 'c')
-```
 ```{r svm-plot-poly, fig.width=6, fig.height=5, fig.align='center', echo=FALSE}
 # Get predictions for the grid
 grid$pred <- predict(svm_poly, grid)
@@ -2241,6 +2217,33 @@ legend("topright",
        cex = 0.7,
        bty = "n")
 ```
+```{r svm-eval-poly, echo=FALSE}
+cm_poly <- confusionMatrix(pred_poly, test_data$y)
+
+# Display confusion matrix as a table
+knitr::kable(cm_poly$table, 
+             caption = "Polynomial Kernel - Confusion Matrix",
+             align = 'c')
+```
+
+The polynomial kernel achieved 610 correct predictions (186 dropouts, 424 graduates) out of 725 total cases. The model's main weakness lies in misclassifying 98 actual dropout students as graduates, which could lead to missed intervention opportunities for at-risk students.
+
+```{r svm-metrics-poly, echo=FALSE}
+metrics_poly <- data.frame(
+  Metric = c("Accuracy", "Sensitivity", "Specificity", "Kappa"),
+  Value = c(
+    round(cm_poly$overall['Accuracy'], 4),
+    round(cm_poly$byClass['Sensitivity'], 4),
+    round(cm_poly$byClass['Specificity'], 4),
+    round(cm_poly$overall['Kappa'], 4)
+  )
+)
+
+knitr::kable(metrics_poly, 
+             caption = "Polynomial Kernel - Performance Metrics",
+             align = 'c')
+```
+The polynomial kernel achieved 84.1% overall accuracy with high specificity (96.2%), indicating strong performance in correctly identifying graduates. However, the model's sensitivity of 65.5% reveals a weakness in detecting dropout cases, with the Kappa score of 64.9% confirming moderate agreement.
 
 ## Performance Comparison
 
@@ -2363,10 +2366,10 @@ Several consistent patterns emerged:
 
 ## 12.1 Current Limitations
 
-1.  **Missing Variables**: Important factors like motivation, study habits, mental health, and campus engagement aren't captured
-2.  **Temporal Dynamics**: Our models don't account for how circumstances change over time
-3.  **Causal Claims**: These are predictive models—we identify associations, not proven causal mechanisms
-4.  **Institutional Specificity**: Results may not generalize to institutions with different student populations or support systems
+1.  **Missing Variables**: Important factors like motivation, study habits, mental health, and campus engagement aren't captured.
+2.  **Temporal Dynamics**: Our models don't account for how circumstances change over time.
+3.  **Causal Claims**: These are predictive models—we identify associations, not proven causal mechanisms.
+4.  **Institutional Specificity**: Results may not generalize to institutions with different student populations or support systems.
 
 ## 12.2 Future Research Directions
 
@@ -2377,22 +2380,31 @@ Several consistent patterns emerged:
 
 ------------------------------------------------------------------------
 
-# 13. Conclusions
+# 13. Conclusions 
 
-**Summary:** We successfully built and compared multiple machine learning models to predict student dropout risk. The analysis reveals that:
+This study applied multiple machine learning approaches to predict student dropout and graduation outcomes using academic performance data from a Portuguese higher education institution. Three classification methods were evaluated: Logistic Regression, Support Vector Machines with multiple kernels, and Random Forest.
 
-1.  **First/second semester performance is the strongest predictor** across all models—early intervention is critical
-2.  **Non-linear relationships exist** and GAMs/neural network capture them better than traditional linear models
-3.  **Financial factors matter significantly**—scholarship programs and tuition payment flexibility can change outcomes
-4.  **Model accuracy ranges from 75-90%** depending on the prediction task, sufficient for operational deployment
+## 13.1 Model Performance Summary
 
-**Impact:** By implementing these models, institutions can:
+The **Random Forest** model demonstrated superior performance across all evaluation metrics, achieving 89.9% accuracy with balanced sensitivity (81.0%) and specificity (94.7%). This method captured the non-linear relationships between academic indicators and student outcomes. The Logistic Regression model provided a strong baseline with 87.0% accuracy, offering interpretability through its linear decision boundary. Among the SVM kernels, the radial basis function achieved the highest performance (87.7% accuracy).
 
--   **Identify at-risk students with 75-90% accuracy**
--   **Allocate intervention resources efficiently**
--   **Improve graduation rates through data-driven strategies**
+## 13.2 Key Findings
 
-**Final Thought:** Machine learning cannot prevent dropout alone, but it can guide **human interventions** to the right students at the right time. The combination of **predictive power** and **interpretability** makes this a practical tool for real-world educational policy. By moving from prediction to prevention—identifying **at-risk students early** and providing **targeted support**—we can transform educational outcomes and change lives.
+All models identified **_second-semester academic metrics_ as the strongest predictors of student success**. The feature importance analysis revealed that **curricular units approved** and **grade performance in the second semester** were consistently the most discriminative variables across all approaches. **Students who pass fewer than 50%** of their enrolled units in the second semester face substantially elevated dropout risk, while those achieving grades below 11.5 (on a 0-20 scale) demonstrate similar vulnerability patterns.
+
+The decision boundaries established by the best-performing models revealed clear risk thresholds. Students with second-semester **grades below 10.0** combined with _fewer_ than **4 approved units** exhibited dropout probabilities exceeding 75%. Conversely, students maintaining grades above 13.0 with at least 8 approved units showed graduation probabilities above 90%, indicating a safe performance zone.
+
+## 13.3 Validation and Refinement
+
+These threshold recommendations derive from model performance across the entire dataset. The specific grade scales, curricular structures, and student demographics at another institution may need adjustments.
+
+## 13.4 Broader Implications
+
+The high predictive performance achieved using only academic metrics suggests that dropout risk is **observable through readily available institutional data**. This finding reduces the barrier to implementing evidence-based retention programs, as institutions do not need to wait for sophisticated data infrastructure or external data sources before taking action.
+
+## 13.5 Final Remarks
+
+This project demonstrates that machine learning methods can achieve strong predictive performance for student retention challenges using readily available academic data. More importantly, the models provide specific, actionable thresholds that translate statistical predictions into decision rules. By implementing the three immediate actions outlined above, student supervisors can establish a data-driven early warning system that identifies at-risk students with approximately 80% accuracy while maintaining low false alarm rates. The combination of predictive power and practical implementation guidance positions these findings for immediate deployment in higher education retention efforts.
 
 ------------------------------------------------------------------------
 
