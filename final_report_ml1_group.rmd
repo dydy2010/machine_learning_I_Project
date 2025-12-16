@@ -37,7 +37,7 @@ h4 {
 body {
   color: #222222;
   font-size: 1.8rem;
-  font-weight: 600;
+  font-weight: 470;
 }
 /* Compact chunk toggle buttons */
 .btn.btn-default.btn-xs.code-folding-btn {
@@ -1934,13 +1934,13 @@ To classify our dataset, the model plots a separating line between the two outco
 
 By applying different kernels—linear, radial, and polynomial— we assess how the shape of the decision boundary affects prediction accuracy and determine which kernel provides the most reliable classification for our dataset.
 
-## Feature Selection
+## 9.1 Feature Selection
 
 For us to choose the best predictors, we will compute **F-statistic ANOVA** for every numeric feature in the dataset. The F-score tell us _how much_ the mean of each feature differs between the **two target groups** (_Graduation_/_Dropout_). higher scores mean there is a bigger separation between classes, and a better cutoff between groups. 
 Results indicate that grades and the amount of credits approved have the highest F-Values, suggesting they are the most significant predictors for predicting the success of graduating or not.
 
 In this case, we want to choose the features of **second semester marks** and the **amount of units passed** to plot our model.
-```{r svm-fscore-top5, echo=FALSE}
+```{r svm-fscore-top5, echo=TRUE}
 numeric_cols <- sapply(student_data, is.numeric)
 features <- names(student_data)[numeric_cols]
 # Remove Target if it's numeric
@@ -1973,12 +1973,12 @@ rownames(results) <- NULL
 knitr::kable(head(results, 5), caption = "Top 5 Features by F-statistic")
 ```
 
-## Prepare Data for SVM
+## 9.2 Prepare Data for SVM
 
 Support Vector Machines require **predictors** (numerical variables) and a **target** (categorical: _Graduate_/_Dropout_) for classification. The data was then structured into a format suitable for SVM modeling.
 The original dataset contained three academic outcomes: _Enrolled_, _Dropout_, and _Graduate_. Since the objective of this analysis is to distinguish students who ultimately graduate from those who drop out, **the Enrolled category was removed**. 
 This reduces the dataset size but produces a cleaner binary classification.
-```{r svm-prepare-marks, echo=FALSE, results='hide'}
+```{r svm-prepare-marks, echo=TRUE, results='hide'}
 # Get the top 2 features (excluding Target)
 top_feature_1 <- as.character(results$Feature[1])
 top_feature_2 <- as.character(results$Feature[2])
@@ -1993,7 +1993,7 @@ marks <- data.frame(
 # Remove rows with NA values if any exist
 marks <- na.omit(marks)
 ```
-```{r svm-prepare-marks-display, echo=FALSE}
+```{r svm-prepare-marks-display, echo=TRUE}
 # Create summary table
 data_summary <- data.frame(
   Metric = c("Total Observations", "Target Classes"),
@@ -2002,18 +2002,18 @@ data_summary <- data.frame(
 
 knitr::kable(data_summary, align = 'c', caption = "Dataset Summary")
 ```
-## Exploratory Visualization
+## 9.3 Exploratory Visualization
 
-## Train/Test Split
+## 9.4 Train/Test Split
 
 Now, we will split the data into training and testing sets, and then fit several SVM models to classify the students based on their marks.
-```{r svm-train-test-split, echo=FALSE, results='hide'}
+
+```{r svm-train-test-split-display, echo=TRUE}
+# svm-train-test-split
 set.seed(123)
 trainIndex <- createDataPartition(marks$y, p = 0.8, list = FALSE)
 train_data <- marks[trainIndex, ]
 test_data <- marks[-trainIndex, ]
-```
-```{r svm-train-test-split-display, echo=FALSE}
 # Create split summary table
 split_summary <- data.frame(
   Dataset = c("Training", "Testing"),
@@ -2027,7 +2027,7 @@ split_summary <- data.frame(
 knitr::kable(split_summary, align = 'c', caption = "Train/Test Split")
 ```
 
-## Model Training
+## 9.5 Model Training
 
 In our dataset, each student is described by academic features such as second-semester grades and credits passed. If the two groups—graduated and dropout— separate cleanly in a straight line, a linear SVM finds the optimal boundary that splits high-performing students from those with a higher risk of dropping out. But if the patterns are more complex, a non-linear kernel like the radial SVM transforms the data so the model can still draw a clear dividing boundary. This allows the SVM to classify students accurately even when the relationship between performance and graduation is not linear.
 
@@ -2036,22 +2036,20 @@ In our dataset, each student is described by academic features such as second-se
 **Radial Basis Function (RBF) Kernel**: Generates curved, non-linear decision boundaries by measuring the distance between data points. This flexible kernel works best at tracking irregular patterns in the data. For our dataset, the RBF kernel can identify students who may succeed despite lower grades in one metric if they compensate with higher performance in another.
 
 **Polynomial Kernel**: Produces curved boundaries with a specific degree of curve. In student performance prediction, a polynomial kernel might capture scenarios where moderate performance in both metrics leads to different outcomes than extreme performance in either direction, revealing threshold effects or interaction patterns between academic indicators.
-```{r svm-train-models, echo=FALSE}
+```{r svm-train-models, echo=TRUE}
 svm_linear <- svm(y ~ x.1 + x.2, data = train_data, kernel = "linear", cost = 1)
 svm_radial <- svm(y ~ x.1 + x.2, data = train_data, kernel = "radial", cost = 10, gamma = 0.1)
 svm_poly <- svm(y ~ x.1 + x.2, data = train_data, kernel = "polynomial", cost = 1, degree = 3)
 ```
 
-## Model Evaluation
+## 9.6 Model Evaluation
 
-```{r svm-predictions, echo=FALSE}
+### Linear Kernel Results
+
+```{r svm-plot-linear, fig.width=6, fig.height=5, fig.align='center', echo=TRUE}
 pred_linear <- predict(svm_linear, test_data)
 pred_radial <- predict(svm_radial, test_data)
 pred_poly <- predict(svm_poly, test_data)
-```
-### Linear Kernel Results
-
-```{r svm-plot-linear, fig.width=6, fig.height=5, fig.align='center', echo=FALSE}
 # Get predictions for the grid
 x1_range <- range(train_data$x.1)
 x2_range <- range(train_data$x.2)
@@ -2087,9 +2085,8 @@ legend("topright",
        pch = 19,
        cex = 0.7,
        bty = "n")
-```
 
-```{r svm-eval-linear, echo=FALSE}
+# svm-eval-linear
 cm_linear <- confusionMatrix(pred_linear, test_data$y)
 
 # Display confusion matrix as a table
@@ -2097,9 +2094,12 @@ knitr::kable(cm_linear$table,
              caption = "Linear Kernel - Confusion Matrix",
              align = 'c')
 ```
+
+
+
 The confusion matrix shows that the linear kernel correctly classified **218 dropouts** and **416 graduates**. However, the model misclassified **66 students who dropped out as graduates** and **25 graduates as dropouts**, indicating some overlap between the two groups. Overall, the linear SVM achieved high accuracy with relatively balanced performance across both prediction categories.
 
-```{r svm-metrics-linear, echo=FALSE}
+```{r svm-metrics-linear, echo=TRUE}
 metrics_linear <- data.frame(
   Metric = c("Accuracy", "Sensitivity", "Specificity", "Kappa"),
   Value = c(
@@ -2119,7 +2119,7 @@ The linear kernel achieved an accuracy of 87.6%, correctly classifying nearly 9 
 
 ### Radial Kernel Results
 
-```{r svm-plot-radial, fig.width=6, fig.height=5, fig.align='center', echo=FALSE}
+```{r svm-plot-radial, fig.width=6, fig.height=5, fig.align='center', echo=TRUE}
 # Get predictions for the grid
 grid$pred <- predict(svm_radial, grid)
 
@@ -2255,10 +2255,10 @@ knitr::kable(metrics_poly,
 ```
 The polynomial kernel achieved 84.1% overall accuracy with high specificity (96.2%), indicating strong performance in correctly identifying graduates. However, the model's sensitivity of 65.5% reveals a weakness in detecting dropout cases, with the Kappa score of 64.9% confirming moderate agreement.
 
-## Performance Comparison
+## 9.7 Performance Comparison
 
 After evaluating all three SVM kernels, the results show minimal performance differences across models. The **radial kernel** achieved the highest accuracy at 87.7%, followed closely by the **linear kernel** at 87.4%, while the **polynomial kernel** performed slightly lower at 84.1%. However, given the marginal improvement of only 0.3% between the linear and radial models, the **linear kernel is the preferred choice** for this classification task. It offers comparable predictive performance while maintaining greater interpretability and computational efficiency—critical factors when deploying models in educational settings where stakeholders need to understand and trust the decision-making process. The linear model's simplicity also makes it easier to explain to administrators and educators, making interventions for at-risk students without sacrificing meaningful accuracy.
-```{r svm-comparison, echo=FALSE}
+```{r svm-comparison, echo=TRUE}
 comparison_results <- data.frame(
   Model = c("Linear", "Radial", "Polynomial"),
   Accuracy = c(cm_linear$overall['Accuracy'],
