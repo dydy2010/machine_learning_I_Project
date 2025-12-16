@@ -9,35 +9,54 @@ output:
     toc_float: true
     toc_depth: 3
     code_folding: hide
-    theme: flatly
+    theme: cosmo
     df_print: paged
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
-header-includes:
-  - |
-    <style>
-      h1, h2, h3, h4, h5, h6 {
-        color: #222222;
-        font-weight: 600;
-      }
-      .caption, caption {
-        color: #222222;
-        font-weight: 600;
-      }
-      body {
-        color: #222222;
-      }
-      /* Compact chunk toggle buttons */
-      .btn.btn-default.btn-xs.code-folding-btn {
-        padding: 2px 6px;
-        font-size: 10px;
-        line-height: 1.1;
-        margin: 2px 0 4px 0;
-      }
-    </style>
 ---
+
+```{css custom-styles, echo=FALSE}
+h1, h2, h3, h4, h5, h6 {
+  color: #111111;
+  font-weight: 700;
+}
+h1 {
+  font-size: 2.3rem;
+}
+h2 {
+  font-size: 2.1rem;
+}
+h3 {
+  font-size: 1.3rem;
+}
+h4 {
+  font-size: 1.1rem;
+}
+.caption, caption {
+  color: #111111;
+  font-weight: 600;
+}
+body {
+  color: #222222;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+/* Compact chunk toggle buttons */
+.btn.btn-default.btn-xs.code-folding-btn {
+  padding: 2px 6px;
+  font-size: 10px;
+  line-height: 1.1;
+  margin: 2px 0 4px 0;
+}
+/* Title block */
+.title {
+  font-size: 2.4rem;
+}
+.subtitle {
+  font-size: 2.3rem;
+}
+.author, .date {
+  font-size: 2.1rem;
+}
+```
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
@@ -144,11 +163,11 @@ By predicting **dropout risk early**, institutions can intervene with:
 
 ### Choosing Our Dataset
 
-Our goal for this project is to deliver a solid report while using it as an opportunity to enhance our understanding of machine learning concepts and practices. With this in mind, we explored several potential datasets for our final analysis.
+*Our goal* for this project is to deliver a *solid report* while using it as an opportunity to *enhance our understanding* of *machine learning concepts* and practices. With this in mind, we explored several *potential datasets* for our final analysis.
 
-We considered three main options. First, the Social Media Fact Sheet from PEW Research Center, which would have allowed us to analyze social media usage patterns. Second, medical quality service data in Switzerland from the Federal Office of Public Health (available through opendata.swiss). Third, student data for predicting dropout and academic success from the UC Irvine Machine Learning Repository.
+We considered *three main options*. First, the Social Media Fact Sheet from PEW Research Center, which would have allowed us to analyze social media usage patterns. Second, medical quality service data in Switzerland from the Federal Office of Public Health (available through opendata.swiss). Third, student data for predicting dropout and academic success from the UC Irvine Machine Learning Repository.
 
-After careful consideration, we chose the third option from the UC Irvine repository. The **data structure and scope align well with our goal** of getting familiarized with machine learning concepts and practices while producing a solid report as our first attempt in the ML world. While the other two datasets were interesting to explore, their structure, diversity, and scope did not suit our learning objectives as well as the student success dataset. We didn't read any papers related to the dataset online while doing the project.
+After careful consideration, we chose the third option from the UC Irvine repository. The **data structure and scope align well with our goal** of getting familiarized with machine learning concepts and practices while producing a solid report as our first attempt in the ML world. While the other two datasets were interesting to explore, their structure, diversity, and scope did not suit our *learning objectives* as well as the student success dataset. For the exploration experience, we didn't read any papers related to the dataset online while doing the project.
 
 ### Dataset Characteristics
 
@@ -267,7 +286,7 @@ The dataset is suitable for applying all required machine learning methods:
 
 **For GAM, Neural Networks, and SVM:** The mix of **continuous and categorical predictors** plus a **classification task** lets us explore **non-linear relationships** and **complex interactions**.
 
-The dataset contains **4,424 observations**—large enough for robust train-test splits and complex training, yet manageable. With **36 predictors** across demographic, academic, financial, and socioeconomic domains, we have the complexity to deliver **insights for our client**.
+The dataset contains **4,424 observations**—large **enough** for robust train-test splits and complex **training**, yet manageable. With **36 predictors** across demographic, academic, financial, and socioeconomic domains, we have the complexity to deliver **insights for our client**.
 
 ------------------------------------------------------------------------
 
@@ -289,13 +308,14 @@ ggplot(target_summary, aes(x = Target, y = count, fill = Target)) +
   scale_fill_manual(values = c("Dropout" = "#E74C3C",
                                 "Enrolled" = "#F39C12",
                                 "Graduate" = "#27AE60")) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
   labs(title = "Distribution of Student Outcomes",
        x = "Outcome", y = "Number of Students", fill = "Outcome") +
   theme(legend.position = "none",
         plot.title = element_text(hjust = 0.5, face = "bold"))
 ```
 
-**Key Observation:** The dataset shows a reasonable distribution with 50% graduates, 32% dropouts, and 18% still enrolled. This balance allows models to learn patterns for all three outcomes effectively.
+**Key Observation:** The dataset shows a **reasonable distribution** for modeling, with 50% graduates, 32% dropouts, and 18% still enrolled. This balance allows models to learn patterns for all outcomes effectively. Depending on the model and task, we may need to **adjust** the classes to **binary(dropout or not dropout)**.
 
 ## 2.2 First Semester Performance Analysis
 
@@ -330,7 +350,7 @@ p2 <- ggplot(first_sem_data, aes(x = Target, y = Curricular.units.1st.sem..appro
 grid.arrange(p1, p2, ncol = 2)
 ```
 
-**Insight:** First semester performance shows dramatic differences across outcomes. Graduate students average **13+ grade points** and complete most enrolled courses, while dropout students struggle with grades around **9-10** and complete fewer courses. This early divergence makes **first semester performance** the most critical intervention point.
+**Insight:** *First semester performance* shows dramatic differences across outcomes. Graduate students average **13+ grade points** and complete most enrolled courses(approved), while dropout students struggle with grades around **9-10** and complete fewer courses. This suggests that *first semester performance* *could be a critical indicator* for dropout prediction.
 
 ## 2.3 Financial & Socioeconomic Factors
 
@@ -369,7 +389,7 @@ p2 <- ggplot(financial_data, aes(x = Scholarship.holder, fill = Target)) +
 grid.arrange(p1, p2, ncol = 2)
 ```
 
-**Insight:** Financial stability strongly correlates with graduation. Students current on tuition fees show significantly higher graduation rates. Scholarship holders also demonstrate better outcomes, suggesting that financial support programs contribute meaningfully to student success.
+**Insight:** Students that currently **pays tuition on time**(tuition.fees.up.to.date) show significantly higher graduation rates. **Scholarship** holders also demonstrate better outcomes, suggesting that financial situation could play an important role in student success.
 
 ## 2.4 Age Distribution
 
@@ -384,7 +404,7 @@ ggplot(df, aes(x = Age.at.enrollment, fill = Target)) +
   theme(legend.position = "bottom")
 ```
 
-**Insight:** Age shows interesting patterns - traditional-age students (18-22) have higher graduation rates, while both younger and significantly older students face elevated dropout risks. This suggests non-linear age effects that GAMs can capture better than linear models.
+**Insight:** Age shows interesting patterns: common students age **(18-22)** have **higher graduation rates**, while both younger and significantly older students face elevated dropout risks. This pattern suggests that age effects may not follow a linear trend, which we could explore using models that can capture such **non-linear**relationships (e.g., *GAMs* with smooth terms, or GLMs with *polynomial/spline* features).
 
 ------------------------------------------------------------------------
 
@@ -2156,7 +2176,7 @@ knitr::kable(metrics_radial,
 The radial kernel demonstrates a slight improvement in overall performance with an **accuracy of 87.7%** and **Kappa score of 0.7359**, both marginally better than the linear model. Notably, the **sensitivity increased to 77.46%**, showing improved ability to detect students at risk of dropping out. The **specificity holds steady at 94%**, maintaining excellent performance in identifying graduates. Overall, the radial kernel's performance is quite similar to the linear model, suggesting that the relationship between the features may be linear.
 
 ### Polynomial Kernel Results
-```{r svm-eval-poly, echo=FALSE}
+```{r svm-eval-poly-conf, echo=FALSE}
 cm_poly <- confusionMatrix(pred_poly, test_data$y)
 
 # Display confusion matrix as a table
@@ -2207,7 +2227,7 @@ legend("topright",
        cex = 0.7,
        bty = "n")
 ```
-```{r svm-eval-poly, echo=FALSE}
+```{r svm-eval-poly-metrics, echo=FALSE}
 cm_poly <- confusionMatrix(pred_poly, test_data$y)
 
 # Display confusion matrix as a table
