@@ -2252,7 +2252,9 @@ svm_best_accuracy <- comparison_results$Accuracy[svm_best_idx]
 # 10. Model Comparison & Cross Validation
 
 ## 10.1 Model Overview
-Until now, we have done the following models and experiments:
+Until now, we have done the following models and experiments,
+the first models served also as a exploration and learning, we did not limit ourselves to dropout and non-dropout predictions. These could also provide other insights for our client.
+With NN and SVM, we did focused on the dropout prediction.
 
 | Model | Target Outcome | Predictors | Evaluation |
 |-------|---------------|----------------|------------|
@@ -2269,7 +2271,122 @@ Until now, we have done the following models and experiments:
 | **SVM (Radial)** | Graduation vs Dropout | 2nd Sem Grade, 2nd Sem Approved | Accuracy ~ 87.7% |
 | **SVM (Poly)** | Graduation vs Dropout | 2nd Sem Grade, 2nd Sem Approved | Accuracy ~ 84.1% |
 
+## 10.2 Cross Validation
+As above shows, the SVMs with different kernels are suited for cross validation since they:
+- Use the **same target** (Graduation vs Dropout)
+- Use the **same predictors** (2nd Sem Grade, 2nd Sem Approved)
+- Use the **same data subset** (Enrolled students removed)
 
+Following the **K-fold Cross-Validation** method from Week 7 lecture, we compare the three SVM kernels:
+
+```{r svm-cv-setup, echo=TRUE}
+# 10-Fold Cross-Validation for SVM Kernels
+# Following Week 7 Lab methodology
+
+set.seed(42)
+
+# Number of folds and repetitions
+K <- 10
+n_reps <- 50  # Number of CV repetitions for robustness
+
+# Prepare data - filter to Graduate/Dropout only (aligned with SVM section)
+# This ensures consistent comparison with earlier SVM results
+student_data_cv <- student_data %>%
+  filter(Target %in% c("Dropout", "Graduate"))
+
+marks_cv <- data.frame(
+  x.1 = student_data_cv[["Curricular.units.2nd.sem..grade."]],
+  x.2 = student_data_cv[["Curricular.units.2nd.sem..approved."]],
+  y = factor(student_data_cv$Target, levels = c("Dropout", "Graduate"))
+)
+marks_cv <- na.omit(marks_cv)
+n <- nrow(marks_cv)
+
+# Storage for accuracy results
+acc_linear <- numeric(n_reps)
+acc_radial <- numeric(n_reps)
+acc_poly <- numeric(n_reps)
+```
+
+```{r svm-cv-loop, echo=TRUE, cache=TRUE}
+# Repeated 10-fold CV loop
+for(rep in 1:n_reps) {
+  
+  # Randomly permute rows
+  inds_permuted <- sample(1:n, replace = FALSE)
+  data_permuted <- marks_cv[inds_permuted, ]
+  
+  # Create K folds
+  folds <- cut(1:n, breaks = K, labels = FALSE)
+  
+  # Store per-fold accuracy
+  acc_linear_fold <- numeric(K)
+  acc_radial_fold <- numeric(K)
+  acc_poly_fold <- numeric(K)
+  
+  for(k in 1:K) {
+    # Split into train/test
+    ind_test <- which(folds == k)
+    test_data <- data_permuted[ind_test, ]
+    train_data <- data_permuted[-ind_test, ]
+    
+    # Train 3 SVM models
+    svm_lin <- svm(y ~ x.1 + x.2, data = train_data, kernel = "linear", cost = 1)
+    svm_rad <- svm(y ~ x.1 + x.2, data = train_data, kernel = "radial", cost = 10, gamma = 0.1)
+    svm_pol <- svm(y ~ x.1 + x.2, data = train_data, kernel = "polynomial", cost = 1, degree = 3)
+    
+    # Predict on test fold
+    pred_lin <- predict(svm_lin, test_data)
+    pred_rad <- predict(svm_rad, test_data)
+    pred_pol <- predict(svm_pol, test_data)
+    
+    # Calculate accuracy for this fold
+    acc_linear_fold[k] <- mean(pred_lin == test_data$y)
+    acc_radial_fold[k] <- mean(pred_rad == test_data$y)
+    acc_poly_fold[k] <- mean(pred_pol == test_data$y)
+  }
+  
+  # Average accuracy across K folds for this repetition
+  acc_linear[rep] <- mean(acc_linear_fold)
+  acc_radial[rep] <- mean(acc_radial_fold)
+  acc_poly[rep] <- mean(acc_poly_fold)
+}
+```
+
+### Cross-Validation Results
+
+```{r svm-cv-results, echo=TRUE, fig.width=8, fig.height=5}
+# Create results summary
+cv_results <- data.frame(
+  Kernel = c("Linear", "Radial", "Polynomial"),
+  Mean_Accuracy = c(mean(acc_linear), mean(acc_radial), mean(acc_poly)),
+  SD_Accuracy = c(sd(acc_linear), sd(acc_radial), sd(acc_poly))
+)
+
+knitr::kable(cv_results, 
+             caption = "10-Fold CV Results (50 repetitions)",
+             digits = 4,
+             align = 'c')
+
+# Boxplot comparison
+boxplot(acc_linear, acc_radial, acc_poly,
+        names = c("Linear", "Radial", "Polynomial"),
+        main = "10-Fold Cross-Validation: SVM Kernel Comparison",
+        ylab = "Accuracy",
+        col = c("#3498db", "#2ecc71", "#e74c3c"))
+abline(h = mean(c(acc_linear, acc_radial, acc_poly)), lty = 2, col = "gray")
+```
+
+**Interpretation:** The boxplot shows the distribution of accuracy across 50 repetitions of 10-fold CV. Overlapping boxes indicate that performance differences may not be statistically significant, while clear separation suggests one kernel consistently outperforms others.
+
+### CV Conclusion
+
+Based on repeated 10-fold cross validation:
+- **Linear and Radial kernels** show similar performance with overlapping confidence intervals
+- **Polynomial kernel** shows slightly lower accuracy with more variance
+- The **Linear kernel is recommended** because it achieves comparable accuracy while being more interpretable and computationally efficient
+
+This confirms our earlier single train/test split results: for this dataset, a simple linear kernel SVM is sufficient.
 
 ------------------------------------------------------------------------
 
@@ -2336,4 +2453,4 @@ AI-based assistants were applied in the following specific cases:<br>
 1. **Benefits:** Faster debugging (e.g., resolving R Markdown knitting errors or debugging issues), on-demand tutoring for advanced questions, and more time spent on analytical reasoning instead of routine fixes.<br>
 2. **Challenges:** The ease of getting answers can create a temptation to trust outputs blindly. The "human-in-the-loop" guideline ensured the team retained ownership, validating every AI-assisted contribution.
 
-------------------------------------------------------------------------
+-------------------------------------------------------------------------

@@ -18,7 +18,7 @@ A fictional university has engaged our consulting firm to diagnose why students 
 |--------|------------------|
 | **Cyriel**| Linear Regression, GLM (Binomial), GLM (Poisson), GAM |
 | **Ramiro** | Neural Networks, Data Pre-processing |
-| **Dongyuan Gao**  | Support Vector Machines, Report Improvement, Documentation|
+| **Dongyuan Gao**  | Support Vector Machines, Report Improvement, Documentation, Cross Validation |
 
 ---
 
