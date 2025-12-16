@@ -5897,6 +5897,26 @@ on the dropout prediction.</p>
 </tbody>
 </table>
 </div>
+<div id="early-warning-system-approaches" class="section level3">
+<h3>Early Warning System Approaches</h3>
+<p><strong>Two prediction timelines are possible with our
+models:</strong></p>
+<pre class="mermaid"><code>flowchart LR
+    subgraph &quot;Option 1: At Admission (Experimental)&quot;
+        A[Admission Data] --&gt; B[Poisson GLM]
+        B --&gt; C[Predicted 1st Sem Courses]
+        C --&gt; D[Binomial GLM]
+        D --&gt; E[Dropout Risk]
+    end
+    
+    subgraph &quot;Option 2: After 1st Semester (Recommended)&quot;
+        F[1st/2nd Sem Data] --&gt; G[NN or SVM]
+        G --&gt; H[Dropout Prediction&lt;br&gt;~88% Accuracy]
+    end</code></pre>
+<p><strong>Option 2 (NN/SVM after 1st semester)</strong> is recommended
+for production use due to higher accuracy (~88%). Option 1 provides
+earlier predictions but relies on predicted intermediate values.</p>
+</div>
 </div>
 <div id="cross-validation" class="section level2">
 <h2>10.2 Cross Validation</h2>
@@ -6125,13 +6145,12 @@ approved</strong> and <strong>grade performance in the second
 semester</strong> were also important variables. <strong>Students who
 pass fewer than 50%</strong> of their enrolled units in the second
 semester face substantially elevated dropout risk.</p>
-<p>The early warning system could be established by the best-performing
-models <strong>SVM</strong> or <strong>Neural Network</strong>. For
-example, students with first-semester <strong>grades below 10.0</strong>
-combined with fewer than <strong>4 approved units</strong> exhibited
-dropout probabilities exceeding 75%. Conversely, students maintaining
-grades above 13.0 with at least 8 approved units showed graduation
-probabilities above 93%, indicating a safe performance zone.</p>
+<p>The <strong>early warning system</strong> could be established by the
+best-performing models <strong>SVM</strong> or <strong>Neural
+Network</strong>. The accuracy rate could reach <strong>86.8%</strong>.
+Another <strong>experimental system</strong> could be [Admission Data] -
+[Poisson GLM] - [Predicted 1st Sem Courses] - [Binomial GLM] - [Dropout
+Risk].</p>
 </div>
 <div id="business-recommendations" class="section level2">
 <h2>11.2 Business Recommendations</h2>
@@ -6142,10 +6161,10 @@ risk of dropping out. They can be used to build an early warning system
 to identify students at risk of dropping out, and take actions againtst
 it. For Our Client University:</p>
 <ol style="list-style-type: decimal">
-<li><strong>First Semester Monitoring</strong>: After the first
-semester, use our models to predict students with high risk of dropping
-out. Handover the data to academic advisors in the university to take
-action.</li>
+<li><strong>First Semester Monitoring</strong>: After the first &amp;
+second semester, use our NN &amp; SVM to predict students with high risk
+of dropping out. Handover the data to academic advisors in the
+university to take action.</li>
 <li><strong>System Application Guidance</strong>: Use <strong>our best
 proven model</strong> to first predict students with high risk of
 dropping out. When unsure of the prediction, using human verification,
@@ -6154,6 +6173,11 @@ compare with 2nd best model ****, to be more assured.</li>
 <strong>graduation prediction models</strong> to dynamically monitor
 students’ risk of dropping out. To have better understand and assist
 students.</li>
+<li><strong>Interesting Exploration</strong>: Using our <strong>GLM
+poisson</strong> it is also possible to predict first semester approved
+courses(RMSE 1.8, avg off by 2 courses) and then use <strong>glm
+binomial</strong> to predict the risk of dropping out, even right after
+admission.</li>
 </ol>
 <p>For Uiversity Academic Advisors:</p>
 <ol style="list-style-type: decimal">

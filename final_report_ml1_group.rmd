@@ -132,13 +132,12 @@ options(warn = -1)
 
 ## Key Findings:
 
--   **First semester performance is the strongest predictor** of subsequent academic outcomes across all models
--   **Non-linear relationships exist** between age, course load, and success rates—captured by GAMs but missed by traditional linear models
--   **Economic and financial factors** (GDP, unemployment, scholarship status, tuition payment) show systematic effects on student success
--   **GAMs consistently outperform traditional GLMs** by 2-5 percentage points, revealing curved relationships in the data
--   **Model accuracy ranges from 75-90%** depending on the prediction task, with graduation prediction achieving the highest discrimination (**AUC ≈ 0.87**)
+-   **First & Second semester performance is the strongest predictor** of academic outcomes across all models.
+-   **2 Early warning systems** could be built upon our models.
+-   **Non-linear relationships exist** between age, course load, and success.
+-   **Model accuracy ranges from 70-90%** depending on the prediction task, with graduation prediction achieving the highest discrimination (**AUC ≈ 0.87**)
 
-**Business Impact:** These models enable institutions to **identify at-risk students early**, **allocate resources efficiently**, and implement **targeted interventions** that can improve graduation rates by **10-15%**.
+**Business Impact:** These models enable our client university to **identify at-risk students early**, **allocate resources**, and implement **targeted interventions** that can improve graduation rates.
 
 ------------------------------------------------------------------------
 
