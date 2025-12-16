@@ -2256,6 +2256,8 @@ Until now, we have done the following models and experiments,
 the first models served also as a exploration and learning, we did not limit ourselves to dropout and non-dropout predictions. These could also provide other insights for our client.
 With NN and SVM, we did focused on the dropout prediction.
 
+<div style="font-size: 70%;">
+
 | Model | Target Outcome | Predictors | Evaluation |
 |-------|---------------|----------------|------------|
 | **Linear Regression** | 2nd Sem Grade (continuous) | 1st Sem Grade, Admission Grade, GDP | R² ~ 0.68 |
@@ -2270,6 +2272,29 @@ With NN and SVM, we did focused on the dropout prediction.
 | **SVM (Linear)** | Graduation vs Dropout | 2nd Sem Grade, 2nd Sem Approved | Accuracy ~ 87.6% |
 | **SVM (Radial)** | Graduation vs Dropout | 2nd Sem Grade, 2nd Sem Approved | Accuracy ~ 87.7% |
 | **SVM (Poly)** | Graduation vs Dropout | 2nd Sem Grade, 2nd Sem Approved | Accuracy ~ 84.1% |
+
+</div>
+
+### Early Warning System Approaches
+
+**Two prediction timelines are possible with our models:**
+
+```mermaid
+flowchart LR
+    subgraph "Option 1: At Admission (Experimental)"
+        A[Admission Data] --> B[Poisson GLM]
+        B --> C[Predicted 1st Sem Courses]
+        C --> D[Binomial GLM]
+        D --> E[Dropout Risk]
+    end
+    
+    subgraph "Option 2: After 1st Semester (Recommended)"
+        F[1st/2nd Sem Data] --> G[NN or SVM]
+        G --> H[Dropout Prediction<br>~88% Accuracy]
+    end
+```
+
+**Option 2 (NN/SVM after 1st semester)** is recommended for production use due to higher accuracy (~88%). Option 1 provides earlier predictions but relies on predicted intermediate values.
 
 ## 10.2 Cross Validation
 As above shows, the SVMs with different kernels are suited for cross validation since they:
@@ -2438,16 +2463,17 @@ This study applied multiple machine learning approaches to predict student dropo
 
 We identified **first/second semester academic metrics** as the **strongest predictors** of student success. The feature importance analysis revealed that **curricular units approved** and **grade performance in the second semester** were also important variables. **Students who pass fewer than 50%** of their enrolled units in the second semester face substantially elevated dropout risk.
 
-The early warning system could be established by the best-performing models. For example, students with first-semester **grades below 10.0** combined with fewer than **4 approved units** exhibited dropout probabilities exceeding 75%. Conversely, students maintaining grades above 13.0 with at least 8 approved units showed graduation probabilities above 93%, indicating a safe performance zone.
+The **early warning system** could be established by the best-performing models **SVM** or **Neural Network**. The accuracy rate could reach **86.8%**. Another **experimental system** could be  [Admission Data] - [Poisson GLM] - [Predicted 1st Sem Courses] - [Binomial GLM] - [Dropout Risk].
 
 ## 11.2 Business Recommendations
 
 These recommendations derive from model performance across the entire report. The specific grade, approved courses(passing exams), and financial situation are the most important factors to predict students' risk of dropping out. They can be used to build an early warning system to identify students at risk of dropping out, and take actions againtst it.
 For Our Client University:
 
-1.  **First Semester Monitoring**: After the first semester, use our models to predict students with high risk of dropping out. Handover the data to academic advisors in the university to take action.
+1.  **First Semester Monitoring**: After the first & second semester, use our NN & SVM to predict students with high risk of dropping out. Handover the data to academic advisors in the university to take action.
 2.  **System Application Guidance**: Use **our best proven model** to first predict students with high risk of dropping out. When unsure of the prediction, using human verification, compare with 2nd best model ****, to be more assured.
 3.  **Continuous Risk Assessment**: Apply **graduation prediction models** to dynamically monitor students' risk of dropping out. To have better understand and assist students.
+4.  **Interesting Exploration**: Using our **GLM poisson** it is also possible to predict first semester approved courses(RMSE 1.8, avg off by 2 courses) and then use **glm binomial** to predict the risk of dropping out, even right after admission.
 
 For Uiversity Academic Advisors:
 
