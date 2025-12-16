@@ -163,9 +163,9 @@ By predicting **dropout risk early**, institutions can intervene with:
 
 ### Choosing Our Dataset
 
-*Our goal* for this project is to deliver a *solid report* while using it as an opportunity to *enhance our understanding* of *machine learning concepts* and practices. With this in mind, we explored several *potential datasets* for our final analysis.
+**Our goal** for this project is to deliver a **solid report** while using it as an opportunity to **enhance our understanding** of **machine learning concepts** and practices. With this in mind, we explored several *potential datasets* for our final analysis.
 
-We considered *three main options*. First, the Social Media Fact Sheet from PEW Research Center, which would have allowed us to analyze social media usage patterns. Second, medical quality service data in Switzerland from the Federal Office of Public Health (available through opendata.swiss). Third, student data for predicting dropout and academic success from the UC Irvine Machine Learning Repository.
+We considered **three main options**. First, the Social Media Fact Sheet from PEW Research Center, which would have allowed us to analyze social media usage patterns. Second, medical quality service data in Switzerland from the Federal Office of Public Health (available through opendata.swiss). Third, student data for predicting dropout and academic success from the UC Irvine Machine Learning Repository.
 
 After careful consideration, we chose the third option from the UC Irvine repository. The **data structure and scope align well with our goal** of getting familiarized with machine learning concepts and practices while producing a solid report as our first attempt in the ML world. While the other two datasets were interesting to explore, their structure, diversity, and scope did not suit our *learning objectives* as well as the student success dataset. For the exploration experience, we didn't read any papers related to the dataset online while doing the project.
 
@@ -2163,56 +2163,7 @@ metrics_radial <- data.frame(
     round(cm_radial$overall['Kappa'], 4)
   )
 
-For Our Client University:
 
-1.  **First Semester Monitoring**: After the first semester, use our models to predict students with high risk of dropping out. Handover the data to academic advisors in the university to take action.
-2.  **System Application Guidance**: Use **our best proven model** to first predict students with high risk of dropping out. When unsure of the prediction, using human verification, compare with 2nd best model ****, to be more assured.
-3.  **Continuous Risk Assessment**: Apply **graduation prediction models** to dynamically monitor students' risk of dropping out. To have better understand and assist students.
-
-For Uiversity Academic Advisors:
-
-1.  **Data Understanding**: First understand the data, verify and human-in-the-loop process must be implemented, rather than only trusting the modeling system.
-2.  **Early Intervention**: After filtering student at risk, use our models to understand the factors and take action before second or third semester begins. Through academic support, or other interventions. Build up a long term support program to continuously to minimize the risk of students dropping out.
-
-For Policy Makers:
-
-1.  **Economic Context Matters**: While individual factors dominate, economic conditions show measurable effects on student success
-2.  **Financial Support **:  Consider financial aids funds for students in need, through academic loans or other social programs.
-
-# 12. Limitations & Future Work
-
-## 12.1 Limitations
-
-Our dataset focuses on academic records and financial indicators, but real student life is more complex. We don't have data on **motivation**, **mental health**, or **study habits** (like how often someone visits the library or attends tutoring). These "soft" factors likely matter a lot, but they're hard to collect.
-
-Finally, this is a Portuguese institution with its own grading scale (0-20). What works here might not directly transfer to HSLU or other universities without recalibration. Some system could be develped using standarized scale.
-
-## 12.2 Ideas for Future Work
-
-1. **Behavioral signals**: Library check-ins, or Ilias login frequency could add predictive power.
-2. **Cross University Project**: We could scale this system and apply to different universities.
-
-# 13. Generative AI Declaration & Guidelines
-
-Generative AI was used as a supplementary tool on top of the assisting material provided in the Machine Learning1 lecture.
-
-## Guidelines for Responsible and Effective Usage of Gen-AI
-1. **Human-in-the-loop verification:** All AI-suggested content was treated as a draft. Text, code, or sources delivered by AI had to be critically reviewed and tested before inclusion.
-2. **Emphasis on learning:** Gen-AI functioned as a learning companion rather than an automated code generator. After receiving suggestions, team members engaged in follow-up questions to grasp the underlying logic and method.
-3. **Transparency:** The team openly acknowledged where and how AI was used in the workflow so the benefits and quality safeguards remained clear.
-
-## Use Cases of AI Tools in the Machine Learning 1 Course Context
-AI-based assistants were applied in the following specific cases:<br>
-1. **Brainstorming:** Elaborating initial ideas, structuring thoughts, and outlining coding approaches.<br>
-2. **Debugging & optimization:** Explaining error messages and helping improve self-developed scripts to raise efficiency.
-3. **Proofreading:** Accelerating grammar and typo checks during documentation.<br>
-4. **Information acquisition:** Searching for methodological references or code documentation for R Markdown, or machine learning methods (always followed by human verification of credibility).<br>
-
-## Benefits and Challenges in Using Generative AI Tools
-1. **Benefits:** Faster debugging (e.g., resolving R Markdown knitting errors or debugging issues), on-demand tutoring for advanced questions, and more time spent on analytical reasoning instead of routine fixes.<br>
-2. **Challenges:** The ease of getting answers can create a temptation to trust outputs blindly. The "human-in-the-loop" guideline ensured the team retained ownership, validating every AI-assisted contribution.
-
-------------------------------------------------------------------------
 )
 rownames(metrics_radial) <- NULL
 
@@ -2298,10 +2249,9 @@ svm_best_accuracy <- comparison_results$Accuracy[svm_best_idx]
 
 ------------------------------------------------------------------------
 
-# 10. Model Comparison & Summary
+# 10. Model Comparison & Cross Validation
 
 ## 10.1 Performance Overview
-
 ```{r summary-table}
 summary_df <- data.frame(
   Model = c("Linear Regression", "Poisson GLM (1st Sem)", "Poisson GLM (2nd Sem)",
@@ -2323,47 +2273,6 @@ summary_df <- data.frame(
 knitr::kable(summary_df, caption = "Comparative Model Performance Summary")
 ```
 
-## 10.2 Key Findings Across All Models
-
-### 1. First Semester Performance: The Critical Juncture
-
-Across all models and outcome types, first semester performance emerged as the dominant predictor of future success:
-
--   **Early intervention is essential**: The first semester represents a critical window for identifying at-risk students
--   **Multiple indicators matter**: Both grades and course completion rates predict future outcomes
--   **Momentum effects exist**: Early success or struggle tends to compound over time
-
-**Recommendation**: Institutions should implement robust **first-semester monitoring systems** with automatic flagging of students whose performance falls below critical thresholds.
-
-### 2. Non-Linear Relationships Matter
-
-GAMs consistently outperformed their linear counterparts, revealing that relationships are often curved rather than straight:
-
--   **Age effects show U-shapes**: Middle-aged students tend to perform best, with elevated risks at both extremes
--   **Course load optima exist**: Sweet spots where students succeed; too few or too many courses both reduce performance
--   **Grade thresholds matter**: The impact of improving grades varies dramatically depending on current performance level
-
-**Recommendation**: Use **GAMs** for risk prediction systems to capture these nuances and improve identification of **at-risk students**.
-
-### 3. Socioeconomic and Financial Factors
-
-Several consistent patterns emerged:
-
--   **Parental education**: Mother's and father's qualification levels positively predict student success
--   **Financial status**: Scholarship holders and students current on tuition show better outcomes
--   **Economic context**: Macro-economic conditions show systematic but modest effects
-
-**Recommendation**: Financial aid programs appear justified by their positive impact on outcomes. Institutions should ensure **financial barriers don't prevent student success**.
-
-### 4. Model Selection Guidelines
-
-| Outcome Type               | Best Approach               | Why                                                         |
-|--------------------|----------------------|--------------------------------|
-| Continuous (grades)        | Linear Regression or GAM    | Efficient and interpretable; GAM if non-linearity suspected |
-| Count (course completions) | Poisson GLM/GAM             | Ensures non-negative predictions; appropriate distribution  |
-| Binary (graduation)        | Binomial GLM/GAM            | Provides probability estimates; ROC analysis                |
-| Complex patterns           | Neural Networks/SVM         | Captures interactions; high capacity                        |
-
 ------------------------------------------------------------------------
 
 
@@ -2373,10 +2282,60 @@ This study applied multiple machine learning approaches to predict student dropo
 
 ## 11.1 Key Findings
 
-We identified **first-semester academic metrics** as the **strongest predictors** of student success. The feature importance analysis revealed that **curricular units approved** and **grade performance in the second semester** were also important variables. **Students who pass fewer than 50%** of their enrolled units in the second semester face substantially elevated dropout risk.
+We identified **first/second semester academic metrics** as the **strongest predictors** of student success. The feature importance analysis revealed that **curricular units approved** and **grade performance in the second semester** were also important variables. **Students who pass fewer than 50%** of their enrolled units in the second semester face substantially elevated dropout risk.
 
 The early warning system could be established by the best-performing models. For example, students with first-semester **grades below 10.0** combined with fewer than **4 approved units** exhibited dropout probabilities exceeding 75%. Conversely, students maintaining grades above 13.0 with at least 8 approved units showed graduation probabilities above 93%, indicating a safe performance zone.
 
 ## 11.2 Business Recommendations
 
 These recommendations derive from model performance across the entire report. The specific grade, approved courses(passing exams), and financial situation are the most important factors to predict students' risk of dropping out. They can be used to build an early warning system to identify students at risk of dropping out, and take actions againtst it.
+For Our Client University:
+
+1.  **First Semester Monitoring**: After the first semester, use our models to predict students with high risk of dropping out. Handover the data to academic advisors in the university to take action.
+2.  **System Application Guidance**: Use **our best proven model** to first predict students with high risk of dropping out. When unsure of the prediction, using human verification, compare with 2nd best model ****, to be more assured.
+3.  **Continuous Risk Assessment**: Apply **graduation prediction models** to dynamically monitor students' risk of dropping out. To have better understand and assist students.
+
+For Uiversity Academic Advisors:
+
+1.  **Data Understanding**: First understand the data, verify and human-in-the-loop process must be implemented, rather than only trusting the modeling system.
+2.  **Early Intervention**: After filtering student at risk, use our models to understand the factors and take action before second or third semester begins. Through academic support, or other interventions. Build up a long term support program to continuously to minimize the risk of students dropping out.
+
+For Policy Makers:
+
+1.  **Economic Context Matters**: While individual factors dominate, economic conditions show measurable effects on student success
+2.  **Financial Support **:  Consider financial aids funds for students in need, through academic loans or other social programs.
+
+# 12. Limitations & Future Work
+
+## 12.1 Limitations
+
+Our dataset focuses on academic records and financial indicators, but real student life is more complex. We don't have data on **motivation**, **mental health**, or **study habits** (like how often someone visits the library or attends tutoring). These "soft" factors likely matter a lot, but they're hard to collect.
+
+Finally, this is a Portuguese institution with its own grading scale (0-20). What works here might not directly transfer to HSLU or other universities without recalibration. Some system could be develped using standarized scale.
+
+## 12.2 Ideas for Future Work
+
+1. **Behavioral signals**: Library check-ins, or Ilias login frequency could add predictive power.
+2. **Cross University Project**: We could scale this system and apply to different universities.
+
+# 13. Generative AI Declaration & Guidelines
+
+Generative AI was used as a supplementary tool on top of the assisting material provided in the Machine Learning1 lecture.
+
+## Guidelines for Responsible and Effective Usage of Gen-AI
+1. **Human-in-the-loop verification:** All AI-suggested content was treated as a draft. Text, code, or sources delivered by AI had to be critically reviewed and tested before inclusion.
+2. **Emphasis on learning:** Gen-AI functioned as a learning companion rather than an automated code generator. After receiving suggestions, team members engaged in follow-up questions to grasp the underlying logic and method.
+3. **Transparency:** The team openly acknowledged where and how AI was used in the workflow so the benefits and quality safeguards remained clear.
+
+## Use Cases of AI Tools in the Machine Learning 1 Course Context
+AI-based assistants were applied in the following specific cases:<br>
+1. **Brainstorming:** Elaborating initial ideas, structuring thoughts, and outlining coding approaches.<br>
+2. **Debugging & optimization:** Explaining error messages and helping improve self-developed scripts to raise efficiency.
+3. **Proofreading:** Accelerating grammar and typo checks during documentation.<br>
+4. **Information acquisition:** Searching for methodological references or code documentation for R Markdown, or machine learning methods (always followed by human verification of credibility).<br>
+
+## Benefits and Challenges in Using Generative AI Tools
+1. **Benefits:** Faster debugging (e.g., resolving R Markdown knitting errors or debugging issues), on-demand tutoring for advanced questions, and more time spent on analytical reasoning instead of routine fixes.<br>
+2. **Challenges:** The ease of getting answers can create a temptation to trust outputs blindly. The "human-in-the-loop" guideline ensured the team retained ownership, validating every AI-assisted contribution.
+
+------------------------------------------------------------------------
