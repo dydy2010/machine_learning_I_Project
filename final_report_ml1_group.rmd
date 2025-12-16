@@ -2251,27 +2251,25 @@ svm_best_accuracy <- comparison_results$Accuracy[svm_best_idx]
 
 # 10. Model Comparison & Cross Validation
 
-## 10.1 Performance Overview
-```{r summary-table}
-summary_df <- data.frame(
-  Model = c("Linear Regression", "Poisson GLM (1st Sem)", "Poisson GLM (2nd Sem)",
-            "Binomial GLM (Admission)", "Binomial GLM (Graduation)",
-            "Gaussian GAM", "Logistic GAM", "Poisson GAM", "SVM (best kernel)"),
-  Outcome = c("Grades", "Course Count", "Course Count", "Classification",
-              "Classification", "Grades", "Classification", "Course Count", "Classification"),
-  Metric = c(sprintf("R² = %.3f", test_r2),
-             sprintf("RMSE = %.3f", test_rmse1),
-             sprintf("RMSE = %.3f", test_rmse2),
-             sprintf("Acc = %.3f", accuracy_adm),
-             sprintf("AUC = %.3f", auc_suc),
-             sprintf("R² = %.3f", test_r2_g),
-             sprintf("AUC = %.3f", auc_s),
-             sprintf("R² = %.3f", test_r2_c),
-             sprintf("Acc = %.3f (%s)", svm_best_accuracy, svm_best_model))
-)
+## 10.1 Model Overview
+Until now, we have done the following models and experiments:
 
-knitr::kable(summary_df, caption = "Comparative Model Performance Summary")
-```
+| Model | Target Outcome | Predictors | Evaluation |
+|-------|---------------|----------------|------------|
+| **Linear Regression** | 2nd Sem Grade (continuous) | 1st Sem Grade, Admission Grade, GDP | R² ~ 0.68 |
+| **Binomial GLM 1** | High vs Low Admission Score | Previous Qualification, Age, Parents' Qualification | Accuracy ~ 70% |
+| **Binomial GLM 2** | Graduation vs Dropout | 1st Sem Approved/Grade, Tuition Status, Debtor | AUC ~ 0.87 |
+| **Poisson GLM 1** | 1st Sem Courses Approved (count) | Admission Grade, Previous Qualification | RMSE ~ 1.8 |
+| **Poisson GLM 2** | 2nd Sem Courses Approved (count) | 1st Sem Approved/Grade, Tuition Status | RMSE ~ 2.1 |
+| **Gaussian GAM** | 2nd Sem Grade (continuous) | 1st Sem Grade (smooth), Age, Scholarship | R² ~ 0.72 |
+| **Logistic GAM** | Graduation vs Dropout | 1st Sem Approved/Grade (smooth), Tuition, Scholarship | AUC ~ 0.89 |
+| **Poisson GAM** | 2nd Sem Courses Approved (count) | 1st Sem Approved (smooth), Age, GDP | R² ~ 0.65 |
+| **Neural Network** | Dropout vs Not Dropout | 1st/2nd Sem Grades, Tuition, Debtor, Scholarship | Accuracy ~ 88% |
+| **SVM (Linear)** | Graduation vs Dropout | 2nd Sem Grade, 2nd Sem Approved | Accuracy ~ 87.6% |
+| **SVM (Radial)** | Graduation vs Dropout | 2nd Sem Grade, 2nd Sem Approved | Accuracy ~ 87.7% |
+| **SVM (Poly)** | Graduation vs Dropout | 2nd Sem Grade, 2nd Sem Approved | Accuracy ~ 84.1% |
+
+
 
 ------------------------------------------------------------------------
 
