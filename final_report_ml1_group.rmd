@@ -2278,19 +2278,40 @@ With NN and SVM, we did focused on the dropout prediction.
 
 **Two prediction timelines are possible with our models:**
 
-```mermaid
-flowchart LR
-    subgraph "Option 1: At Admission (Experimental)"
-        A[Admission Data] --> B[Poisson GLM]
-        B --> C[Predicted 1st Sem Courses]
-        C --> D[Binomial GLM]
-        D --> E[Dropout Risk]
-    end
+```{r early-warning-flowchart, echo=FALSE, fig.width=10, fig.height=4}
+if (requireNamespace("DiagrammeR", quietly = TRUE)) {
+  DiagrammeR::grViz("
+  digraph early_warning {
+    graph [rankdir=LR, bgcolor=white, fontname=Helvetica]
+    node [shape=box, style='rounded,filled', fontname=Helvetica, fontsize=11]
     
-    subgraph "Option 2: After 1st Semester (Recommended)"
-        F[1st/2nd Sem Data] --> G[NN or SVM]
-        G --> H[Dropout Prediction<br>~88% Accuracy]
-    end
+    subgraph cluster_0 {
+      label='Option 1: At Admission (Experimental)'
+      style=dashed
+      color=gray
+      A [label='Admission\\nData', fillcolor='#e3f2fd']
+      B [label='Poisson\\nGLM', fillcolor='#bbdefb']
+      C [label='Predicted\\n1st Sem Courses', fillcolor='#90caf9']
+      D [label='Binomial\\nGLM', fillcolor='#64b5f6']
+      E [label='Dropout\\nRisk', fillcolor='#42a5f5']
+      A -> B -> C -> D -> E
+    }
+    
+    subgraph cluster_1 {
+      label='Option 2: After 1st Semester (Recommended)'
+      style=solid
+      color='#2e7d32'
+      F [label='1st/2nd Sem\\nData', fillcolor='#c8e6c9']
+      G [label='NN or SVM', fillcolor='#81c784']
+      H [label='Dropout Prediction\\n~88% Accuracy', fillcolor='#4caf50', fontcolor=white]
+      F -> G -> H
+    }
+  }
+  ")
+} else {
+  cat("Option 1 (Experimental): Admission Data → Poisson GLM → Predicted Courses → Binomial GLM → Dropout Risk\n")
+  cat("Option 2 (Recommended): 1st/2nd Sem Data → NN or SVM → Dropout Prediction (~88% Accuracy)")
+}
 ```
 
 **Option 2 (NN/SVM after 1st semester)** is recommended for production use due to higher accuracy (~88%). Option 1 provides earlier predictions but relies on predicted intermediate values.

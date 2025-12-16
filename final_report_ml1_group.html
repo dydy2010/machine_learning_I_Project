@@ -3157,26 +3157,20 @@ academic success</strong>.</p>
 <div id="key-findings" class="section level2">
 <h2>Key Findings:</h2>
 <ul>
-<li><strong>First semester performance is the strongest
-predictor</strong> of subsequent academic outcomes across all
-models</li>
+<li><strong>First &amp; Second semester performance is the strongest
+predictor</strong> of academic outcomes across all models.</li>
+<li><strong>2 Early warning systems</strong> could be built upon our
+models.</li>
 <li><strong>Non-linear relationships exist</strong> between age, course
-load, and success rates—captured by GAMs but missed by traditional
-linear models</li>
-<li><strong>Economic and financial factors</strong> (GDP, unemployment,
-scholarship status, tuition payment) show systematic effects on student
-success</li>
-<li><strong>GAMs consistently outperform traditional GLMs</strong> by
-2-5 percentage points, revealing curved relationships in the data</li>
-<li><strong>Model accuracy ranges from 75-90%</strong> depending on the
+load, and success.</li>
+<li><strong>Model accuracy ranges from 70-90%</strong> depending on the
 prediction task, with graduation prediction achieving the highest
 discrimination (<strong>AUC ≈ 0.87</strong>)</li>
 </ul>
-<p><strong>Business Impact:</strong> These models enable institutions to
-<strong>identify at-risk students early</strong>, <strong>allocate
-resources efficiently</strong>, and implement <strong>targeted
-interventions</strong> that can improve graduation rates by
-<strong>10-15%</strong>.</p>
+<p><strong>Business Impact:</strong> These models enable our client
+university to <strong>identify at-risk students early</strong>,
+<strong>allocate resources</strong>, and implement <strong>targeted
+interventions</strong> that can improve graduation rates.</p>
 <hr />
 </div>
 </div>
@@ -5901,18 +5895,8 @@ on the dropout prediction.</p>
 <h3>Early Warning System Approaches</h3>
 <p><strong>Two prediction timelines are possible with our
 models:</strong></p>
-<pre class="mermaid"><code>flowchart LR
-    subgraph &quot;Option 1: At Admission (Experimental)&quot;
-        A[Admission Data] --&gt; B[Poisson GLM]
-        B --&gt; C[Predicted 1st Sem Courses]
-        C --&gt; D[Binomial GLM]
-        D --&gt; E[Dropout Risk]
-    end
-    
-    subgraph &quot;Option 2: After 1st Semester (Recommended)&quot;
-        F[1st/2nd Sem Data] --&gt; G[NN or SVM]
-        G --&gt; H[Dropout Prediction&lt;br&gt;~88% Accuracy]
-    end</code></pre>
+<pre><code>## Option 1 (Experimental): Admission Data → Poisson GLM → Predicted Courses → Binomial GLM → Dropout Risk
+## Option 2 (Recommended): 1st/2nd Sem Data → NN or SVM → Dropout Prediction (~88% Accuracy)</code></pre>
 <p><strong>Option 2 (NN/SVM after 1st semester)</strong> is recommended
 for production use due to higher accuracy (~88%). Option 1 provides
 earlier predictions but relies on predicted intermediate values.</p>
