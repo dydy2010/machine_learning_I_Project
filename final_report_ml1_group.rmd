@@ -2345,35 +2345,18 @@ Several consistent patterns emerged:
 
 ------------------------------------------------------------------------
 
-# 12. Limitations & Future Work
 
-## 12.1 Current Limitations
-
-1.  **Missing Variables**: Important factors like motivation, study habits, mental health, and campus engagement aren't captured.
-2.  **Temporal Dynamics**: Our models don't account for how circumstances change over time.
-3.  **Causal Claims**: These are predictive models—we identify associations, not proven causal mechanisms.
-4.  **Institutional Specificity**: Results may not generalize to institutions with different student populations or support systems.
-
-## 12.2 Future Research Directions
-
-1.  **Add study-behavior data**: Add library visits, and tutoring center check-ins.
-2.  **Use text signals**: Look at course evaluations, advisor notes, or short essays for extra context.
-3.  **Track over time**: Try simple time-series approaches to see how risk changes semester by semester.
-5.  **Fairness checks**: Regularly test that the model isn’t reinforcing gaps between student groups.
-
-------------------------------------------------------------------------
-
-# 13. Conclusions & Business Recommendations
+# 11. Conclusions & Business Recommendations
 
 This study applied multiple machine learning approaches to predict student dropout and graduation outcomes using academic performance data from a Portuguese higher education institution. Three classification methods were evaluated: Linear and non-linear models like GLM/GAM, Support Vector Machines with multiple kernels, and Neural Networks.
 
-## 13.1 Key Findings
+## 11.1 Key Findings
 
 We identified **first-semester academic metrics** as the **strongest predictors** of student success. The feature importance analysis revealed that **curricular units approved** and **grade performance in the second semester** were also important variables. **Students who pass fewer than 50%** of their enrolled units in the second semester face substantially elevated dropout risk.
 
 The early warning system could be established by the best-performing models. For example, students with first-semester **grades below 10.0** combined with fewer than **4 approved units** exhibited dropout probabilities exceeding 75%. Conversely, students maintaining grades above 13.0 with at least 8 approved units showed graduation probabilities above 93%, indicating a safe performance zone.
 
-## 13.2 Business Recommendations
+## 11.2 Business Recommendations
 
 These recommendations derive from model performance across the entire report. The specific grade, approved courses(passing exams), and financial situation are the most important factors to predict students' risk of dropping out. They can be used to build an early warning system to identify students at risk of dropping out, and take actions againtst it.
 For Our Client University:
@@ -2392,7 +2375,20 @@ For Policy Makers:
 1.  **Economic Context Matters**: While individual factors dominate, economic conditions show measurable effects on student success
 2.  **Financial Support **:  Consider financial aids funds for students in need, through academic loans or other social programs.
 
-# Generative AI Declaration & Guidelines
+# 12. Limitations & Future Work
+
+## 12.1 Limitations
+
+Our dataset focuses on academic records and financial indicators, but real student life is more complex. We don't have data on **motivation**, **mental health**, or **study habits** (like how often someone visits the library or attends tutoring). These "soft" factors likely matter a lot, but they're hard to collect.
+
+Finally, this is a Portuguese institution with its own grading scale (0-20). What works here might not directly transfer to HSLU or other universities without recalibration. Some system could be develped using standarized scale.
+
+## 12.2 Ideas for Future Work
+
+1. **Behavioral signals**: Library check-ins, or Ilias login frequency could add predictive power.
+2. **Cross University Project**: We could scale this system and apply to different universities.
+
+# 13. Generative AI Declaration & Guidelines
 
 Generative AI was used as a supplementary tool on top of the assisting material provided in the Machine Learning1 lecture.
 
