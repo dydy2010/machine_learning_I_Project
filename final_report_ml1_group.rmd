@@ -2027,8 +2027,8 @@ if (requireNamespace("DiagrammeR", quietly = TRUE)) {
   }
   ")
 } else {
-  cat("Option 1 (Experimental): Admission Data → Poisson GLM → Predicted Courses → Binomial GLM → Dropout Risk\n")
-  cat("Option 2 (Recommended): 1st/2nd Sem Data → NN or SVM → Dropout Prediction (~88% Accuracy)")
+  cat("Option 1 (Experimental): Admission Data - Poisson GLM - Predicted Courses - Binomial GLM - Dropout Risk\n")
+  cat("Option 2 (Recommended): 1st/2nd Sem Data - NN or SVM - Dropout Prediction (~88% Accuracy)")
 }
 ```
 

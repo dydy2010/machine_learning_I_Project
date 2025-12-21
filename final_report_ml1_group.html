@@ -5660,8 +5660,8 @@ on the dropout prediction.</p>
 <h3>Early Warning System Approaches</h3>
 <p><strong>Two prediction timelines are possible with our
 models:</strong></p>
-<pre><code>## Option 1 (Experimental): Admission Data → Poisson GLM → Predicted Courses → Binomial GLM → Dropout Risk
-## Option 2 (Recommended): 1st/2nd Sem Data → NN or SVM → Dropout Prediction (~88% Accuracy)</code></pre>
+<pre><code>## Option 1 (Experimental): Admission Data - Poisson GLM - Predicted Courses - Binomial GLM - Dropout Risk
+## Option 2 (Recommended): 1st/2nd Sem Data - NN or SVM - Dropout Prediction (~88% Accuracy)</code></pre>
 <p><strong>Option 2 (NN/SVM after 1st semester)</strong> is recommended
 for production use due to higher accuracy (~88%). Option 1 provides
 earlier predictions but relies on predicted intermediate values.</p>
