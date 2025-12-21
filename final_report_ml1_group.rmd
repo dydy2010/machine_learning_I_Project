@@ -1,6 +1,6 @@
 ---
 title: "Predicting Student Success:<br>A Multi-Model Machine Learning Approach"
-subtitle: "Early Warning System for Student Dropout Risk"
+subtitle: "-- Early Warning System for Student Dropout Risk"
 author: "Dongyuan Gao, Ramiro, Cyriel"
 date: "`r Sys.Date()`"
 output:
@@ -143,13 +143,18 @@ options(warn = -1)
 
 # 1. Introduction & Data Context
 
-## 1.1 Motivation
+## 1.1 Business Questions & Model Mapping
 
-**Student dropout** is a critical issue in higher education with consequences for:
+**Student dropout** is a critical issue in higher education (often 20-40% in STEM). To address it, we deploy six modeling approaches, each answering a specific business question:
 
--   **Students:** Lost time, financial burden, and psychological impact
--   **Institutions:** Revenue loss, reduced graduation rates, reputational damage
--   **Society:** Lost human capital and economic potential
+1.  **How do 1st-semester results predict final graduation?** (Binomial GLM / GAM)
+    *   *Purpose:* Early intervention based on initial performance.
+2.  **Can we predict exact 2nd-semester grades?** (Linear Regression / Gaussian GAM)
+    *   *Purpose:* Forecasting specific academic performance.
+3.  **How many courses will a student pass in the 1st semester?** (Poisson GLM)
+    *   *Purpose:* Identifying students struggling with studies, prediction result could be beneficial for intervention methods.
+4.  **Who is at immediate risk of dropping out?** (SVM / Neural Net)
+    *   *Purpose:* High-accuracy classification for targeted support.
 
 By predicting **dropout risk early**, institutions can intervene with:
 
@@ -517,7 +522,7 @@ knitr::kable(top5_cor, caption = "Top 5 correlations with 2nd semester grade")
 
 ### Feature Relationships
 
-```{r linear-correlation, fig.height=8}
+```{r linear-correlation, fig.height=8, fig.width=10}
 correlation_matrix <- cor(df_model[c(FEATURES, TARGET)])
 
 corrplot(correlation_matrix,
@@ -525,10 +530,10 @@ corrplot(correlation_matrix,
          type = "upper",
          tl.col = "black",
          tl.srt = 45,
-         tl.cex = 0.7,
+         tl.cex = 1.1,        # Increased from 0.7 for bigger text
          col = colorRampPalette(c("blue", "white", "red"))(200),
          addCoef.col = "black",
-         number.cex = 0.4,
+         number.cex = 0.9,    # Increased from 0.4 for readable numbers
          title = "Feature Correlation Heatmap",
          mar = c(0, 0, 2, 0))
 ```
@@ -1258,7 +1263,7 @@ We train two neural networks to compare Lab 1 and Lab 2 approaches.
 
 Following `ANN_Lab1_GermanCredit_v1.Rmd`, we use `nnet` with one hidden layer and weight decay.
 
-```{r nn-train-model-A, results="hide"}
+```{r nn-train-model-A, results="hide", cache=TRUE, cacherebuild=FALSE}
 # Model A: nnet with single hidden layer (Lab 1 style)
 model_A <- nnet(
   Target ~ .,
@@ -2200,23 +2205,20 @@ The **early warning system** could be established by the best-performing models 
 
 ## 11.2 Business Recommendations
 
-These recommendations derive from model performance across the entire report. The specific grade, approved courses(passing exams), and financial situation are the most important factors to predict students' risk of dropping out. They can be used to build an early warning system to identify students at risk of dropping out, and take actions againtst it.
-For Our Client University:
+Our models suggest that **grade performance** and **financial stability** are the most critical factors for student retention. We propose the following structured intervention strategy:
 
-1.  **First Semester Monitoring**: After the first & second semester, use our NN & SVM to predict students with high risk of dropping out. Handover the data to academic advisors in the university to take action.
-2.  **System Application Guidance**: Use **our best proven model** to first predict students with high risk of dropping out. When unsure of the prediction, using human verification, compare with 2nd best model ****, to be more assured.
-3.  **Continuous Risk Assessment**: Apply **graduation prediction models** to dynamically monitor students' risk of dropping out. To have better understand and assist students.
-4.  **Interesting Exploration**: Using our **GLM poisson** it is also possible to predict first semester approved courses(RMSE 1.8, avg off by 2 courses) and then use **glm binomial** to predict the risk of dropping out, even right after admission.
+**1. For Our Client University:**
+*   **Implement "Option 2" Warning System:** Deploy the Neural Network or SVM after the first semester. Flags high-risk students with **~88% accuracy**.
+*   **Human-in-the-Loop Protocol:** Use the model as a *filtering tool*. High-risk lists should be reviewed by advisors, not used for automated decisions.
+*   **Continuous Monitoring:** Re-run risk assessments after every exam period.
 
-For Uiversity Academic Advisors:
+**2. For Academic Advisors:**
+*   **Early Intervention:** Focus on students failing >50% of first-semester courses. This is the single biggest red flag.
+*   **Holistic Support:** Combine academic tutoring with financial counseling, as financial stress (debtor status) is a key silent dropout driver.
 
-1.  **Data Understanding**: First understand the data, verify and human-in-the-loop process must be implemented, rather than only trusting the modeling system.
-2.  **Early Intervention**: After filtering student at risk, use our models to understand the factors and take action before second or third semester begins. Through academic support, or other interventions. Build up a long term support program to continuously to minimize the risk of students dropping out.
-
-For Policy Makers:
-
-1.  **Economic Context Matters**: While individual factors dominate, economic conditions show measurable effects on student success
-2.  **Financial Support **:  Consider financial aids funds for students in need, through academic loans or other social programs.
+**3. For Policy Makers:**
+*   **Economic Context:** External factors like Unemployment Rate and GDP impact success.
+*   **Financial Safety Nets:** Strengthen scholarship and emergency loan programs to buffer against economic downturns.
 
 # 12. Limitations & Future Work
 
@@ -2224,12 +2226,12 @@ For Policy Makers:
 
 Our dataset focuses on academic records and financial indicators, but real student life is more complex. We don't have data on **motivation**, **mental health**, or **study habits** (like how often someone visits the library or attends tutoring). These "soft" factors likely matter a lot, but they're hard to collect.
 
-Finally, this is a Portuguese institution with its own grading scale (0-20). What works here might not directly transfer to HSLU or other universities without recalibration. Some system could be develped using standarized scale.
+Finally, this is a Portuguese institution with its own grading scale (0-20). What works here might not directly transfer to HSLU or other universities without recalibration. A standardized scoring system would be needed for broader use.
 
 ## 12.2 Ideas for Future Work
 
-1. **Behavioral signals**: Library check-ins, or Ilias login frequency could add predictive power.
-2. **Cross University Project**: We could scale this system and apply to different universities.
+1. **Behavioral Signals:** Library check-ins, Ilias login frequency, and assignment submission times could significantly boost predictive power.
+2. **Cross-University Validation:** Scaling this system to other universities (e.g., HSLU) to test robustness across different institutions.
 
 # 13. Generative AI Declaration & Guidelines
 
