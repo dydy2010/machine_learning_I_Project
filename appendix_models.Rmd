@@ -1,0 +1,151 @@
+---
+title: "Appendix: Additional Models & Explorations"
+author: "Dongyuan Gao, Ramiro, Cyriel"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+# Re-load necessary libraries and data setup from main report logic
+library(tidyverse)
+library(caret)
+library(mgcv)
+library(pROC)
+library(gridExtra)
+
+# Basic Data Loading (Simplified for standalone running)
+# Note: Ensure paths match your project structure
+if(file.exists('data/data_choosing_process/Cyriel/data.csv')) {
+  df <- read.csv2('data/data_choosing_process/Cyriel/data.csv', fileEncoding = 'UTF-8-BOM')
+  
+  numeric_cols <- c('Admission.grade', 'Previous.qualification..grade.',
+                    'Age.at.enrollment', 'Mother.s.qualification',
+                    'Father.s.qualification', 'Curricular.units.1st.sem..grade.',
+                    'Curricular.units.2nd.sem..grade.', 'GDP',
+                    'Unemployment.rate', 'Inflation.rate')
+
+  for (col in numeric_cols) {
+    if (col %in% names(df)) {
+      df[[col]] <- as.numeric(as.character(df[[col]]))
+    }
+  }
+}
+```
+
+# A.1 Binomial GLM: Predicting High vs Low Admission Scores
+
+*Originally from Section 5.2 of the main report.*
+
+This model attempts to classify students into "High" or "Low" admission categories based on their background. While interesting for understanding entry profiles, it is less critical for the dropout prediction task.
+
+```{r binomial-admission-model}
+median_admission <- median(df$Admission.grade, na.rm = TRUE)
+df$High_Admission <- ifelse(df$Admission.grade >= median_admission, 1, 0)
+
+features_admission <- c(
+  'Previous.qualification..grade.',
+  'Age.at.enrollment',
+  'Mother.s.qualification',
+  'Father.s.qualification',
+  'Scholarship.holder',
+  'Gender',
+  'Debtor',
+  'Tuition.fees.up.to.date',
+  'Curricular.units.1st.sem..approved.',
+  'Curricular.units.1st.sem..grade.',
+  'Unemployment.rate',
+  'Inflation.rate',
+  'GDP'
+)
+
+df_admission <- df %>%
+  select(all_of(c(features_admission, 'High_Admission'))) %>%
+  mutate(across(-High_Admission, as.numeric)) %>%
+  na.omit()
+
+set.seed(42)
+train_index_adm <- createDataPartition(df_admission$High_Admission, p = 0.8, list = FALSE)
+train_adm <- df_admission[train_index_adm, ]
+test_adm  <- df_admission[-train_index_adm, ]
+
+# Model Training
+glm_adm <- glm(High_Admission ~ ., data = train_adm, family = binomial(link = "logit"))
+summary(glm_adm)
+
+# Evaluation
+pred_prob_adm <- predict(glm_adm, test_adm, type = "response")
+pred_class_adm <- ifelse(pred_prob_adm > 0.5, 1, 0)
+confusionMatrix(factor(pred_class_adm), factor(test_adm$High_Admission))
+```
+
+
+# A.2 Poisson GLM: 2nd Semester Course Approvals
+
+*Originally from Section 6.3 of the main report.*
+
+This model predicts the count of approved courses in the 2nd semester. It was removed from the main report because its findings (financial stability and 1st semester success are key) overlap heavily with the Linear Regression and 1st Semester Poisson models.
+
+```{r poisson-2nd-sem}
+TARGET_2 <- 'Curricular.units.2nd.sem..approved.'
+FEATURES_2 <- c(
+    'Previous.qualification..grade.',
+    'Admission.grade',
+    'Age.at.enrollment',
+    'Scholarship.holder',
+    'Debtor',
+    'Tuition.fees.up.to.date',
+    'Curricular.units.1st.sem..approved.',
+    'Curricular.units.1st.sem..grade.',
+    'Curricular.units.2nd.sem..enrolled.',
+    'Unemployment.rate',
+    'GDP'
+)
+
+df_model2 <- df %>%
+    select(all_of(c(FEATURES_2, TARGET_2))) %>%
+    mutate(across(everything(), ~ as.numeric(as.character(.)))) %>%
+    drop_na()
+
+set.seed(42)
+trainIndex2 <- createDataPartition(df_model2[[TARGET_2]], p = 0.8, list = FALSE)
+train_data2 <- df_model2[trainIndex2, ]
+test_data2  <- df_model2[-trainIndex2, ]
+
+poisson_model2 <- glm(as.formula(paste(TARGET_2, "~", paste(FEATURES_2, collapse = " + "))), 
+                      data = train_data2, family = poisson(link = "log"))
+
+# Prediction & Metrics
+y_pred2 <- predict(poisson_model2, newdata = test_data2, type = "response")
+rmse2 <- sqrt(mean((test_data2[[TARGET_2]] - y_pred2)^2))
+mae2 <- mean(abs(test_data2[[TARGET_2]] - y_pred2))
+cat(sprintf("Test RMSE: %.4f | MAE: %.4f", rmse2, mae2))
+```
+
+# A.3 Generalized Additive Models (GAM)
+
+*Originally from Section 7 of the main report.*
+
+GAMs were used to explore non-linear relationships. They confirmed that most relationships (e.g., grades) are largely linear, but some variables (like Age) show non-linear patterns.
+
+## A.3.1 Gaussian GAM (Grades)
+```{r gam-grade}
+# Using limited features for demonstration
+gam_grade <- gam(Curricular.units.2nd.sem..grade. ~ 
+                   s(Admission.grade) + s(Age.at.enrollment) + factor(Scholarship.holder),
+                 data = df, method = "REML")
+plot(gam_grade, pages = 1)
+summary(gam_grade)
+```
+
+## A.3.2 Poisson GAM (Course Counts)
+```{r gam-count}
+gam_count <- gam(Curricular.units.2nd.sem..approved. ~ 
+                   s(Admission.grade) + s(Age.at.enrollment) + factor(Scholarship.holder),
+                 data = df, family = poisson, method = "REML")
+summary(gam_count)
+```

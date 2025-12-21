@@ -69,6 +69,7 @@ machine_learning_I_Project/
 │   └── preprocessed_data.csv        # Cleaned data for modeling
 │
 ├── final_report_ml1_group.rmd       # Main deliverable (knit this)
+├── appendix_models.Rmd              # Supplementary models that are not included in final report
 ├── Evaluation_and_Hints.pdf         # Course requirements
 └── README.md                        # This file
 ```
@@ -103,7 +104,7 @@ machine_learning_I_Project/
 | **Source** | UCI Machine Learning Repository |
 | **URL** | https://archive.ics.uci.edu/dataset/697 |
 | **Size** | 4,424 students × 36 features |
-| **Target** | Dropout / Enrolled / Graduate |
+| **Target** | Dropout / Graduate / *Enrolled |
 
 ---
 
@@ -131,8 +132,8 @@ Generative AI was used as a supplementary tool on top of the assisting material 
 2. **Emphasis on learning:** Gen-AI functioned as a learning companion rather than an automated code generator. After receiving suggestions, team members engaged in follow-up questions to grasp the underlying logic and method.
 3. **Transparency:** The team openly acknowledged where and how AI was used in the workflow so the benefits and quality safeguards remained clear.
 
-### Use Cases of AI Tools in the DBM Course Context
-AI-based assistants were applied in the following specific cases:
+### Use Cases of AI Tools in the ML1 Course Context
+GenAI tools were applied in the following specific cases:
 1. **Brainstorming:** Elaborating initial ideas, structuring thoughts, and outlining coding approaches.
 2. **Debugging & optimization:** Explaining error messages and helping improve self-developed scripts to raise efficiency.
 3. **Proofreading:** Accelerating grammar and typo checks during documentation.
