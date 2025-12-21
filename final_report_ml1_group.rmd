@@ -2198,8 +2198,11 @@ This confirms our earlier single train/test split results: for this dataset, sim
 This study applied multiple machine learning approaches to predict student dropout and graduation outcomes using academic performance data from a Portuguese higher education institution. Three classification methods were evaluated: Linear and non-linear models like GLM/GAM, Support Vector Machines with multiple kernels, and Neural Networks.
 
 ## 11.1 Key Findings
+We identified **second semester academic performance** as the **strongest predictors** of student success or dropout, this was proven in our most reliable models SVM and NN features selection process.
+However, for the business case, first semester **early warning** could make more sense, as first semester performance comes as second often as the most important features.
 
-We identified **first/second semester academic metrics** as the **strongest predictors** of student success. The feature importance analysis revealed that **curricular units approved** and **grade performance in the second semester** were also important variables. **Students who pass fewer than 50%** of their enrolled units in the second semester face substantially elevated dropout risk.
+*   **1st Semester Performance:** The critical **"early warning"** signal. While less definitive than 2nd-semester results, poor performance here is the earliest actionable indicator of risk.
+*   **2nd Semester Performance:** The **"definitive"** predictor. Models using 2nd-semester data (SVM, NN) achieved the highest accuracy (~88%). By the end of the first year, the student's success or dropout is largely decided. **Failure to pass enrolled units** in the second semester is the dominant risk factor.
 
 The **early warning system** could be established by the best-performing models **SVM** or **Neural Network**. The accuracy rate could reach **86.8%**. Another **experimental system** could be  [Admission Data] - [Poisson GLM] - [Predicted 1st Sem Courses] - [Binomial GLM] - [Dropout Risk].
 
@@ -2207,18 +2210,20 @@ The **early warning system** could be established by the best-performing models 
 
 Our models suggest that **grade performance** and **financial stability** are the most critical factors for student retention. We propose the following structured intervention strategy:
 
-**1. For Our Client University:**
-*   **Implement "Option 2" Warning System:** Deploy the Neural Network or SVM after the first semester. Flags high-risk students with **~88% accuracy**.
+**1. For Our Client University (Two-Stage Filter):**
+
+*   **Implement "Option 2" Warning System:
+*   **Stage 1 (After Sem 1):** Deploy the **Binomial GLM** or **1st-Sem SVM** as a broad screening tool. The goal is *prevention*, flag students with difficulty early.
+*   **Stage 2 (After Sem 2):** Deploy the higher precision **Neural Network** or **SVM** . The goal is *crisis intervention*. Accurately identify students who are on the brink of dropout for intensive counseling.
 *   **Human-in-the-Loop Protocol:** Use the model as a *filtering tool*. High-risk lists should be reviewed by advisors, not used for automated decisions.
-*   **Continuous Monitoring:** Re-run risk assessments after every exam period.
 
 **2. For Academic Advisors:**
-*   **Early Intervention:** Focus on students failing >50% of first-semester courses. This is the single biggest red flag.
-*   **Holistic Support:** Combine academic tutoring with financial counseling, as financial stress (debtor status) is a key silent dropout driver.
+*   **Early Warning is key:** Do not wait for the 2nd semester. If the **system predicts dropout** based on first-semester data (where failing multiple courses is a key driver), this is the single biggest red flag for action. And another drop-out signal in 2nd semester would be definitive signal for inmediate intervention.
+*   **Multi-faceted Support:** Combine academic tutoring with financial counseling, as financial stress (debtor status) is a key dropout factor too.
 
 **3. For Policy Makers:**
 *   **Economic Context:** External factors like Unemployment Rate and GDP impact success.
-*   **Financial Safety Nets:** Strengthen scholarship and emergency loan programs to buffer against economic downturns.
+*   **Financial Safety Nets:** Consider policy to provide scholarship and emergency loan programs for in-risk students.
 
 # 12. Limitations & Future Work
 
