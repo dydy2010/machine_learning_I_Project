@@ -2248,14 +2248,16 @@ Generative AI was used as a supplementary tool on top of the assisting material 
 3. **Transparency:** The team openly acknowledged where and how AI was used in the workflow so the benefits and quality safeguards remained clear.
 
 ## Use Cases of AI Tools in the Machine Learning 1 Course Context
-AI-based assistants were applied in the following specific cases:<br>
-1. **Brainstorming:** Elaborating initial ideas, structuring thoughts, and outlining coding approaches.<br>
+AI-based assistants were applied in the following specific cases:
+
+1. **Brainstorming:** Elaborating initial ideas, structuring thoughts, and outlining coding approaches.
 2. **Debugging & optimization:** Explaining error messages and helping improve self-developed scripts to raise efficiency.
-3. **Proofreading:** Accelerating grammar and typo checks during documentation.<br>
-4. **Information acquisition:** Searching for methodological references or code documentation for R Markdown, or machine learning methods (always followed by human verification of credibility).<br>
+3. **Proofreading:** Accelerating grammar and typo checks during documentation.
+4. **Information acquisition:** Searching for methodological references or code documentation for R Markdown, or machine learning methods (always followed by human verification of credibility).
 
 ## Benefits and Challenges in Using Generative AI Tools
-1. **Benefits:** Faster debugging (e.g., resolving R Markdown knitting errors or debugging issues), on-demand tutoring for advanced questions, and more time spent on analytical reasoning instead of routine fixes.<br>
+
+1. **Benefits:** Faster debugging (e.g., resolving R Markdown knitting errors or debugging issues), on-demand tutoring for advanced questions, and more time spent on analytical reasoning instead of routine fixes.
 2. **Challenges:** The ease of getting answers can create a temptation to trust outputs blindly. The "human-in-the-loop" guideline ensured the team retained ownership, validating every AI-assisted contribution.
 
 -------------------------------------------------------------------------
