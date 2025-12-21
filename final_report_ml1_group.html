@@ -5887,13 +5887,24 @@ methods were evaluated: Linear and non-linear models like GLM/GAM,
 Support Vector Machines with multiple kernels, and Neural Networks.</p>
 <div id="key-findings-1" class="section level2">
 <h2>11.1 Key Findings</h2>
-<p>We identified <strong>first/second semester academic metrics</strong>
-as the <strong>strongest predictors</strong> of student success. The
-feature importance analysis revealed that <strong>curricular units
-approved</strong> and <strong>grade performance in the second
-semester</strong> were also important variables. <strong>Students who
-pass fewer than 50%</strong> of their enrolled units in the second
-semester face substantially elevated dropout risk.</p>
+<p>We identified <strong>second semester academic performance</strong>
+as the <strong>strongest predictors</strong> of student success or
+dropout, this was proven in our most reliable models SVM and NN features
+selection process. However, for the business case, first semester
+<strong>early warning</strong> could make more sense, as first semester
+performance comes as second often as the most important features.</p>
+<ul>
+<li><strong>1st Semester Performance:</strong> The critical
+<strong>“early warning”</strong> signal. While less definitive than
+2nd-semester results, poor performance here is the earliest actionable
+indicator of risk.</li>
+<li><strong>2nd Semester Performance:</strong> The
+<strong>“definitive”</strong> predictor. Models using 2nd-semester data
+(SVM, NN) achieved the highest accuracy (~88%). By the end of the first
+year, the student’s success or dropout is largely decided.
+<strong>Failure to pass enrolled units</strong> in the second semester
+is the dominant risk factor.</li>
+</ul>
 <p>The <strong>early warning system</strong> could be established by the
 best-performing models <strong>SVM</strong> or <strong>Neural
 Network</strong>. The accuracy rate could reach <strong>86.8%</strong>.
@@ -5907,25 +5918,36 @@ Risk].</p>
 <strong>financial stability</strong> are the most critical factors for
 student retention. We propose the following structured intervention
 strategy:</p>
-<p><strong>1. For Our Client University:</strong> * <strong>Implement
-“Option 2” Warning System:</strong> Deploy the Neural Network or SVM
-after the first semester. Flags high-risk students with <strong>~88%
-accuracy</strong>. * <strong>Human-in-the-Loop Protocol:</strong> Use
-the model as a <em>filtering tool</em>. High-risk lists should be
-reviewed by advisors, not used for automated decisions. *
-<strong>Continuous Monitoring:</strong> Re-run risk assessments after
-every exam period.</p>
-<p><strong>2. For Academic Advisors:</strong> * <strong>Early
-Intervention:</strong> Focus on students failing &gt;50% of
-first-semester courses. This is the single biggest red flag. *
-<strong>Holistic Support:</strong> Combine academic tutoring with
-financial counseling, as financial stress (debtor status) is a key
-silent dropout driver.</p>
+<p><strong>1. For Our Client University (Two-Stage Filter):</strong></p>
+<ul>
+<li>**Implement “Option 2” Warning System:</li>
+<li><strong>Stage 1 (After Sem 1):</strong> Deploy the <strong>Binomial
+GLM</strong> or <strong>1st-Sem SVM</strong> as a broad screening tool.
+The goal is <em>prevention</em>, flag students with difficulty
+early.</li>
+<li><strong>Stage 2 (After Sem 2):</strong> Deploy the higher precision
+<strong>Neural Network</strong> or <strong>SVM</strong> . The goal is
+<em>crisis intervention</em>. Accurately identify students who are on
+the brink of dropout for intensive counseling.</li>
+<li><strong>Human-in-the-Loop Protocol:</strong> Use the model as a
+<em>filtering tool</em>. High-risk lists should be reviewed by advisors,
+not used for automated decisions.</li>
+</ul>
+<p><strong>2. For Academic Advisors:</strong> * <strong>Early Warning is
+key:</strong> Do not wait for the 2nd semester. If the <strong>system
+predicts dropout</strong> based on first-semester data (where failing
+multiple courses is a key driver), this is the single biggest red flag
+for action. And another drop-out signal in 2nd semester would be
+definitive signal for inmediate intervention. * <strong>Multi-faceted
+Support:</strong> Combine academic tutoring with financial counseling,
+as financial stress (debtor status) is a key dropout factor too.</p>
 <p><strong>3. For Policy Makers:</strong> * <strong>Economic
-Context:</strong> External factors like Unemployment Rate and GDP impact
-success. * <strong>Financial Safety Nets:</strong> Strengthen
-scholarship and emergency loan programs to buffer against economic
-downturns.</p>
+Context:</strong> External factors like Unemployment Rate and GDP have
+minor effects on academic success(The Linear Regression coefficients
+(Section 4.8) show GDP/Unemployment have small effect sizes). This could
+be considered into policy making as background information. *
+<strong>Financial Safety Nets:</strong> Consider policy to provide
+scholarship and emergency loan programs for in-risk students.</p>
 </div>
 </div>
 <div id="limitations-future-work" class="section level1">

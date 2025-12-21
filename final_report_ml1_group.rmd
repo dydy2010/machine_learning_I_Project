@@ -2222,7 +2222,7 @@ Our models suggest that **grade performance** and **financial stability** are th
 *   **Multi-faceted Support:** Combine academic tutoring with financial counseling, as financial stress (debtor status) is a key dropout factor too.
 
 **3. For Policy Makers:**
-*   **Economic Context:** External factors like Unemployment Rate and GDP impact success.
+*   **Economic Context:** External factors like Unemployment Rate and GDP have minor effects on academic success(The Linear Regression coefficients (Section 4.8) show GDP/Unemployment have small effect sizes). This could be considered into policy making as background information.
 *   **Financial Safety Nets:** Consider policy to provide scholarship and emergency loan programs for in-risk students.
 
 # 12. Limitations & Future Work
