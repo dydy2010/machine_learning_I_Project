@@ -1641,25 +1641,24 @@ par(mfrow = c(1, 1))
 # Load the dataset from the project data folder
 student_data <- read_csv("data/preprocessed_data.csv")
 
-# Create binary target: Dropout vs Not Dropout (Graduate + Enrolled)
-# This aligns with the Early Warning System goal and is consistent with our Neural Network
+# Filter to keep only Dropout and Graduate (remove Enrolled)
 student_data <- student_data %>%
-  mutate(Target = ifelse(Target == "Dropout", "Dropout", "Not Dropout"))
+  filter(Target %in% c("Dropout", "Graduate"))
 
-# Convert Target to factor
-student_data$Target <- factor(student_data$Target, levels = c("Dropout", "Not Dropout"))
+# Convert Target to factor with only 2 levels
+student_data$Target <- factor(student_data$Target, levels = c("Dropout", "Graduate"))
 ```
 
-We will now test different **SVM kernels** to understand which is the best classifier for our student performance prediction. SVMs operate by identifying where the **margin** between different categories of data is the greatest.
+We will now test different vector models to understand what is the best classifier for our student's performance. SVMs operate by identifying where the **margin** between different categories of data is the greatest.
 To classify our dataset, the model plots a separating line between the two outcome classes using a number of predictors - in order to keep it clear, we want to create a two-dimensional plane (two predictors).
 
 By applying different kernels—linear, radial, and polynomial— we assess how the shape of the decision boundary affects prediction accuracy and determine which kernel provides the most reliable classification for our dataset.
 
 ## 9.1 Feature Selection
 
-For us to choose the best predictors, we will compute **F-statistic ANOVA** for every numeric feature in the dataset. The F-score tells us _how much_ the **mean** of each feature **differs** between the **two target groups** (_Dropout_ vs _Not Dropout_). Higher scores mean bigger separation between classes, making the feature more useful for classification. 
+For us to choose the best predictors, we will compute **F-statistic ANOVA** for every numeric feature in the dataset. The F-score tell us _how much_ the mean of each feature differs between the **two target groups** (_Graduation_/_Dropout_). Higher scores mean there is a bigger separation between classes, and a better cutoff between groups. 
 
-To visualize the SVM decision boundary, we need to limit our analysis to **two features** (creating a 2D plot with X and Y axes). We selected **second semester marks** and **courses approved** as they have the highest F-values, indicating they best separate Dropout from Not Dropout students.
+In this case, we want to choose the features of **second semester marks** and the **amount of courses approved** to plot our model. As they have the highest F-Values.
 ```{r svm-fscore-top5, echo=TRUE}
 numeric_cols <- sapply(student_data, is.numeric)
 features <- names(student_data)[numeric_cols]
@@ -1693,9 +1692,11 @@ rownames(results) <- NULL
 knitr::kable(head(results, 5), caption = "Top 5 Features by F-statistic")
 ```
 
-## 9.2 Data Preparation & Train/Test Split
+## 9.2 Prepare Data for SVM
 
-For consistency with our Neural Network model and the Early Warning System goal, we use a **binary classification**: *Dropout* vs *Not Dropout* (which includes both Graduate and Enrolled students). This approach makes sense because at prediction time, all students are enrolled — we want to predict if they will drop out.
+Support Vector Machines require **predictors** (numerical variables) and a **target** (categorical: _Graduate_/_Dropout_) for classification. The data was then structured into a format suitable for SVM modeling.
+The original dataset contained three academic outcomes: _Enrolled_, _Dropout_, and _Graduate_. Since the objective of this analysis is to distinguish students who ultimately graduate from those who drop out, **the Enrolled category was removed**. 
+This reduces the dataset size but produces a cleaner binary classification.
 ```{r svm-prepare-marks, echo=TRUE, results='hide'}
 # Get the top 2 features (excluding Target)
 top_feature_1 <- as.character(results$Feature[1])
@@ -1721,7 +1722,10 @@ data_summary <- data.frame(
 knitr::kable(data_summary, align = 'c', caption = "Dataset Summary")
 ```
 
-We split the data 80/20 for training and testing:
+### Train/Test Split
+
+Now, we will split the data into training and testing sets, and then fit several SVM models to classify the students based on their marks.
+
 ```{r svm-train-test-split-display, echo=TRUE}
 # svm-train-test-split
 set.seed(123)
@@ -1741,175 +1745,228 @@ split_summary <- data.frame(
 knitr::kable(split_summary, align = 'c', caption = "Train/Test Split")
 ```
 
-## 9.3 Model Training & Tuning
+## 9.4 Model Training
 
-We train and optimize **all three SVM kernels** using `tune()` to find the best hyperparameters for each. This ensures a fair comparison rather than using arbitrary parameter values.
+In our dataset, each student is described by academic features such as second-semester grades and credits passed. Depending on the data relationship(linear or non-linear or complex), we try the following Kernels.
 
 **Linear Kernel**: Creates a straight decision boundary to separate classes. This kernel is ideal when the data is linearly separable.  
 **Radial Basis Function (RBF) Kernel**: Generates curved, non-linear decision boundaries by measuring the distance between data points.  
 **Polynomial Kernel**: Produces curved boundaries with a specific degree of curve. 
 ```{r svm-train-models, echo=TRUE}
-set.seed(123)
-
-# 1. Linear Kernel (Tune cost only)
-tune_linear <- tune(svm, y ~ x.1 + x.2, data = train_data,
-                    kernel = "linear",
-                    ranges = list(cost = c(0.1, 1, 10, 100)))
-svm_linear <- tune_linear$best.model
-
-# 2. Radial Kernel (Tune cost + gamma)
-tune_radial <- tune(svm, y ~ x.1 + x.2, data = train_data, 
-                    kernel = "radial",
-                    ranges = list(cost = c(0.1, 1, 10, 100),
-                                 gamma = c(0.1, 0.5, 1, 2)))
-svm_radial <- tune_radial$best.model
-
-# 3. Polynomial Kernel (Tune cost + degree)
-tune_poly <- tune(svm, y ~ x.1 + x.2, data = train_data,
-                  kernel = "polynomial",
-                  ranges = list(cost = c(0.1, 1, 10),
-                               degree = c(2, 3, 4)))
-svm_poly <- tune_poly$best.model
-
+svm_linear <- svm(y ~ x.1 + x.2, data = train_data, kernel = "linear", cost = 1)
+svm_radial <- svm(y ~ x.1 + x.2, data = train_data, kernel = "radial", cost = 10, gamma = 0.1)
+svm_poly <- svm(y ~ x.1 + x.2, data = train_data, kernel = "polynomial", cost = 1, degree = 3)
 ```
 
-**Optimal Hyperparameters:**
+### 9.5 Model Performance & Evaluation
 
-*   **Linear:** Cost = `r tune_linear$best.parameters$cost`. A lower cost suggests the data is not perfectly separable, allowing some misclassifications to find a wider margin (Soft Margin).
-*   **Radial:** Cost = `r tune_radial$best.parameters$cost`, Gamma = `r tune_radial$best.parameters$gamma`. The gamma value controls the "reach" of a single training example; a moderate value implies a balance between capturing complex boundaries and overfitting.
-*   **Polynomial:** Cost = `r tune_poly$best.parameters$cost`, Degree = `r tune_poly$best.parameters$degree`. The degree indicates the complexity of the curved boundary needed.
+#### Linear Kernel Results
 
-## 9.4 Decision Boundary Comparison
-
-The plots below compare the **"Rigid" Linear Boundary** against the **"Flexible" Tuned Radial Boundary**. The decision boundary represents the "Safe Zone" — students above the line are predicted to *Not Dropout*, while those below are flagged as *Dropout* risk.
-
-```{r svm-boundary-comparison, fig.width=10, fig.height=5, fig.align='center', echo=FALSE}
-# Setup grid for plotting
+```{r svm-plot-linear, fig.width=6, fig.height=5, fig.align='center', echo=TRUE}
+pred_linear <- predict(svm_linear, test_data)
+pred_radial <- predict(svm_radial, test_data)
+pred_poly <- predict(svm_poly, test_data)
+# Get predictions for the grid
 x1_range <- range(train_data$x.1)
 x2_range <- range(train_data$x.2)
+
 x1_seq <- seq(x1_range[1], x1_range[2], length.out = 200)
 x2_seq <- seq(x2_range[1], x2_range[2], length.out = 200)
+
 grid <- expand.grid(x.1 = x1_seq, x.2 = x2_seq)
+grid$pred <- predict(svm_linear, grid)
 
-# Colors: Yellow (Dropout) vs Blue (Not Dropout)
+# Create colors for binary classification (Yellow for Dropout, Blue for Graduate)
 cols <- c("#FFF9C4", "#B3E5FC")
-pt_cols <- c("#FFA000", "#1976D2")
 
-# Function to plot boundary
-plot_svm_boundary <- function(model, title_text) {
-plot_svm_boundary <- function(model, title_text) {
-  # Background Grid (Prediction)
-  grid$pred <- predict(model, grid)
-  plot(grid$x.1, grid$x.2, col = cols[as.numeric(grid$pred)], pch = 15, cex = 0.3,
-       xlab = gsub("\\.", " ", top_feature_2),
-       ylab = gsub("\\.", " ", top_feature_1),
-       main = title_text,
-       cex.lab = 0.9, cex.axis = 0.8)
-  
-  # Overlay TEST Data points (Actual)
-  # Jitter added to separate overlapping integer scores
-  points(jitter(test_data$x.1, amount = 0.3), jitter(test_data$x.2, amount = 0.3), 
-         col = pt_cols[as.numeric(test_data$y)],
-         pch = 19, cex = 0.6)
-}
+# Set up plot with smaller margins
+par(mar = c(4, 4, 2, 2))
 
-# Dual Plot Layout
-par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
+# Plot decision regions
+plot(grid$x.1, grid$x.2, col = cols[as.numeric(grid$pred)], pch = 15, cex = 0.3,
+     xlab = gsub("\\.", " ", top_feature_2),
+     ylab = gsub("\\.", " ", top_feature_1),
+     main = "",
+     cex.lab = 0.9, cex.axis = 0.8)
 
-plot_svm_boundary(svm_linear, "Linear Kernel (Test Data)")
-legend("topright", legend = levels(test_data$y), col = pt_cols, pch = 19, cex = 0.7, bty = "n")
+# Add training points
+points(train_data$x.1, train_data$x.2, 
+       col = c("#FFA000", "#1976D2")[as.numeric(train_data$y)],
+       pch = 19, cex = 0.8)
 
-plot_svm_boundary(svm_radial, "Tuned Radial Kernel (Test Data)")
-legend("topright", legend = levels(test_data$y), col = pt_cols, pch = 19, cex = 0.7, bty = "n")
+# Add simple legend
+legend("topright", 
+       legend = levels(train_data$y),
+       col = c("#FFA000", "#1976D2"),
+       pch = 19,
+       cex = 0.7,
+       bty = "n")
 
-par(mfrow = c(1, 1))
+# svm-eval-linear
+cm_linear <- confusionMatrix(pred_linear, test_data$y)
+
+# Display confusion matrix as a table
+knitr::kable(cm_linear$table, 
+             caption = "Linear Kernel - Confusion Matrix",
+             align = 'c')
 ```
 
 
-The **Linear kernel** creates a simple straight line cut-off. The **Radial kernel** is more sophisticated: notice how it creates a second "risk zone" (yellow blob) for students with many approved units but very low grades. The Linear model misses these at-risk students, classifying them as safe.
 
-## 9.5 Visual Comparison: Confusion Matrices
+The confusion matrix shows that the linear kernel correctly classified **218 dropouts** and **416 graduates**. However, the model misclassified **66 students who dropped out as graduates** and **25 graduates as dropouts**, indicating some overlap between the two groups. Overall, the linear SVM achieved high accuracy with relatively balanced performance across both prediction categories.
 
-Here we visually compare where the models make mistakes. The **Linear Model** serves as our baseline.
+```{r svm-metrics-linear, echo=TRUE}
+metrics_linear <- data.frame(
+  Metric = c("Accuracy", "Sensitivity", "Specificity", "Kappa"),
+  Value = c(
+    round(cm_linear$overall['Accuracy'], 4),
+    round(cm_linear$byClass['Sensitivity'], 4),
+    round(cm_linear$byClass['Specificity'], 4),
+    round(cm_linear$overall['Kappa'], 4)
+  )
+)
+rownames(metrics_linear) <- NULL
 
-```{r svm-matrix-comparison, fig.width=10, fig.height=4, fig.align='center', echo=FALSE}
-# Helper to plot matrix
-plot_cm_tile <- function(pred_vals, title) {
-  cm <- caret::confusionMatrix(pred_vals, test_data$y)
-  cm_df <- as.data.frame(cm$table)
-  colnames(cm_df) <- c("Predicted", "Actual", "Count")
-  
-  ggplot(cm_df, aes(x = Predicted, y = Actual, fill = Count)) +
-    geom_tile(color = "white") +
-    geom_text(aes(label = Count), color = "black", size = 5) +
-    scale_fill_gradient(low = "#E3F2FD", high = "#2196F3") +
-    labs(title = title, x = "Predicted", y = "Actual") +
-    theme_minimal() +
-    theme(legend.position = "none", plot.title = element_text(hjust = 0.5, face="bold"))
-}
+knitr::kable(metrics_linear, 
+             caption = "Linear Kernel - Performance Metrics",
+             align = 'c')
+```
+The linear kernel achieved an accuracy of 87.6%, correctly classifying nearly 9 out of 10 students in the test set. The model demonstrates **high specificity (94.3%)**, meaning it excels at identifying graduates, but shows moderate **sensitivity (76.7%)**, indicating it sometimes misses students at risk of dropping out. The **Kappa score of 0.73** suggests substantial agreement beyond chance, confirming the model's reliability. These metrics indicate that while the linear SVM performs well overall, it is **especially strong at predicting graduation**, but could be improved for dropout detection.
 
-# Generate plots
-pred_lin <- predict(svm_linear, test_data)
-pred_rad <- predict(svm_radial, test_data)
+### Radial Kernel Results
 
-p1 <- plot_cm_tile(pred_lin, "Linear Confusion Matrix")
-p2 <- plot_cm_tile(pred_rad, "Radial Confusion Matrix")
+```{r svm-plot-radial, fig.width=6, fig.height=5, fig.align='center', echo=TRUE}
+# Get predictions for the grid
+grid$pred <- predict(svm_radial, grid)
 
-gridExtra::grid.arrange(p1, p2, ncol = 2)
+# Set up plot
+par(mar = c(4, 4, 2, 2))
+
+# Plot decision regions
+plot(grid$x.1, grid$x.2, col = cols[as.numeric(grid$pred)], pch = 15, cex = 0.3,
+     xlab = gsub("\\.", " ", top_feature_2),
+     ylab = gsub("\\.", " ", top_feature_1),
+     main = "",
+     cex.lab = 0.9, cex.axis = 0.8)
+
+# Add training points
+points(train_data$x.1, train_data$x.2, 
+       col = c("#FFA000", "#1976D2")[as.numeric(train_data$y)],
+       pch = 19, cex = 0.8)
+
+# Add legend
+legend("topright", 
+       legend = levels(train_data$y),
+       col = c("#FFA000", "#1976D2"),
+       pch = 19,
+       cex = 0.7,
+       bty = "n")
 ```
 
-**Interpretation:** The confusion matrices show where each model makes errors. For an Early Warning System, **false negatives** (predicting "Not Dropout" for students who actually dropout) are more costly than false positives.
+```{r svm-eval-radial, echo=FALSE}
+cm_radial <- confusionMatrix(pred_radial, test_data$y)
 
-Comparing the two models:
+# Display confusion matrix as a table
+knitr::kable(cm_radial$table, 
+             caption = "Radial Kernel - Confusion Matrix",
+             align = 'c')
+```
+The radial kernel shows improved performance over the linear model, correctly classifying **220 dropouts** and **416 graduates**. The model reduced misclassifications of at-risk students, while maintaining the same **25 graduates misclassified as dropouts**. This suggests the **radial function better captures the relationships** in the data, leading to slightly better detection of students at risk of dropping out.
 
-- **Linear kernel:** Catches 157 dropouts, but **misses 127** (false negatives)
-- **Radial kernel:** Catches 195 dropouts, but **misses only 89** (false negatives)
+```{r svm-metrics-radial, echo=FALSE}
+metrics_radial <- data.frame(
+  Metric = c("Accuracy", "Sensitivity", "Specificity", "Kappa"),
+  Value = c(
+    round(cm_radial$overall['Accuracy'], 4),
+    round(cm_radial$byClass['Sensitivity'], 4),
+    round(cm_radial$byClass['Specificity'], 4),
+    round(cm_radial$overall['Kappa'], 4)
+  )
 
-The Radial kernel reduces missed dropout cases by **30%** (from 127 to 89). The trade-off is 26 extra false alarms (57 vs 31), which is acceptable since extra support for non-at-risk students causes no harm.
 
-## 9.6 Performance Summary
+)
+rownames(metrics_radial) <- NULL
 
-All three kernels were optimized using grid search to find the best hyperparameters. The table below compares their final performance on the test set:
+knitr::kable(metrics_radial, 
+             caption = "Radial Kernel - Performance Metrics",
+             align = 'c')
+```
+The radial kernel demonstrates a slight improvement in overall performance with an **accuracy of 87.7%** and **Kappa score of 0.7359**, both marginally better than the linear model. Notably, the **sensitivity increased to 77.46%**, showing improved ability to detect students at risk of dropping out. The **specificity holds steady at 94%**, maintaining excellent performance in identifying graduates. Overall, the radial kernel's performance is quite similar to the linear model, suggesting that the relationship between the features may be linear.
 
+### Polynomial Kernel Results
+```{r svm-eval-poly-conf, echo=FALSE}
+cm_poly <- confusionMatrix(pred_poly, test_data$y)
+
+# Display confusion matrix as a table
+knitr::kable(cm_poly$table, 
+             caption = "Polynomial Kernel - Confusion Matrix",
+             align = 'c')
+
+# Display key metrics as a table
+metrics_poly <- data.frame(
+  Metric = c("Accuracy", "Sensitivity", "Specificity", "Kappa"),
+  Value = c(
+    round(cm_poly$overall['Accuracy'], 4),
+    round(cm_poly$byClass['Sensitivity'], 4),
+    round(cm_poly$byClass['Specificity'], 4),
+    round(cm_poly$overall['Kappa'], 4)
+  )
+)
+rownames(metrics_poly) <- NULL
+
+knitr::kable(metrics_poly, 
+             caption = "Polynomial Kernel - Performance Metrics",
+             align = 'c')
+
+# svm-plot-poly
+# Get predictions for the grid
+grid$pred <- predict(svm_poly, grid)
+
+# Set up plot
+par(mar = c(4, 4, 2, 2))
+
+# Plot decision regions
+plot(grid$x.1, grid$x.2, col = cols[as.numeric(grid$pred)], pch = 15, cex = 0.3,
+     xlab = gsub("\\.", " ", top_feature_2),
+     ylab = gsub("\\.", " ", top_feature_1),
+     main = "",
+     cex.lab = 0.9, cex.axis = 0.8)
+
+# Add training points
+points(train_data$x.1, train_data$x.2, 
+       col = c("#FFA000", "#1976D2")[as.numeric(train_data$y)],
+       pch = 19, cex = 0.8)
+
+# Add legend
+legend("topright", 
+       legend = levels(train_data$y),
+       col = c("#FFA000", "#1976D2"),
+       pch = 19,
+       cex = 0.7,
+       bty = "n")
+```
+The polynomial kernel achieved 84.1% overall accuracy with high specificity (96.2%), indicating strong performance in correctly identifying graduates. However, the model's sensitivity of 65.5% reveals a weakness in detecting dropout cases, with the Kappa score of 64.9% confirming moderate agreement.
+
+## 9.7 Performance Comparison
+
+After evaluating all three SVM kernels, the results show minimal performance differences across models. The **radial kernel** achieved the highest accuracy at 87.7%, followed closely by the **linear kernel** at 87.4%, while the **polynomial kernel** performed slightly lower at 84.1%. However, given the marginal improvement of only 0.3% between the linear and radial models, the **linear kernel is the preferred choice** for this classification task. The linear model's simplicity also makes it easier to explain to administrators and educators.
 ```{r svm-comparison, echo=TRUE}
-# Calculate predictions for all models
-pred_lin <- predict(svm_linear, test_data)
-pred_rad <- predict(svm_radial, test_data)
-pred_poly <- predict(svm_poly, test_data)
-
-cm_linear <- confusionMatrix(pred_lin, test_data$y)
-cm_radial <- confusionMatrix(pred_rad, test_data$y)
-cm_poly   <- confusionMatrix(pred_poly, test_data$y)
-
 comparison_results <- data.frame(
   Model = c("Linear", "Radial", "Polynomial"),
   Accuracy = c(cm_linear$overall['Accuracy'],
                cm_radial$overall['Accuracy'],
-               cm_poly$overall['Accuracy']),
-  Sensitivity = c(cm_linear$byClass['Sensitivity'],
-                  cm_radial$byClass['Sensitivity'],
-                  cm_poly$byClass['Sensitivity']),
-  Kappa = c(cm_linear$overall['Kappa'],
-            cm_radial$overall['Kappa'],
-            cm_poly$overall['Kappa'])
+               cm_poly$overall['Accuracy'])
 )
+rownames(comparison_results) <- NULL
 
-# Store best model info using numeric values
+knitr::kable(comparison_results, digits = 3, caption = "Model Accuracy Comparison")
+
+# Store best model info for summary table
 svm_best_idx <- which.max(comparison_results$Accuracy)
 svm_best_model <- comparison_results$Model[svm_best_idx]
 svm_best_accuracy <- comparison_results$Accuracy[svm_best_idx]
-
-# Create display table with formatting
-display_table <- comparison_results
-display_table[,2:3] <- lapply(display_table[,2:3], function(x) sprintf("%.1f%%", x*100))
-display_table$Kappa <- round(display_table$Kappa, 3)
-
-knitr::kable(display_table, caption = "Model Accuracy Comparison", align = 'c')
 ```
 
-Based on these results, the **Radial kernel** performs best with the highest accuracy and sensitivity. This makes it the recommended choice for the Early Warning System to identify at-risk students.
-
-Cross Validation will be elaborated in next Chapter 10.
 ------------------------------------------------------------------------
 
 # 10. Model Comparison & Cross Validation
@@ -1917,7 +1974,7 @@ Cross Validation will be elaborated in next Chapter 10.
 ## 10.1 Model Overview
 Until now, we have done the following models and experiments,
 the first models served also as a exploration and learning, we did not limit ourselves to dropout and non-dropout predictions. These could also provide other insights for our client.
-With NN and SVM, we focused on the dropout prediction.
+With NN and SVM, we did focused on the dropout prediction.
 
 <div style="font-size: 70%;">
 
@@ -1929,9 +1986,9 @@ With NN and SVM, we focused on the dropout prediction.
 | **Gaussian GAM** | 2nd Sem Grade (continuous) | 1st Sem Grade (smooth), Age, Scholarship | R² ~ 0.72 |
 | **Logistic GAM** | Graduation vs Dropout | 1st Sem Approved/Grade (smooth), Tuition, Scholarship | AUC ~ 0.89 |
 | **Neural Network** | Dropout vs Not Dropout | 1st/2nd Sem Grades, Tuition, Debtor, Scholarship | Accuracy ~ 88% |
-| **SVM (Linear)** | Dropout vs Not Dropout | 2nd Sem Grade, 2nd Sem Approved | Accuracy ~ 87.6% |
-| **SVM (Radial)** | Dropout vs Not Dropout | 2nd Sem Grade, 2nd Sem Approved | Accuracy ~ 87.7% |
-| **SVM (Poly)** | Dropout vs Not Dropout | 2nd Sem Grade, 2nd Sem Approved | Accuracy ~ 84.1% |
+| **SVM (Linear)** | Graduation vs Dropout | 2nd Sem Grade, 2nd Sem Approved | Accuracy ~ 87.6% |
+| **SVM (Radial)** | Graduation vs Dropout | 2nd Sem Grade, 2nd Sem Approved | Accuracy ~ 87.7% |
+| **SVM (Poly)** | Graduation vs Dropout | 2nd Sem Grade, 2nd Sem Approved | Accuracy ~ 84.1% |
 
 </div>
 
@@ -1978,101 +2035,130 @@ if (requireNamespace("DiagrammeR", quietly = TRUE)) {
 **Option 2 (NN/SVM after 1st semester)** is recommended for production use due to higher accuracy (~88%). Option 1 provides earlier predictions but relies on predicted intermediate values.
 
 ## 10.2 Cross Validation
+As above shows, the SVMs with different kernels are suited for cross validation since they:
+- Use the **same target** (Graduation vs Dropout)
+- Use the **same predictors** (2nd Sem Grade, 2nd Sem Approved)
+- Use the **same data subset** (Enrolled students removed)
 
-Given the promising performance of the Support Vector Machines in Chapter 9, we proceed with a rigorous confirmation step. We use **10-Fold Cross-Validation** to test the stability of the three kernels. 
-
-For a fair comparison, all models use the exact same configuration as the previous section:
-- **Target:** Dropout vs Not Dropout
-- **Predictors:** 2nd Sem Grade, 2nd Sem Approved
-- **Data:** Full dataset (binary classification)
-
-> **Note on Methodology:** To efficiently verify the stability of our *optimized* models, we use the fixed hyperparameters identified in Chapter 9 (via `tune()`) rather than re-tuning inside each fold. This validates that our chosen model configurations perform reliably across different data subsets.
+Following the **K-fold Cross-Validation** method from Week 7 lecture, we compare the three SVM kernels:
 
 ```{r svm-cv-setup, echo=TRUE}
 # 10-Fold Cross-Validation for SVM Kernels
+# Following Week 7 Lab methodology
+
 set.seed(42)
 
-# Use the 'marks' dataset from Chapter 9 (Dropout vs Not Dropout)
-data_cv <- marks
-n <- nrow(data_cv)
-
-# Parameters
+# Number of folds and repetitions
 K <- 10
-folds <- sample(rep(1:K, length.out = n))
+n_reps <- 50  # Number of CV repetitions for robustness
+
+# Prepare data - filter to Graduate/Dropout only (aligned with SVM section)
+# This ensures consistent comparison with earlier SVM results
+student_data_cv <- student_data %>%
+  filter(Target %in% c("Dropout", "Graduate"))
+
+marks_cv <- data.frame(
+  x.1 = student_data_cv[["Curricular.units.2nd.sem..grade."]],
+  x.2 = student_data_cv[["Curricular.units.2nd.sem..approved."]],
+  y = factor(student_data_cv$Target, levels = c("Dropout", "Graduate"))
+)
+marks_cv <- na.omit(marks_cv)
+n <- nrow(marks_cv)
 
 # Storage for accuracy results
-acc_linear <- numeric(K)
-acc_radial <- numeric(K)
-acc_poly <- numeric(K)
+acc_linear <- numeric(n_reps)
+acc_radial <- numeric(n_reps)
+acc_poly <- numeric(n_reps)
+```
 
-# Loop through k folds
-for(k in 1:K) {
-    # Split into train/test for this fold
-    test_idx <- which(folds == k)
-    train_fold <- data_cv[-test_idx, ]
-    test_fold <- data_cv[test_idx, ]
+```{r svm-cv-loop, echo=TRUE, cache=TRUE}
+# Repeated 10-fold CV loop
+for(rep in 1:n_reps) {
+  
+  # Randomly permute rows
+  inds_permuted <- sample(1:n, replace = FALSE)
+  data_permuted <- marks_cv[inds_permuted, ]
+  
+  # Create K folds
+  folds <- cut(1:n, breaks = K, labels = FALSE)
+  
+  # Store per-fold accuracy
+  acc_linear_fold <- numeric(K)
+  acc_radial_fold <- numeric(K)
+  acc_poly_fold <- numeric(K)
+  
+  for(k in 1:K) {
+    # Split into train/test
+    ind_test <- which(folds == k)
+    test_data <- data_permuted[ind_test, ]
+    train_data <- data_permuted[-ind_test, ]
     
-    # Train using the TUNED parameters found in Chapter 9
-    # We access 'best.parameters' from the tune objects to ensure we use the optimized values
-    m_lin <- svm(y ~ x.1 + x.2, data = train_fold, kernel = "linear", 
-                 cost = tune_linear$best.parameters$cost)
+    # Train 3 SVM models
+    svm_lin <- svm(y ~ x.1 + x.2, data = train_data, kernel = "linear", cost = 1)
+    svm_rad <- svm(y ~ x.1 + x.2, data = train_data, kernel = "radial", cost = 10, gamma = 0.1)
+    svm_pol <- svm(y ~ x.1 + x.2, data = train_data, kernel = "polynomial", cost = 1, degree = 3)
     
-    m_rad <- svm(y ~ x.1 + x.2, data = train_fold, kernel = "radial", 
-                 cost = tune_radial$best.parameters$cost, 
-                 gamma = tune_radial$best.parameters$gamma)
+    # Predict on test fold
+    pred_lin <- predict(svm_lin, test_data)
+    pred_rad <- predict(svm_rad, test_data)
+    pred_pol <- predict(svm_pol, test_data)
     
-    m_pol <- svm(y ~ x.1 + x.2, data = train_fold, kernel = "polynomial", 
-                 cost = tune_poly$best.parameters$cost, 
-                 degree = tune_poly$best.parameters$degree)
-    
-    # Predict & Calculate Accuracy
-    p_lin <- predict(m_lin, test_fold)
-    p_rad <- predict(m_rad, test_fold)
-    p_pol <- predict(m_pol, test_fold)
-    
-    acc_linear[k] <- mean(p_lin == test_fold$y)
-    acc_radial[k] <- mean(p_rad == test_fold$y)
-    acc_poly[k]   <- mean(p_pol == test_fold$y)
+    # Calculate accuracy for this fold
+    acc_linear_fold[k] <- mean(pred_lin == test_data$y)
+    acc_radial_fold[k] <- mean(pred_rad == test_data$y)
+    acc_poly_fold[k] <- mean(pred_pol == test_data$y)
+  }
+  
+  # Average accuracy across K folds for this repetition
+  acc_linear[rep] <- mean(acc_linear_fold)
+  acc_radial[rep] <- mean(acc_radial_fold)
+  acc_poly[rep] <- mean(acc_poly_fold)
 }
 ```
 
 ### Cross-Validation Results
 
-The boxplot below shows the spread of accuracy scores across the 10 folds. A narrower box indicates a more **stable** model.
-
 ```{r svm-cv-results, echo=TRUE, fig.width=8, fig.height=5}
-# Combine results for plotting
+# Create results summary
 cv_results <- data.frame(
-  Accuracy = c(acc_linear, acc_radial, acc_poly),
-  Model = factor(rep(c("Linear", "Radial", "Polynomial"), each = K))
+  Kernel = c("Linear", "Radial", "Polynomial"),
+  Mean_Accuracy = c(mean(acc_linear), mean(acc_radial), mean(acc_poly)),
+  SD_Accuracy = c(sd(acc_linear), sd(acc_radial), sd(acc_poly))
 )
 
-# Visual comparison of stability
-print(ggplot(cv_results, aes(x = Model, y = Accuracy, fill = Model)) +
-  geom_boxplot(alpha = 0.7) +
-  geom_jitter(width = 0.1, alpha = 0.5) +  # Show individual fold scores
-  labs(title = "Stability of SVM Kernels (10-Fold CV)",
-       subtitle = "Using optimized hyperparameters from Chapter 9",
-       y = "Accuracy per Fold") +
-  theme_minimal() +
-  scale_fill_manual(values = c("#90CAF9", "#1976D2", "#1565C0")) +
-  theme(legend.position = "none"))
+knitr::kable(cv_results, 
+             caption = "10-Fold CV Results (50 repetitions)",
+             digits = 4,
+             align = 'c')
 
-# Summary table
-cv_summary <- cv_results %>%
-  group_by(Model) %>%
-  summarise(
-    Mean_Accuracy = sprintf("%.1f%%", mean(Accuracy)*100),
-    SD = sprintf("%.3f", sd(Accuracy)),
-    Min = sprintf("%.1f%%", min(Accuracy)*100),
-    Max = sprintf("%.1f%%", max(Accuracy)*100)
-  )
+# Improved boxplot with jitter points to show individual CV results
+boxplot(acc_linear, acc_radial, acc_poly,
+        names = c("Linear", "Radial", "Polynomial"),
+        main = "10-Fold Cross-Validation: SVM Kernel Comparison",
+        ylab = "Accuracy",
+        ylim = c(0.81, 0.88),  # Tighter y-axis
+        col = c("#3498db80", "#2ecc7180", "#e74c3c80"),  # Semi-transparent
+        border = "black",
+        lwd = 1.5,
+        outline = FALSE)  # Hide outlier points (we'll add all points)
 
-knitr::kable(cv_summary, caption = "10-Fold CV Performance Statistics", align = 'c')
+# Add jitter points to show all 50 CV results
+set.seed(42)
+stripchart(list(acc_linear, acc_radial, acc_poly),
+           vertical = TRUE, method = "jitter", jitter = 0.15,
+           pch = 16, cex = 0.8, col = c("#2980b9", "#27ae60", "#c0392b"),
+           add = TRUE)
+
+# Add mean points (black diamonds)
+means <- c(mean(acc_linear), mean(acc_radial), mean(acc_poly))
+points(1:3, means, pch = 18, cex = 2.5, col = "black")
+
+# Add mean accuracy labels
+text(1:3, means + 0.006, labels = paste0(round(means * 100, 1), "%"), cex = 1.1, font = 2)
 ```
-### Statistical Comparison
+Note: The boxplot is quite compressed because data has extremely low variance (SD = 0.0006), which is actually a good result.
 
-To confirm if the differences are statistically significant, we perform paired t-tests between the kernels.
+### Statistical Comparison
 
 ```{r svm-cv-stats, echo=TRUE}
 # Paired t-tests to compare kernels
@@ -2083,9 +2169,10 @@ t_rad_vs_poly <- t.test(acc_radial, acc_poly, paired = TRUE)
 # Results table
 stat_results <- data.frame(
   Comparison = c("Linear vs Radial", "Linear vs Poly", "Radial vs Poly"),
-  p_value = c(t_lin_vs_rad$p.value, t_lin_vs_poly$p.value, t_rad_vs_poly$p.value)
+  t_statistic = c(t_lin_vs_rad$statistic, t_lin_vs_poly$statistic, t_rad_vs_poly$statistic),
+  p_value = c(t_lin_vs_rad$p.value, t_lin_vs_poly$p.value, t_rad_vs_poly$p.value),
+  Significant = c(t_lin_vs_rad$p.value < 0.05, t_lin_vs_poly$p.value < 0.05, t_rad_vs_poly$p.value < 0.05)
 )
-stat_results$Significant <- stat_results$p_value < 0.05
 
 knitr::kable(stat_results, 
              caption = "Paired t-test Results (α = 0.05)",
@@ -2095,13 +2182,13 @@ knitr::kable(stat_results,
 
 ### CV Conclusion
 
-Based on repeated 10-fold cross-validation:
+Based on repeated 10-fold cross-validation with statistical testing:
+- **Radial kernel** achieves the highest accuracy (86.8%)
+- **Linear kernel** is very close (86.3%) with minimal difference
+- **Polynomial kernel** performs significantly worse (82.1%)
+- The **Linear kernel is recommended** for production use due to its interpretability and computational efficiency, despite Radial being marginally better
 
-*   **Radial kernel** achieves a mean accuracy of `r sprintf("%.1f%%", mean(acc_radial)*100)`.
-*   **Linear kernel** achieves `r sprintf("%.1f%%", mean(acc_linear)*100)`.
-*   **Polynomial kernel** achieves `r sprintf("%.1f%%", mean(acc_poly)*100)`.
-
-This confirms the findings from Section 9: The **Radial Kernel** is the most robust and accurate model for our Early Warning System. Its ability to capture non-linear relationships gives it a crucial edge in correctly identifying at-risk students.
+This confirms our earlier single train/test split results: for this dataset, simpler kernels perform best.
 
 ------------------------------------------------------------------------
 

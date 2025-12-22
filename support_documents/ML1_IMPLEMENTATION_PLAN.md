@@ -389,21 +389,47 @@ Some system could be developed using a standardized scale.
 
 ---
 
-### Step 3.4: Add SVM Feature Selection Note
+### Step 3.4: Restructure SVM Section (Detailed Plan)
 
-**WHY:** Addresses the weakness of using only 2 predictors
+**Design Goal:** Align with lecture concepts while adding "A-Grade" optimization and strictly controlling length.
 
-**FIND (after the marks dataframe creation):**
-```markdown
-# Remove rows with NA values if any exist
-marks <- na.omit(marks)
-```
+**A. ADDRESSING USER QUESTIONS (Methodology)**
+1.  **Feature Selection (ANOVA F-stat):**
+    *   *Lecture:* Used `iris` (4 vars), so they just plotted 2 vars manually.
+    *   *Our Project:* We have 36 vars. We *must* use a selection method to pick the best 2 for the 2D plot. ANOVA is a standard, statistical way to doing this (better than random guessing). *We will keep this and explain why.*
+2.  **Hyperparameter Tuning (`tune()`):**
+    *   *Lecture:* Manually set `cost=10`, `cost=100`.
+    *   *Our Improvement:* We will uses `tune()` to automatically find the best cost/gamma. This is a robust extension of the lecture material.
 
-**ADD AFTER:**
-```markdown
-```
+**B. DETAILED STRUCTURE**
 
-**Note on Feature Selection:** For visualization clarity and to demonstrate SVM decision boundaries in 2D, we use only the top 2 predictors by F-statistic. A production system could include additional features for potentially higher accuracy, but the core insight—that academic performance metrics dominate—would remain unchanged.
+**9.1 Feature Selection**
+*   **Keep:** F-statistic table. Justification: "High-dimensional data (36 vars) requires statistical selection for valid 2D visualization."
+
+**9.2 Model Training & Tuning (The Code Block)**
+*   **Action:** Group all training code here.
+    *   Train Linear (Baseline).
+    *   **Tune** & Train Radial (The "A-Grade" optimization).
+    *   Train Poly (Code visible, output hidden).
+
+**9.3 Visual Comparison (Decision Boundaries)**
+*   **Layout:** `par(mfrow=c(1,2))`
+    *   **Left:** Linear Kernel Boundary.
+    *   **Right:** Tuned Radial Kernel Boundary.
+*   **Benefit:** Direct visual comparison of the "Safe Zone" shape.
+
+**9.4 Visual Comparison (Confusion Matrices)**
+*   **Layout:** `par(mfrow=c(1,2))`
+    *   **Left:** Linear CM (Baseline accuracy).
+    *   **Right:** Tuned Radial CM (Improved sensitivity).
+*   **Metrics:** Display a **small metrics table** for the Linear Model (Baseline) immediately below to ground the visual.
+*   **Polynomial:** **HIDE GRAPH**. Text description only ("Performed worse").
+
+**9.5 Performance Summary**
+*   **Table:** Single table comparing all 3 models (Linear, Tuned Radial, Poly).
+
+**9.5 Cross-Validation**
+*   **Keep:** Proof of stability.
 
 ---
 
