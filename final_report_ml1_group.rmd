@@ -129,6 +129,7 @@ options(warn = -1)
 **Our Data:** We have chosen a real case dataset from **University of California, Irvine (UCI)**, to simulate the fictional case. We found the dataset because the data repository website appeared once in our Machine Learning 1 lecture.
 
 **Our Approach:** We analyzed **4,424 students** from a Portuguese higher education institution using **six** machine learning models to predict student outcomes (**Dropout**, **Enrolled**, **Graduate**) and **understand the factors that drive academic success**.
+**Project Repository:** [Click here to view full code & history on GitHub](https://github.com/dydy2010/machine_learning_I_Project)
 
 ## Key Findings:
 
