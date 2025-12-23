@@ -124,12 +124,12 @@ options(warn = -1)
 
 # Summary
 
-**Our Storyline:** Higher education institutions face significant challenges with **student drop-outs**. A fictional university has engaged our education consulting firm to diagnose why students drop out. The university wants to **understand and improve academic performance**, and design **interventions** that reduce failed academic lives. Understanding which students are **at risk of dropping out**, and timely support that can change academic and life trajectories.
+**Our Storyline:** Higher education institutions face significant challenges with **student drop-outs**. A fictional university has engaged our education consulting firm to understand what influences student dropout and how to better prevent dropouts. The university wants to **understand and improve academic performance**, and design **interventions** that reduce failed academic lives. Understanding which students are **at risk of dropping out**, and timely support that can change academic and life trajectories.
 
 **Our Data:** We have chosen a real case dataset from **University of California, Irvine (UCI)**, to simulate the fictional case. We found the dataset because the data repository website appeared once in our Machine Learning 1 lecture.
 
 **Our Approach:** We analyzed **4,424 students** from a Portuguese higher education institution using **six** machine learning models to predict student outcomes (**Dropout**, **Enrolled**, **Graduate**) and **understand the factors that drive academic success**.
-**Project Repository:** [Click here to view full code & history on GitHub](https://github.com/dydy2010/machine_learning_I_Project)
+**Project Repository:** [Click here to view full code & repositorz on GitHub](https://github.com/dydy2010/machine_learning_I_Project)
 
 ## Key Findings:
 
@@ -405,7 +405,7 @@ p2 <- ggplot(financial_data, aes(x = Scholarship.holder, fill = Target)) +
 grid.arrange(p1, p2, ncol = 2)
 ```
 
-**Insight:** Students that currently **pays tuition on time**(tuition.fees.up.to.date) show significantly higher graduation rates. **Scholarship** holders also demonstrate better outcomes, suggesting that financial situation could play an important role in student success.
+**Insight:** Students that currently **pay tuition on time**(tuition.fees.up.to.date) show significantly higher graduation rates. **Scholarship** holders also demonstrate better outcomes, suggesting that financial situation could play an important role in student success.
 
 ## 2.4 Age Distribution
 
@@ -420,7 +420,7 @@ ggplot(df, aes(x = Age.at.enrollment, fill = Target)) +
   theme(legend.position = "bottom")
 ```
 
-**Insight:** Age shows interesting patterns: common students age **(18-22)** have **higher graduation rates**, while both younger and significantly older students face elevated dropout risks. This pattern suggests that age effects may not follow a linear trend, which we could explore using models that can capture such **non-linear**relationships (e.g., *GAMs* with smooth terms, or GLMs with *polynomial/spline* features).
+**Insight:** Age shows interesting patterns: common students age **(18-22)** have **higher graduation rates**, while both younger and significantly older students face elevated dropout risks. This pattern suggests that age effects may not follow a linear trend, which we could explore using models that can capture such **non-linear** relationships (e.g., *GAMs* with smooth terms, or GLMs with *polynomial/spline* features).
 
 ------------------------------------------------------------------------
 
@@ -806,7 +806,7 @@ odds_table_suc <- coef_df_suc %>%
 knitr::kable(odds_table_suc, caption = "Top 3 graduation predictors (log-odds and odds ratio)")
 ```
 
-We model graduation vs dropout in one step: build the binary target, split/scale, train a binomial GLM, and summarize discrimination (AUC) plus odds ratios for the most influential features. The model delivers **AUC = `r round(auc_suc, 3)`**, showing strong abilit to predict graduates and dropouts. First-semester performance and financial factors are proven to be top factors.
+We model graduation vs dropout in one step: build the binary target, split/scale, train a binomial GLM, and summarize discrimination (AUC) plus odds ratios for the most influential features. The model delivers **AUC = `r round(auc_suc, 3)`**, showing strong ability to predict graduates and dropouts. First-semester performance and financial factors are proven to be top factors.
 
 **Actionable Insights:** **First semester performance** emerges as the dominant predictor. **Financial factors** (debtor status, tuition payment) also show strong effects, suggesting that financial aid could meaningfully impact retention.
 
@@ -2125,17 +2125,17 @@ Our models suggest that **grade performance** and **financial stability** are th
 
 **1. For Our Client University (Two-Stage Filter):**
 
-*   **Implement "Option 2" Warning System:
+*   **Implement "Option 2" Warning System:**
 *   **Stage 1 (After Sem 1):** Deploy the **Binomial GLM** or **1st-Sem SVM** as a broad screening tool. The goal is *prevention*, flag students with difficulty early.
 *   **Stage 2 (After Sem 2):** Deploy the higher precision **Neural Network** or **SVM** . The goal is *crisis intervention*. Accurately identify students who are on the brink of dropout for intensive counseling.
 *   **Human-in-the-Loop Protocol:** Use the model as a *filtering tool*. High-risk lists should be reviewed by advisors, not used for automated decisions.
 
 **2. For Academic Advisors:**
-*   **Early Warning is key:** Do not wait for the 2nd semester. If the **system predicts dropout** based on first-semester data (where failing multiple courses is a key driver), this is the single biggest red flag for action. And another drop-out signal in 2nd semester would be definitive signal for inmediate intervention.
+*   **Early Warning is key:** Do not wait for the 2nd semester. If the **system predicts dropout** based on first-semester data (where failing multiple courses is a key driver), this is the single biggest red flag for action. And another drop-out signal in 2nd semester would be definitive signal for immediate intervention.
 *   **Multi-faceted Support:** Combine academic tutoring with financial counseling, as financial stress (debtor status) is a key dropout factor too.
 
 **3. For Policy Makers:**
-*   **Economic Context:** External factors like Unemployment Rate and GDP have minor effects on academic success(The Linear Regression coefficients (Section 4.8) show GDP/Unemployment have small effect sizes). This could be considered into policy making as background information.
+*   **Economic Context:** External factors like Unemployment Rate and GDP have minor effects on academic success (The Linear Regression coefficients (Section 4.8) show GDP/Unemployment have small effect sizes). This could be considered into policy making as background information.
 *   **Financial Safety Nets:** Consider policy to provide scholarship and emergency loan programs for in-risk students.
 
 # 12. Limitations & Future Work
