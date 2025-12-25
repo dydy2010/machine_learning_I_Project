@@ -322,12 +322,14 @@ missing_summary <- df %>%
   mutate(percentage = round(n_missing / nrow(df) * 100, 2)) %>%
   arrange(desc(n_missing))
 
-ggplot(missing_summary, aes(x = reorder(variable, n_missing), y = n_missing)) +
+p_missing <- ggplot(missing_summary, aes(x = reorder(variable, n_missing), y = n_missing)) +
   geom_col(fill = "#6C8EBF") +
   coord_flip() +
-  labs(title = "Missing values by feature",
+  labs(title = "Missing values (count)",
        x = "Feature",
-       y = "Count of missing values")
+       y = "Count of missing values") +
+  theme(axis.text.y = element_text(angle = 5, hjust = 0),
+        plot.title = element_text(size = 10))
 
 # One-way ANOVA per numeric feature vs Target (univariate screening)
 numeric_feats <- names(df)[sapply(df, is.numeric)]
@@ -344,24 +346,26 @@ top_anova <- head(anova_results, 10)
 ggplot(top_anova, aes(x = reorder(Feature, F_value), y = F_value)) +
   geom_col(fill = "#2E86AB") +
   coord_flip() +
-  labs(title = "Top features by ANOVA F-statistic (univariate)",
+  labs(title = "Top 10 features (ANOVA F-stat)",
        x = "Feature",
-       y = "F-statistic")
+       y = "F-statistic") +
+  theme(axis.text.y = element_text(angle = 5, hjust = 0),
+        plot.title = element_text(size = 10)) -> p_anova
+
+gridExtra::grid.arrange(p_missing, p_anova, ncol = 2, widths = c(0.9, 1.1))
 ```
 
-## 2.2 Target Variable Distribution
+## 2.2 Target Variable Distribution & Age Distribution
 
-```{r target-distribution, fig.height=5}
+```{r target&age-distribution, fig.height=5}
 # Create a bar plot with percentages
 target_summary <- df %>%
   group_by(Target) %>%
   summarise(count = n()) %>%
   mutate(percentage = count / sum(count) * 100)
 
-ggplot(target_summary, aes(x = Target, y = count, fill = Target)) +
+p_target <- ggplot(target_summary, aes(x = Target, y = count, fill = Target)) +
   geom_bar(stat = "identity", alpha = 0.8) +
-  geom_text(aes(label = paste0(round(percentage, 1), "%\n(n=", count, ")")),
-            vjust = -0.5, size = 4) +
   scale_fill_manual(values = c("Dropout" = "#E74C3C",
                                 "Enrolled" = "#F39C12",
                                 "Graduate" = "#27AE60")) +
@@ -370,98 +374,107 @@ ggplot(target_summary, aes(x = Target, y = count, fill = Target)) +
        x = "Outcome", y = "Number of Students", fill = "Outcome") +
   theme(legend.position = "none",
         plot.title = element_text(hjust = 0.5, face = "bold"))
-```
 
-**Key Observation:** The dataset shows a **reasonable distribution** for modeling, with 50% graduates, 32% dropouts, and 18% still enrolled. This balance allows models to learn patterns for all outcomes effectively. Depending on the model and task, we may need to **adjust** the classes to **binary(dropout or not dropout)**.
-
-## 2.3 First Semester Performance Analysis
-
-```{r first-sem-analysis, fig.height=5}
-# Prepare data for first semester grades
-first_sem_data <- df %>%
-  filter(!is.na(Curricular.units.1st.sem..grade.) &
-         Curricular.units.1st.sem..grade. > 0) %>%
-  select(Target, Curricular.units.1st.sem..grade.,
-         Curricular.units.1st.sem..approved.)
-
-# Box plot for first semester grades
-p1 <- ggplot(first_sem_data, aes(x = Target, y = Curricular.units.1st.sem..grade., fill = Target)) +
-  geom_boxplot(alpha = 0.7) +
-  scale_fill_manual(values = c("Dropout" = "#E74C3C",
-                                "Enrolled" = "#F39C12",
-                                "Graduate" = "#27AE60")) +
-  labs(title = "First Semester Grades by Outcome",
-       x = "Outcome", y = "First Semester Grade (0-20)") +
-  theme(legend.position = "none")
-
-# Box plot for courses approved
-p2 <- ggplot(first_sem_data, aes(x = Target, y = Curricular.units.1st.sem..approved., fill = Target)) +
-  geom_boxplot(alpha = 0.7) +
-  scale_fill_manual(values = c("Dropout" = "#E74C3C",
-                                "Enrolled" = "#F39C12",
-                                "Graduate" = "#27AE60")) +
-  labs(title = "Courses Approved in First Semester",
-       x = "Outcome", y = "Number of Courses Approved") +
-  theme(legend.position = "none")
-
-grid.arrange(p1, p2, ncol = 2)
-```
-
-**Insight:** *First semester performance* shows dramatic differences across outcomes. Graduate students average **13+ grade points** and complete most enrolled courses(approved), while dropout students struggle with grades around **9-10** and complete fewer courses. This suggests that *first semester performance* *could be a critical indicator* for dropout prediction.
-
-## 2.4 Financial & Socioeconomic Factors
-
-```{r financial-factors, fig.height=5}
-# Prepare financial data
-financial_data <- df %>%
-  select(Target, Tuition.fees.up.to.date, Scholarship.holder, Debtor) %>%
-  mutate(Tuition.fees.up.to.date = factor(Tuition.fees.up.to.date,
-                                           levels = c(0, 1),
-                                           labels = c("Not Current", "Current")),
-         Scholarship.holder = factor(Scholarship.holder,
-                                     levels = c(0, 1),
-                                     labels = c("No", "Yes")),
-         Debtor = factor(Debtor,
-                        levels = c(0, 1),
-                        labels = c("No", "Yes")))
-
-# Tuition status
-p1 <- ggplot(financial_data, aes(x = Tuition.fees.up.to.date, fill = Target)) +
-  geom_bar(position = "fill") +
-  scale_fill_manual(values = c("Dropout" = "#E74C3C",
-                                "Enrolled" = "#F39C12",
-                                "Graduate" = "#27AE60")) +
-  labs(title = "Tuition Payment Status",
-       x = "Tuition Fees Status", y = "Proportion", fill = "Outcome")
-
-# Scholarship status
-p2 <- ggplot(financial_data, aes(x = Scholarship.holder, fill = Target)) +
-  geom_bar(position = "fill") +
-  scale_fill_manual(values = c("Dropout" = "#E74C3C",
-                                "Enrolled" = "#F39C12",
-                                "Graduate" = "#27AE60")) +
-  labs(title = "Scholarship Holder Status",
-       x = "Has Scholarship", y = "Proportion", fill = "Outcome")
-
-grid.arrange(p1, p2, ncol = 2)
-```
-
-**Insight:** Students that currently **pay tuition on time**(tuition.fees.up.to.date) show significantly higher graduation rates. **Scholarship** holders also demonstrate better outcomes, suggesting that financial situation could play an important role in student success.
-
-## 2.5 Age Distribution
-
-```{r age-distribution, fig.height=4}
-ggplot(df, aes(x = Age.at.enrollment, fill = Target)) +
+p_age <- ggplot(df, aes(x = Age.at.enrollment, fill = Target)) +
   geom_density(alpha = 0.6) +
   scale_fill_manual(values = c("Dropout" = "#E74C3C",
                                 "Enrolled" = "#F39C12",
                                 "Graduate" = "#27AE60")) +
   labs(title = "Age Distribution by Student Outcome",
        x = "Age at Enrollment", y = "Density", fill = "Outcome") +
-  theme(legend.position = "bottom")
+  theme(legend.position = "none")
+
+p_target_noleg <- p_target + theme(legend.position = "none")
+p_age_noleg <- p_age + theme(legend.position = "none")
+
+gridExtra::grid.arrange(
+  gridExtra::arrangeGrob(p_target_noleg, p_age_noleg, ncol = 2, widths = c(1, 1))
+)
 ```
 
-**Insight:** Age shows interesting patterns: common students age **(18-22)** have **higher graduation rates**, while both younger and significantly older students face elevated dropout risks. This pattern suggests that age effects may not follow a linear trend, which we could explore using models that can capture such **non-linear** relationships (e.g., *GAMs* with smooth terms, or GLMs with *polynomial/spline* features).
+**Key Observation:** The dataset shows a **reasonable distribution** for modeling, with 50% graduates, 32% dropouts, and 18% still enrolled. This balance allows models to learn patterns for all outcomes effectively. Depending on the model and task, we may need to **adjust** the classes to **binary(dropout or not dropout)**.
+
+**Insight:** Age shows interesting patterns: common students age **(18-22)** have **higher graduation rates**, while both younger and significantly older students face elevated dropout risks. This pattern suggests that age effects may not follow a linear trend, which we could explore using models that can capture such **non-linear** relationships (e.g., *GAMs* with smooth terms, or GLMs with *polynomial/spline* features). Though Age is possibly not an important factor (as Anova shows).
+
+## 2.3 Semester Performance-Financial Factor Effect Overview
+
+To have a **first overview** of the **important factors** from Anova test, we show the *second semester performance* plots together with the key *financial factors* in one combined figure below.
+
+```{r sem-and-financial-factors, fig.height=7, fig.width=11}
+# Prepare data for second semester grades
+second_sem_data <- df %>%
+  filter(!is.na(Curricular.units.2nd.sem..grade.) &
+         Curricular.units.2nd.sem..grade. > 0) %>%
+  select(Target, Curricular.units.2nd.sem..grade.,
+         Curricular.units.2nd.sem..approved.)
+
+# Prepare financial data
+financial_data <- df %>%
+  select(Target, Tuition.fees.up.to.date, Scholarship.holder, Debtor) %>%
+  mutate(Tuition.fees.up.to.date = factor(Tuition.fees.up.to.date,
+                                          levels = c(0, 1),
+                                          labels = c("Not Current", "Current")),
+         Scholarship.holder = factor(Scholarship.holder,
+                                     levels = c(0, 1),
+                                     labels = c("No", "Yes")),
+         Debtor = factor(Debtor,
+                         levels = c(0, 1),
+                         labels = c("No", "Yes")))
+
+outcome_colors <- c("Dropout" = "#E74C3C",
+                    "Enrolled" = "#F39C12",
+                    "Graduate" = "#27AE60")
+
+# Box plot for second semester grades
+p_grade <- ggplot(second_sem_data,
+                  aes(x = Target, y = Curricular.units.2nd.sem..grade., fill = Target)) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_manual(values = outcome_colors) +
+  labs(title = "Second Semester Grades",
+       x = "Outcome", y = "Grade (0-20)", fill = "Outcome") +
+  theme_minimal(base_size = 11)
+
+# Box plot for courses approved
+p_approved <- ggplot(second_sem_data,
+                     aes(x = Target, y = Curricular.units.2nd.sem..approved., fill = Target)) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_manual(values = outcome_colors) +
+  labs(title = "Second Semester Approved",
+       x = "Outcome", y = "# Courses Approved", fill = "Outcome") +
+  theme_minimal(base_size = 11)
+
+# Tuition status
+p_tuition <- ggplot(financial_data, aes(x = Tuition.fees.up.to.date, fill = Target)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual(values = outcome_colors) +
+  labs(title = "Tuition Payment Status",
+       x = "Tuition Fees Status", y = "Proportion", fill = "Outcome") +
+  theme_minimal(base_size = 11)
+
+# Scholarship status
+p_scholarship <- ggplot(financial_data, aes(x = Scholarship.holder, fill = Target)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual(values = outcome_colors) +
+  labs(title = "Scholarship Holder Status",
+       x = "Has Scholarship", y = "Proportion", fill = "Outcome") +
+  theme_minimal(base_size = 11)
+
+p_grade_noleg <- p_grade + theme(legend.position = "none")
+p_approved_noleg <- p_approved + theme(legend.position = "none")
+p_tuition_noleg <- p_tuition + theme(legend.position = "none")
+p_scholarship_noleg <- p_scholarship + theme(legend.position = "none")
+
+gridExtra::grid.arrange(
+  p_grade_noleg, p_approved_noleg,
+  p_tuition_noleg, p_scholarship_noleg,
+  ncol = 2,
+  widths = c(1, 1)
+)
+```
+
+**Insight:** *Second semester performance* shows noticeable differences across outcomes. Graduate students average **13+ grade points** and complete most enrolled courses(approved), while dropout students struggle with grades around **9-10** and complete fewer courses. This suggests that *first semester performance* *could be a critical indicator* for dropout prediction.
+
+**Insight (financial factors):** Students who **pay tuition on time** and who **hold scholarships** show much higher graduation rates and lower dropout proportions. Financial stability appears to be a strong protective factor.
 
 ------------------------------------------------------------------------
 
@@ -482,13 +495,13 @@ We employ six modeling techniques, each with distinct strengths:
 
 ## 3.2 Research Questions
 
-Each model addresses specific questions:
+Each model could address specific questions we have in mind:
 
 1.  **Linear Regression:** How do student characteristics linearly predict **second semester grades**?
-2.  **GLM (Binomial):** What factors distinguish **graduates from dropouts** in probabilistic terms?
-3.  **GLM (Poisson):** What predicts the **count of approved courses** in each semester?
-4.  **GAM:** Are there **non-linear relationships** that traditional linear models miss?
-5.  **Neural Networks:** Can **deep learning** uncover **hidden interaction patterns**?
+2.  **GLM (Binomial):** How factors distinguish **graduates from dropouts** in probabilistic terms?
+3.  **GLM (Poisson):** How it predicts the **count of approved courses** in each semester?
+4.  **GAM:** Can GAM with **non-linear relationships** better predict dropout?
+5.  **Neural Networks:** Can **neural deep learning** better **predict dropout**?
 6.  **SVM:** Can we build a **robust classifier** that maximizes the margin between success and failure?
 
 ## 3.3 Evaluation Strategy
@@ -496,7 +509,7 @@ Each model addresses specific questions:
 -   **Training/Test Split:** **80/20 stratified split** to maintain class balance
 -   **Regression Metrics:** **R²**, **RMSE**, **MAE**
 -   **Classification Metrics:** **Accuracy**, **AUC-ROC**, **Confusion Matrix**
--   **Cross-Model Comparison:** Identify **consistent predictors** across methods
+-   **Cross Validation:** Compare models
 
 ------------------------------------------------------------------------
 
