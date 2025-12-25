@@ -121,6 +121,8 @@ machine_learning_I_Project/
 
 ## References
 
+OECD (2025). *Education at a Glance 2025*. OECD. https://www.oecd.org/en/publications/education-at-a-glance-2025_1a3543e2-en/switzerland_e7c7fc03-en.html
+
 Realinho, V., Machado, J., Baptista, L., & Martins, M.V. (2022). *Predict Students' Dropout and Academic Success*. UCI Machine Learning Repository. https://doi.org/10.24432/C5MC89
 
 ## Generative AI Declaration & Guidelines

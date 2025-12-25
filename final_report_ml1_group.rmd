@@ -146,15 +146,15 @@ options(warn = -1)
 
 ## 1.1 Business Questions & Model Mapping
 
-**Student dropout** is a critical issue in higher education (often 20-40% in STEM). To address it, we deploy six modeling approaches, each answering a specific business question:
+**Student dropout** is a critical issue in higher education. As noted by the OECD, "In Switzerland, STEM completion rates are 68%, lower than those for health and welfare, at 81%" (OECD, 2025). To address it, we deploy six modeling approaches, each answering a specific business question:
 
-1.  **How do 1st-semester results predict final graduation?** (Binomial GLM / GAM)
+1.  **How do 1st-semester results predict students' final graduation/dropout?** (Binomial GLM / GAM)
     *   *Purpose:* Early intervention based on initial performance.
-2.  **Can we predict exact 2nd-semester grades?** (Linear Regression / Gaussian GAM)
-    *   *Purpose:* Forecasting specific academic performance.
-3.  **How many courses will a student pass in the 1st semester?** (Poisson GLM)
-    *   *Purpose:* Identifying students struggling with studies, prediction result could be beneficial for intervention methods.
-4.  **Who is at immediate risk of dropping out?** (SVM / Neural Net)
+2.  **Can we predict 2nd-semester grades?** (Linear Regression / Gaussian GAM)
+    *   *Purpose:* Forecasting academic performance. The prediction result could be beneficial for intervention methods.
+3.  **Can we predict how many courses will a student pass in the 1st semester?** (Poisson GLM)
+    *   *Purpose:* Identifying students struggling with studies. The prediction result could be beneficial for intervention methods.
+4.  **How do major factors like 2nd semester performance and finance predict students' final graduation/dropout?** (SVM / Neural Net)
     *   *Purpose:* High-accuracy classification for targeted support.
 
 By predicting **dropout risk early**, institutions can intervene with:
@@ -172,7 +172,7 @@ This project was completed collaboratively by three team members, with each memb
 |-------------|------------|---------------|
 | **Cyriel**| Linear Regression, GLM (Binomial & Poisson), GAM | Exploratory Analysis |
 | **Ramiro** | Support Vector Machines | Data Preprocessing |
-| **Dongyuan Gao** | Neural Networks | Cross-validation, <br> All Models proof-reading & Report Editing |
+| **Dongyuan Gao** | Neural Networks | Cross-validation, <br> Models proof-reading & Report Editing |
 
 
 ## 1.3 Data Source and Selection Process
@@ -181,9 +181,9 @@ This project was completed collaboratively by three team members, with each memb
 
 **Our goal** for this project is to deliver a **solid report** while using it as an opportunity to **enhance our understanding** of **machine learning concepts** and practices. With this in mind, we explored several *potential datasets* for our final analysis.
 
-We considered **three main options**. First, the Social Media Fact Sheet from PEW Research Center, which would have allowed us to analyze social media usage patterns. Second, medical quality service data in Switzerland from the Federal Office of Public Health (available through opendata.swiss). Third, student data for predicting dropout and academic success from the UC Irvine Machine Learning Repository.
+We considered **three main dataset options**. First, the Social Media Fact Sheet from PEW Research Center, which would have allowed us to analyze social media usage patterns. Second, medical quality service data in Switzerland from the Federal Office of Public Health (available through opendata.swiss). Third, student data for predicting dropout and academic success from the UC Irvine Machine Learning Repository.
 
-After careful consideration, we chose the third option from the UC Irvine repository. The **data structure and scope align well with our goal** of getting familiarized with machine learning concepts and practices while producing a solid report as our first attempt in the ML world. While the other two datasets were interesting to explore, their structure, diversity, and scope did not suit our *learning objectives* as well as the student success dataset. For the exploration experience, we didn't read any papers related to the dataset online while doing the project.
+After careful consideration, we chose the third option from the UC Irvine repository. The **data structure and scope align well with our goal** of getting familiarized with machine learning concepts and practices and producing a solid report as our first attempt in the ML world. Though the other two datasets were interesting to explore, their structure, diversity, and scope did not suit our *learning objectives* as well as the student success dataset. For the exploration experience, we didn't read any papers related to the dataset online while doing the project.
 
 ### Dataset Characteristics
 
@@ -192,7 +192,7 @@ After careful consideration, we chose the third option from the UC Irvine reposi
 **Time Period:** Multiple academic years\
 **Sample Size:** 4,424 students with 37 variables (e.g., age, 1st-semester grades, credits completed)
 
-The dataset provides a comprehensive view of student characteristics and outcomes, making it well-suited for applying multiple machine learning models.
+The dataset provides a comprehensive view of student characteristics and outcomes. It is well-suited for applying multiple machine learning models.
 
 **Target Variable (3 factors):**
 
@@ -2151,7 +2151,14 @@ Finally, this is a Portuguese institution with its own grading scale (0-20). Wha
 1. **Behavioral Signals:** Library check-ins, Ilias login frequency, and assignment submission times could significantly boost predictive power.
 2. **Cross-University Validation:** Scaling this system to other universities (e.g., HSLU) to test robustness across different institutions.
 
-# 13. Generative AI Declaration & Guidelines
+# 13. References
+
+1. OECD (2025). *Education at a Glance 2025*. OECD. https://www.oecd.org/en/publications/education-at-a-glance-2025_1a3543e2-en/switzerland_e7c7fc03-en.html
+2. Realinho, V., Machado, J., Baptista, L., & Martins, M.V. (2022). *Predict Students' Dropout and Academic Success*. UCI Machine Learning Repository. https://doi.org/10.24432/C5MC89
+
+-------------------------------------------------------------------------
+
+# 14. Generative AI Declaration & Guidelines
 
 Generative AI was used as a supplementary tool on top of the assisting material provided in the Machine Learning1 lecture.
 
