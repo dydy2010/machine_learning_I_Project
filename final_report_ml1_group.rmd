@@ -129,7 +129,7 @@ options(warn = -1)
 **Our Data:** We have chosen a real case dataset from **University of California, Irvine (UCI)**, to simulate the fictional case. We found the dataset because the data repository website appeared once in our Machine Learning 1 lecture.
 
 **Our Approach:** We analyzed **4,424 students** from a Portuguese higher education institution using **six** machine learning models to predict student outcomes (**Dropout**, **Enrolled**, **Graduate**) and **understand the factors that drive academic success**.
-**Project Repository:** [Click here to view full code & repositorz on GitHub](https://github.com/dydy2010/machine_learning_I_Project)
+**Project Repository:** [Click here to view full code & repository on GitHub](https://github.com/dydy2010/machine_learning_I_Project)
 
 ## Key Findings:
 
@@ -308,7 +308,48 @@ The dataset contains **4,424 observations**—large **enough** for robust train-
 
 # 2. Exploratory Data Analysis
 
-## 2.1 Target Variable Distribution
+Before all teammates exploring models, we cast categorical/binary fields to factors and ran one-way ANOVAs of each numeric feature vs the three-level `Target` (see `data/preprocessing`), then saved `data/preprocessed_data.csv`. We also quickly check for missing values below, we found out that there are no missing values (it is not common in real world cases, but it fit our goal of focusing on exploring machine learning concepts and models in this project.)  
+Secondly, we did a simple **Anova** important features screening, to have an overview of the importance features for each teammate to work on. Higher F means that feature’s average differs a lot across Dropout/Enrolled/Graduate; in our Anova chart, **semester grades/approvals** differ the most between groups, financial next, and demographics least. So each of our teammates can explore the important features first, and use features that are model specific to their models.
+## 2.1 Data Preprocessing
+```{r missing-values, fig.height=5}
+# Simple ANOVA screening: each numeric feature vs Target (see data/preprocessing)
+# Missing value counts per column
+missing_summary <- df %>%
+  summarise(across(everything(), ~ sum(is.na(.)))) %>%
+  pivot_longer(cols = everything(),
+               names_to = "variable",
+               values_to = "n_missing") %>%
+  mutate(percentage = round(n_missing / nrow(df) * 100, 2)) %>%
+  arrange(desc(n_missing))
+
+ggplot(missing_summary, aes(x = reorder(variable, n_missing), y = n_missing)) +
+  geom_col(fill = "#6C8EBF") +
+  coord_flip() +
+  labs(title = "Missing values by feature",
+       x = "Feature",
+       y = "Count of missing values")
+
+# One-way ANOVA per numeric feature vs Target (univariate screening)
+numeric_feats <- names(df)[sapply(df, is.numeric)]
+anova_results <- lapply(numeric_feats, function(feat) {
+  fit <- aov(as.formula(paste(feat, "~ Target")), data = df)
+  f_val <- summary(fit)[[1]]$`F value`[1]
+  data.frame(Feature = feat, F_value = f_val)
+}) %>%
+  bind_rows() %>%
+  arrange(desc(F_value))
+
+top_anova <- head(anova_results, 10)
+
+ggplot(top_anova, aes(x = reorder(Feature, F_value), y = F_value)) +
+  geom_col(fill = "#2E86AB") +
+  coord_flip() +
+  labs(title = "Top features by ANOVA F-statistic (univariate)",
+       x = "Feature",
+       y = "F-statistic")
+```
+
+## 2.2 Target Variable Distribution
 
 ```{r target-distribution, fig.height=5}
 # Create a bar plot with percentages
@@ -333,7 +374,7 @@ ggplot(target_summary, aes(x = Target, y = count, fill = Target)) +
 
 **Key Observation:** The dataset shows a **reasonable distribution** for modeling, with 50% graduates, 32% dropouts, and 18% still enrolled. This balance allows models to learn patterns for all outcomes effectively. Depending on the model and task, we may need to **adjust** the classes to **binary(dropout or not dropout)**.
 
-## 2.2 First Semester Performance Analysis
+## 2.3 First Semester Performance Analysis
 
 ```{r first-sem-analysis, fig.height=5}
 # Prepare data for first semester grades
@@ -368,7 +409,7 @@ grid.arrange(p1, p2, ncol = 2)
 
 **Insight:** *First semester performance* shows dramatic differences across outcomes. Graduate students average **13+ grade points** and complete most enrolled courses(approved), while dropout students struggle with grades around **9-10** and complete fewer courses. This suggests that *first semester performance* *could be a critical indicator* for dropout prediction.
 
-## 2.3 Financial & Socioeconomic Factors
+## 2.4 Financial & Socioeconomic Factors
 
 ```{r financial-factors, fig.height=5}
 # Prepare financial data
@@ -407,7 +448,7 @@ grid.arrange(p1, p2, ncol = 2)
 
 **Insight:** Students that currently **pay tuition on time**(tuition.fees.up.to.date) show significantly higher graduation rates. **Scholarship** holders also demonstrate better outcomes, suggesting that financial situation could play an important role in student success.
 
-## 2.4 Age Distribution
+## 2.5 Age Distribution
 
 ```{r age-distribution, fig.height=4}
 ggplot(df, aes(x = Age.at.enrollment, fill = Target)) +
