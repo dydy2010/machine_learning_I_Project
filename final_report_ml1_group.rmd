@@ -620,8 +620,16 @@ formula_obj <- as.formula(formula_str)
 
 model <- lm(formula_obj, data = train_data)
 
-cat("**Fitted model formula:**\n\n")
-cat("`", paste(deparse(formula(model)), collapse = " "), "`\n\n", sep = "")
+cat("**Fitted equation (with coefficients):**\n\n")
+cat("```\n")
+b <- coef(model)
+eq <- paste0(
+  "Predicted ", TARGET, " = ",
+  round(b[1], 3), " + ",
+  paste0(round(b[-1], 3), " * ", names(b)[-1], collapse = " + ")
+)
+cat(paste(strwrap(eq, width = 90), collapse = "\n"))
+cat("\n```\n\n")
 
 drop1_tbl <- drop1(model, test = "F")
 drop1_df <- as.data.frame(drop1_tbl)
@@ -630,6 +638,11 @@ drop1_df <- drop1_df[drop1_df$Feature != "<none>", c("Feature", "Df", "F value",
 drop1_df <- drop1_df[order(drop1_df$`Pr(>F)`), ]
 drop1_df$`Pr(>F)` <- signif(drop1_df$`Pr(>F)`, 3)
 rownames(drop1_df) <- NULL
+
+age_row <- which(drop1_df$Feature == "Age.at.enrollment")
+if (length(age_row) == 1) {
+  drop1_df <- drop1_df[seq_len(age_row), ]
+}
 
 if (requireNamespace("kableExtra", quietly = TRUE)) {
   knitr::kable(
