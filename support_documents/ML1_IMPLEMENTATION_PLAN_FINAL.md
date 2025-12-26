@@ -99,27 +99,9 @@ These changes strengthen the story without requiring major rewrites.
 
 ---
 
-### Step 2.1: Strengthen Linear Model Intro (Section 4)
 
-**WHY:** Current intro is generic. Should connect to Business Question 2 from Section 1.1.
 
-**FIND (lines 464-466):**
-```markdown
-## 4.1 Introduction to the Problem
 
-Predicting student grades is fundamental to early intervention strategies. Linear regression provides an interpretable framework for understanding how various factors—from prior academic preparation to socioeconomic conditions—combine to influence academic performance. While simple in concept, this approach reveals which factors matter most and by how much.
-```
-
-**REPLACE WITH:**
-```markdown
-## 4.1 Introduction to the Problem
-
-**Business Question:** *"Can we predict exact 2nd-semester grades?"* (from Section 1.1)
-
-Predicting specific grades—not just pass/fail—helps our client university forecast academic performance and identify students who may be sliding toward failure before they actually fail. Linear regression provides an interpretable framework: we can tell advisors exactly which factors matter and by how much. For example, "a 1-point drop in first semester grades predicts a 0.7-point drop in second semester."
-
-This granular insight complements our binary dropout classifiers (GLM, NN, SVM) by providing a continuous early warning signal.
-```
 
 ---
 

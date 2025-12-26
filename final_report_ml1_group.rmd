@@ -172,7 +172,7 @@ This project was completed collaboratively by three team members, with each memb
 |-------------|------------|---------------|
 | **Cyriel**| Linear Regression, GLM (Binomial & Poisson), GAM | Exploratory Analysis |
 | **Ramiro** | Support Vector Machines | Data Preprocessing |
-| **Dongyuan Gao** | Neural Networks | Cross-validation, <br> Models proof-reading & Report Editing |
+| **Dongyuan Gao** | Neural Networks | Cross-validation, <br> All-models proof-reading & Report Editing |
 
 
 ## 1.3 Data Source and Selection Process
@@ -517,17 +517,18 @@ Each model could address specific questions we have in mind:
 
 ## 4.1 Introduction to the Problem
 
-Predicting student grades is fundamental to early intervention strategies. Linear regression provides an interpretable framework for understanding how various factors—from prior academic preparation to socioeconomic conditions—combine to influence academic performance. While simple in concept, this approach reveals which factors matter most and by how much.
+In this section, we use **linear regression** as a simple and interpretable baseline model. It helps us see which factors are linked to most important factorper, and in which direction. The prediction could be used for later early-warning system.
+For example, "a 1-point drop in first semester grades predicts a 0.7-point drop in second semester.
 
 ## 4.2 Methodology
 
-Linear regression models the relationship between predictor variables and a continuous outcome through the equation:
+Linear regression models a continuous outcome (here: **2nd semester grade**) as a weighted sum of input features:
 
 $$Y = \beta_0 + \beta_1X_1 + \beta_2X_2 + ... + \beta_nX_n + \epsilon$$
 
-where $Y$ represents second semester grades, $X_i$ are our predictor variables, $\beta_i$ are coefficients indicating the strength and direction of each relationship, and $\epsilon$ captures random error.
+Here, $Y$ is the 2nd semester grade, $X_i$ are the input variables, and $\beta_i$ are the estimated coefficients. Each $\beta_i$ tells us how $Y$ is expected to change when $X_i$ increases by 1 unit (while keeping other variables constant). The term $\epsilon$ represents unexplained variation.
 
-We predict second semester grades based on 13 carefully selected features including demographic factors, previous academic performance, and economic indicators. This multi-factor approach recognizes that student success results from the interplay of personal, academic, and contextual variables.
+We predict **2nd semester grades** using **13 features**, including demographics, earlier academic information, and macroeconomic indicators. This matches the idea that student outcomes depend on multiple factors, not just one.
 
 ## 4.3 Data Preparation
 
@@ -557,11 +558,11 @@ df_model <- df %>%
     filter(get(TARGET) > 0)
 ```
 
-After filtering missing values and excluding zero grades, the linear regression model uses **`r nrow(df_model)` students**. The target variable (**2nd semester grade**) has **mean** **`r round(mean(df_model[[TARGET]]), 2)`** and **standard deviation** **`r round(sd(df_model[[TARGET]]), 2)`**.
+After preparing the dataset (we did not observe missing values in EDA, but we keep `drop_na()` as a safety check) and excluding zero grades, the linear regression model uses **`r nrow(df_model)` students**. The target variable (**2nd semester grade**) has **mean** **`r round(mean(df_model[[TARGET]]), 2)`** and **standard deviation** **`r round(sd(df_model[[TARGET]]), 2)`**.
 
 The dataset is filtered to **exclude students with zero grades**, as these typically represent withdrawals or incomplete coursework rather than actual performance. This ensures our model focuses on **predicting outcomes for actively enrolled students**.
 
-## 4.4 Exploratory Analysis
+## 4.4 Linear EDA
 
 ```{r linear-eda, results="asis"}
 correlations <- cor(df_model[FEATURES], df_model[[TARGET]])
@@ -604,69 +605,65 @@ trainIndex <- createDataPartition(df_model[[TARGET]], p = 0.8, list = FALSE)
 
 train_data <- df_model[trainIndex, ]
 test_data <- df_model[-trainIndex, ]
-
-X_train <- train_data %>% dplyr::select(all_of(FEATURES))
 y_train <- train_data[[TARGET]]
-X_test <- test_data %>% dplyr::select(all_of(FEATURES))
 y_test <- test_data[[TARGET]]
 
 train_n <- nrow(train_data)
 test_n <- nrow(test_data)
 ```
 
-We use an **80/20 train-test split**, resulting in **`r train_n`** training observations and **`r test_n`** test observations.
-
-```{r linear-scale}
-preProc <- preProcess(X_train, method = c("center", "scale"))
-X_train_scaled <- predict(preProc, X_train)
-X_test_scaled <- predict(preProc, X_test)
-```
-
-**Feature Scaling:** Standardization (**z-score normalization**) ensures all features contribute proportionally to the model regardless of their original scales.
+We use an **80/20 train-test split**, resulting in **`r train_n`** training observations and **`r test_n`** test observations, even for the linear model.
 
 ```{r linear-train, results="asis", echo=FALSE}
-train_data_scaled <- X_train_scaled
-train_data_scaled[[TARGET]] <- y_train
-
 formula_str <- paste(TARGET, "~", paste(FEATURES, collapse = " + "))
 formula_obj <- as.formula(formula_str)
 
-model <- lm(formula_obj, data = train_data_scaled)
-coef_summary <- data.frame(
-  Feature = names(coef(model)),
-  Coefficient = coef(model)
-)
-coef_table <- coef_summary %>%
-  dplyr::filter(Feature != "(Intercept)") %>%
-  dplyr::mutate(Abs_Coefficient = abs(Coefficient)) %>%
-  dplyr::arrange(desc(Abs_Coefficient)) %>%
-  dplyr::select(Feature, Coefficient) %>%
-  utils::head(3)
+model <- lm(formula_obj, data = train_data)
 
-rownames(coef_table) <- NULL
+cat("**Fitted model formula:**\n\n")
+cat("`", paste(deparse(formula(model)), collapse = " "), "`\n\n", sep = "")
+
+drop1_tbl <- drop1(model, test = "F")
+drop1_df <- as.data.frame(drop1_tbl)
+drop1_df$Feature <- rownames(drop1_df)
+drop1_df <- drop1_df[drop1_df$Feature != "<none>", c("Feature", "Df", "F value", "Pr(>F)")]
+drop1_df <- drop1_df[order(drop1_df$`Pr(>F)`), ]
+drop1_df$`Pr(>F)` <- signif(drop1_df$`Pr(>F)`, 3)
+rownames(drop1_df) <- NULL
 
 if (requireNamespace("kableExtra", quietly = TRUE)) {
   knitr::kable(
-    coef_table,
-    caption = "Top 3 linear regression coefficients (by absolute value)",
-    align = c("l", "r")
+    drop1_df,
+    caption = "Drop-one (partial) F-tests: top predictors",
+    align = c("l", "r", "r", "r"),
+    row.names = FALSE
   ) %>%
     kableExtra::kable_styling(full_width = FALSE) %>%
     kableExtra::column_spec(1, bold = TRUE)
 } else {
   knitr::kable(
-    coef_table,
-    caption = "Top 3 linear regression coefficients (by absolute value)",
-    align = c("l", "r")
+    drop1_df,
+    caption = "Drop-one (partial) F-tests: top predictors (lower p-value = more useful)",
+    align = c("l", "r", "r", "r"),
+    row.names = FALSE
   )
 }
 ```
 
-## 4.6 Model Performance
+**Interpretation:** `drop1(model, test = "F")` checks each feature one by one. It asks: *if we remove this feature from the linear model, does the model get noticeably worse?* If yes, the feature is considered more useful.
 
-```{r linear-predict, results="hide"}
-y_train_pred <- predict(model, X_train_scaled)
-y_test_pred <- predict(model, X_test_scaled)
+**What we see in our results table:**
+
+- **Curricular.units.1st.sem..grade.** is by far the strongest predictor (very large F).
+- **Curricular.units.1st.sem..approved.** and **Curricular.units.1st.sem..credited.** are also strong.
+- **Admission.grade** and **GDP** still show meaningful contribution (smaller than semester performance, but significant).
+- **Age.at.enrollment** is weaker (smaller F and more borderline p-value).
+
+## 4.7 Visual Assessment & Performance Interpretation
+
+```{r linear-metrics, include=FALSE}
+y_train_pred <- predict(model, newdata = train_data)
+y_test_pred <- predict(model, newdata = test_data)
 
 train_r2 <- cor(y_train, y_train_pred)^2
 train_rmse <- sqrt(mean((y_train - y_train_pred)^2))
@@ -677,12 +674,13 @@ test_rmse <- sqrt(mean((y_test - y_test_pred)^2))
 test_mae <- mean(abs(y_test - y_test_pred))
 ```
 
-**Performance Interpretation:** The R² score of `r round(test_r2, 4)` indicates that `r round(test_r2 * 100, 1)`% of variance in second semester grades can be explained by our selected features. The Mean Absolute Error (MAE) of `r round(test_mae, 2)` means our predictions are typically within `r round(test_mae, 2)` grade points of actual values.
+**Performance Interpretation:** The R² score of `r round(test_r2, 4)` indicates that `r round(test_r2 * 100, 1)`% of variance in second semester grades can be explained by our selected features. The Mean Absolute Error (MAE) of `r round(test_mae, 2)` means our predictions are typically within `r round(test_mae, 2)` grade points of actual values.  
+It provides a solid baseline, but there is room for more flexible models.
 
-## 4.7 Visual Assessment
+**How to read the 4-panel plot:** In the two scatter plots, points closer to the red dashed line mean better predictions; here we see a clear trend but with spread (so it’s not perfect). The two residual plots show errors are mostly centered around 0 with a few outliers, which is acceptable for a simple baseline model.
 
 ```{r linear-plots, fig.cap="Actual vs. Predicted Grades"}
-par(mfrow = c(1, 2))
+par(mfrow = c(2, 2))
 
 plot(y_train, y_train_pred,
      xlab = "Actual Grade", ylab = "Predicted Grade",
@@ -697,56 +695,27 @@ plot(y_test, y_test_pred,
      pch = 16, col = rgb(0, 1, 0, 0.5))
 abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2)
 grid()
-```
 
-### Residual Analysis
-
-```{r linear-residuals, fig.cap="Residual diagnostics"}
 residuals_test <- y_test - y_test_pred
-
-par(mfrow = c(1, 2))
 
 plot(y_test_pred, residuals_test,
      xlab = "Predicted Grade", ylab = "Residuals",
-     main = "Residual Plot",
+     main = "Residual Plot (Test)",
      pch = 16, col = rgb(0, 0, 1, 0.5))
 abline(h = 0, col = "red", lwd = 2, lty = 2)
 grid()
 
 hist(residuals_test, breaks = 30,
      xlab = "Residuals", ylab = "Frequency",
-     main = "Residual Distribution",
+     main = "Residual Distribution (Test)",
      col = rgb(0, 0, 1, 0.7), border = "black")
 abline(v = 0, col = "red", lwd = 2, lty = 2)
 grid()
 ```
 
-## 4.8 Feature Importance
+**Final takeaway (linear regression):** Using the selected features, the linear regression model can produce a reasonable prediction of **2nd semester grades**. With a test R² of about **`r round(test_r2, 2)`** and MAE around **`r round(test_mae, 2)`**, it works well as a simple and interpretable baseline. We maybe could later use this prediction tool to predict dropout on top. In the next section we move to a **Binomial GLM (logistic regression)** for dropout prediction.
 
-```{r linear-importance, fig.height=8, fig.cap="Feature importance"}
-feature_importance <- data.frame(
-    Feature = names(coef(model))[-1],
-    Coefficient = coef(model)[-1]
-) %>%
-    mutate(Abs_Coefficient = abs(Coefficient)) %>%
-    arrange(desc(Abs_Coefficient))
 
-par(mar = c(5, 12, 4, 2))
-colors <- ifelse(feature_importance$Coefficient > 0, "green", "red")
-barplot(feature_importance$Coefficient,
-        names.arg = feature_importance$Feature,
-        horiz = TRUE,
-        las = 1,
-        col = adjustcolor(colors, alpha.f = 0.7),
-        xlab = "Coefficient Value (Standardized)",
-        main = "Feature Importance in Grade Prediction",
-        xlim = c(min(feature_importance$Coefficient) * 1.2,
-                 max(feature_importance$Coefficient) * 1.2))
-abline(v = 0, col = "black", lwd = 1)
-grid()
-```
-
-**Key Insights:** First semester grades have the strongest positive effect—students who perform well initially tend to continue succeeding. Course approvals and enrollments in the first semester significantly impact second semester outcomes. Economic indicators show measurable but smaller effects.
 
 ------------------------------------------------------------------------
 
