@@ -993,13 +993,80 @@ grid()
 
 # 7. Generalized Additive Model - GAM
 
-## 7.1 Beyond Linear Relationships
+## 7.1 Introduction: Two GAM Models
 
-All our previous models assumed **linear relationships**. But reality is rarely this simple. **GAMs** extend **GLMs** by replacing straight lines with **smooth curves**, allowing the model to discover **non-linear patterns** while maintaining interpretability.
+All our previous models assumed **linear relationships**. But reality is rarely this simple.
 
-The model structure: $Y = \beta_0 + f_1(X_1) + f_2(X_2) + ... + f_n(X_n) + \epsilon$, where $f_i$ are smooth, flexible functions learned from data.
+**GAMs** extend **GLMs** by replacing straight lines with **smooth curves**, allowing the model to discover **non-linear patterns** while maintaining interpretability. The model structure: $Y = \beta_0 + f_1(X_1) + f_2(X_2) + ... + f_n(X_n) + \epsilon$, where $f_i$ are smooth, flexible functions learned from data.
 
-## 7.2 Model 1: Gaussian GAM for Grade Prediction
+**In this section, we build two GAM models:**
+
+1. **Model 1 - Gaussian GAM (Section 7.2)**: Predicts **2nd semester grades** (continuous outcome), similar to the Linear Model in Section 4, but with curves instead of straight lines. Like the linear model, this is not a direct prediction of our business question, but as a step stone, it could help later for more complex prediction systems (multi-step prediction).
+
+2. **Model 2 - Logistic GAM (Section 7.3)**: Predicts **Graduation vs Dropout** (binary outcome), similar to the Binomial GLM in Section 5, but allowing for non-linear risk patterns.
+
+**Our approach:** First, we visually check if non-linearity exists. Then we fit the model, interpret which smooths are significant, and compare performance with simpler linear models.
+
+## 7.2 Model 1: Gaussian GAM for 2nd-Semester Grade Prediction
+
+### Exploratory Analysis: Is Non-Linearity Present?
+
+Before fitting GAM, we check whether predictors actually have **non-linear relationships** with 2nd semester grades. We plot scatter plots with a **linear fit** (red dashed line). If the data deviates systematically from the straight line, we need GAM.
+
+```{r gam1-eda-prep, include=FALSE}
+TARGET_GRADE <- 'Curricular.units.2nd.sem..grade.'
+
+features_grade <- c(
+  'Previous.qualification..grade.',
+  'Admission.grade',
+  'Age.at.enrollment',
+  'Scholarship.holder',
+  'Curricular.units.1st.sem..approved.',
+  'Curricular.units.1st.sem..grade.',
+  'Unemployment.rate',
+  'GDP'
+)
+
+df_grade <- df %>%
+  select(all_of(c(features_grade, TARGET_GRADE))) %>%
+  mutate(across(everything(), as.numeric)) %>%
+  na.omit() %>%
+  filter(!!sym(TARGET_GRADE) > 0)
+```
+
+```{r gam1-eda-visual, fig.height=8, fig.width=10, fig.cap="Visual inspection: Do predictors have non-linear relationships?"}
+# Reshape data to long format for faceting (exclude Scholarship.holder - it's categorical)
+continuous_predictors <- features_grade[features_grade != 'Scholarship.holder']
+
+df_long <- df_grade %>%
+  select(all_of(c(continuous_predictors, TARGET_GRADE))) %>%
+  pivot_longer(cols = all_of(continuous_predictors),
+               names_to = "Predictor",
+               values_to = "Value")
+
+# Single ggplot with facet_wrap
+ggplot(df_long, aes(x = Value, y = .data[[TARGET_GRADE]])) +
+  geom_point(alpha = 0.3, size = 0.8) +
+  geom_smooth(color = "red", linetype = "dashed", linewidth = 0.8) +
+  facet_wrap(~ Predictor, scales = "free_x", ncol = 3) +
+  labs(x = "Predictor Value", y = "2nd Semester Grade")
+```
+
+**What we observe:**
+
+- **1st Sem Grade**: Strong **non-linear curve** at lower values—students who barely pass in semester 1 show a curved pattern, not a straight relationship.
+
+- **1st Sem Approved**: Clear **non-linearity**—passing 0-5 courses vs. 15-20 courses has different effects on 2nd semester outcomes.
+
+- **Admission Grade & Previous Qualification**: These look **fairly linear**—the straight red line fits the data reasonably well. Smoothing might not help much.
+
+- **Age, GDP, Unemployment**: These are **discrete/categorical** variables with limited variation. Less clear if smoothing adds value.
+
+**Decision:** Non-linearity is clearly present for **semester performance variables**. We'll fit a GAM with smooths on all continuous predictors, then use **effective degrees of freedom (edf) and p-value** to determine which smooths are truly needed.
+
+### Fitting the GAM for 2nd Semester Grade Prediction
+
+Now that we've confirmed non-linearity exists, we fit a GAM model. We'll start by smoothing all continuous predictors, then examine which smooths are actually needed.
 
 ```{r gam1-all, results="hide"}
 TARGET_GRADE <- 'Curricular.units.2nd.sem..grade.'
@@ -1055,42 +1122,110 @@ cat(sprintf("GAM performance: R²=%.4f RMSE=%.4f MAE=%.4f\n",
             test_r2_g, test_rmse_g, test_mae_g))
 ```
 
-### Comparison with Linear Model
+### Interpreting the GAM Summary
+
+The GAM summary provides two critical pieces of information for each smooth term:
+
+1. **Effective Degrees of Freedom (edf)**: How "wiggly" the smooth is
+   - **edf ≈ 1**: The relationship is essentially **linear** (smooth isn't needed)
+   - **edf ≈ 2-3**: Moderately non-linear
+   - **edf > 3**: Highly non-linear, complex curve
+   
+2. **p-value**: Is this term statistically significant?
+   - **p < 0.05**: Significant predictor
+   - **p > 0.05**: Not significant (could be removed)
+
+```{r gam1-summary-interpretation, results="asis", echo=FALSE}
+# Extract smooth terms information from GAM summary
+gam_summary <- summary(gam_grade)
+smooth_terms <- gam_summary$s.table
+
+# Create interpretation table
+interpretation_df <- data.frame(
+  Term = rownames(smooth_terms),
+  EDF = round(smooth_terms[, "edf"], 2),
+  `p-value` = round(smooth_terms[, "p-value"], 4),
+  Significance = ifelse(smooth_terms[, "p-value"] < 0.001, "***",
+                       ifelse(smooth_terms[, "p-value"] < 0.01, "**",
+                             ifelse(smooth_terms[, "p-value"] < 0.05, "*", ""))),
+  Interpretation = c(
+    ifelse(smooth_terms[1, "edf"] < 1.5, "Nearly linear", 
+           ifelse(smooth_terms[1, "edf"] < 3, "Moderately non-linear", "Highly non-linear")),
+    ifelse(smooth_terms[2, "edf"] < 1.5, "Nearly linear", 
+           ifelse(smooth_terms[2, "edf"] < 3, "Moderately non-linear", "Highly non-linear")),
+    ifelse(smooth_terms[3, "edf"] < 1.5, "Nearly linear", 
+           ifelse(smooth_terms[3, "edf"] < 3, "Moderately non-linear", "Highly non-linear")),
+    ifelse(smooth_terms[4, "edf"] < 1.5, "Nearly linear", 
+           ifelse(smooth_terms[4, "edf"] < 3, "Moderately non-linear", "Highly non-linear")),
+    ifelse(smooth_terms[5, "edf"] < 1.5, "Nearly linear", 
+           ifelse(smooth_terms[5, "edf"] < 3, "Moderately non-linear", "Highly non-linear")),
+    ifelse(smooth_terms[6, "edf"] < 1.5, "Nearly linear", 
+           ifelse(smooth_terms[6, "edf"] < 3, "Moderately non-linear", "Highly non-linear")),
+    ifelse(smooth_terms[7, "edf"] < 1.5, "Nearly linear", 
+           ifelse(smooth_terms[7, "edf"] < 3, "Moderately non-linear", "Highly non-linear"))
+  ),
+  check.names = FALSE
+)
+
+knitr::kable(interpretation_df, 
+             caption = "GAM Smooth Terms: Significance and Non-linearity",
+             align = c("l", "r", "r", "c", "l"))
+```
+
+**Key Findings from GAM Summary:**
+
+- **Highly significant & non-linear** (edf > 3, p < 0.001):
+  - `s(Curricular.units.1st.sem..approved.)` - edf ≈ 5.4
+  - `s(Curricular.units.1st.sem..grade.)` - edf ≈ 5.5
+  
+  These **justify using GAM** - they show complex curved relationships that linear models can't capture.
+
+- **Nearly linear** (edf ≈ 1):
+  - `s(Admission.grade)` - edf ≈ 1.0
+  - `s(Unemployment.rate)` - edf ≈ 1.0
+  
+  These smooths are **essentially straight lines** - they could be replaced with regular linear terms to save complexity.
+
+- **Not significant** (p > 0.05):
+  - `s(Age.at.enrollment)` - p ≈ 0.37
+  
+  Age doesn't significantly improve grade prediction in this model, despite our EDA suggesting some pattern.
+
+### Visualizing the Key Non-Linear Effects
+
+Based on our summary interpretation, we plot only the **significant AND truly non-linear smooths** (edf > 2, p < 0.05).
+
+```{r gam1-smooth, fig.height=4, fig.width=10, fig.cap="Smooth terms showing true non-linear patterns"}
+par(mfrow = c(1, 3), mar = c(4, 4, 3, 2))
+
+# Plot only the 3 most meaningful smooths
+plot(gam_grade, select = 4, shade = TRUE, col = "darkblue", shade.col = "lightblue",
+     main = "1st Sem Approved Courses", cex.main = 1.1, ylab = "Effect on 2nd Sem Grade")
+
+plot(gam_grade, select = 5, shade = TRUE, col = "darkblue", shade.col = "lightblue",
+     main = "1st Sem Grade", cex.main = 1.1, ylab = "Effect on 2nd Sem Grade")
+
+plot(gam_grade, select = 7, shade = TRUE, col = "darkblue", shade.col = "lightblue",
+     main = "GDP", cex.main = 1.1, ylab = "Effect on 2nd Sem Grade")
+```
+
+**Interpretation:**
+
+- **1st Sem Approved**: Non-linear pattern—students who pass very few OR complete all courses show different effects than mid-range students.
+- **1st Sem Grade**: Strong curve at lower grades—struggling students follow a different trajectory than average performers.
+- **GDP**: Moderate curve showing economic factors have some non-linear influence.
+
+### Model Evaluation & Summary
 
 ```{r gam1-comparison, results="hide"}
 lm_model <- lm(Curricular.units.2nd.sem..grade. ~ ., data = train_g)
 lm_pred <- predict(lm_model, test_g)
 lm_r2 <- cor(test_g[[TARGET_GRADE]], lm_pred)^2
-
-cat(sprintf("GAM vs Linear | GAM R²=%.4f | Linear R²=%.4f | Improvement=%.2f pp\n",
-            test_r2_g, lm_r2, (test_r2_g - lm_r2) * 100))
+lm_rmse <- sqrt(mean((test_g[[TARGET_GRADE]] - lm_pred)^2))
+lm_mae <- mean(abs(test_g[[TARGET_GRADE]] - lm_pred))
 ```
 
-The GAM achieves an **R²** of `r round(test_r2_g, 4)` versus `r round(lm_r2, 4)` for the linear model—demonstrating that **non-linear relationships** exist and capturing them improves predictions.
-
-### Visualizing Non-Linear Effects
-
-```{r gam1-smooth, fig.height=8, fig.cap="Smooth functions reveal non-linear patterns"}
-par(mfrow = c(2, 4), mar = c(4, 4, 3, 1))
-plot(gam_grade, select = 1, shade = TRUE, col = "blue", shade.col = "lightblue",
-     main = "Previous Qualification", cex.main = 1.2)
-plot(gam_grade, select = 2, shade = TRUE, col = "blue", shade.col = "lightblue",
-     main = "Admission Grade", cex.main = 1.2)
-plot(gam_grade, select = 3, shade = TRUE, col = "blue", shade.col = "lightblue",
-     main = "Age at Enrollment", cex.main = 1.2)
-plot(gam_grade, select = 4, shade = TRUE, col = "blue", shade.col = "lightblue",
-     main = "1st Sem Approved", cex.main = 1.2)
-plot(gam_grade, select = 5, shade = TRUE, col = "blue", shade.col = "lightblue",
-     main = "1st Sem Grade", cex.main = 1.2)
-plot(gam_grade, select = 6, shade = TRUE, col = "blue", shade.col = "lightblue",
-     main = "Unemployment Rate", cex.main = 1.2)
-plot(gam_grade, select = 7, shade = TRUE, col = "blue", shade.col = "lightblue",
-     main = "GDP", cex.main = 1.2)
-```
-
-**Key Non-Linear Patterns:** Age effects may show optimal ranges, course load might reveal sweet spots, and economic variables might display threshold effects that linear models cannot capture.
-
-```{r gam1-predictions, fig.cap="GAM predictions maintain strong accuracy"}
+```{r gam1-predictions, fig.cap="GAM prediction accuracy on test set"}
 par(mfrow = c(1, 2))
 
 plot(test_g[[TARGET_GRADE]], pred_test_g,
@@ -1110,6 +1245,27 @@ plot(pred_test_g, residuals_g,
 abline(h = 0, col = "red", lwd = 2, lty = 2)
 grid()
 ```
+
+```{r gam1-comparison-table, echo=FALSE}
+comparison_df <- data.frame(
+  Model = c("Linear Model (Section 4)", "GAM"),
+  `R²` = c(sprintf("%.4f", lm_r2), sprintf("%.4f", test_r2_g)),
+  RMSE = c(sprintf("%.4f", lm_rmse), sprintf("%.4f", test_rmse_g)),
+  MAE = c(sprintf("%.4f", lm_mae), sprintf("%.4f", test_mae_g)),
+  check.names = FALSE
+)
+
+knitr::kable(comparison_df,
+             caption = "GAM vs Linear Model Performance",
+             align = c("l", "r", "r", "r"))
+```
+
+**Summary of Gaussian GAM (Model 1):**
+
+- GAM achieves **R² = `r round(test_r2_g, 3)`** versus **`r round(lm_r2, 3)`** for Linear Model—an improvement of **`r round((test_r2_g - lm_r2) * 100, 1)` percentage points**.
+- The improvement comes from capturing **curved relationships** in 1st semester performance variables.
+- Residuals are centered around zero with no systematic bias, indicating a well-fitted model.
+- Some variance remains unexplained (~45%), likely due to unmeasured factors like study habits or motivation.
 
 ## 7.3 Model 2: Logistic GAM for Graduation Prediction
 
@@ -1959,10 +2115,10 @@ With NN and SVM, we focused on the dropout prediction.
 
 | Model | Target Outcome | Predictors | Evaluation |
 |-------|---------------|----------------|------------|
-| **Linear Regression** | 2nd Sem Grade (continuous) | 1st Sem Grade, Admission Grade, GDP | R² ~ 0.68 |
+| **Linear Regression** | 2nd Sem Grade (continuous) | 1st Sem Grade, Admission Grade, GDP | R² ~ 0.37 |
 | **Binomial GLM** | Graduation vs Dropout | 1st Sem Approved/Grade, Tuition Status, Debtor | AUC ~ 0.87 |
 | **Poisson GLM** | 1st Sem Courses Approved (count) | Admission Grade, Previous Qualification | RMSE ~ 1.8 |
-| **Gaussian GAM** | 2nd Sem Grade (continuous) | 1st Sem Grade (smooth), Age, Scholarship | R² ~ 0.72 |
+| **Gaussian GAM** | 2nd Sem Grade (continuous) | 1st Sem Grade (smooth), Age, Scholarship | R² ~ 0.55 |
 | **Logistic GAM** | Graduation vs Dropout | 1st Sem Approved/Grade (smooth), Tuition, Scholarship | AUC ~ 0.89 |
 | **Neural Network** | Dropout vs Not Dropout | 1st/2nd Sem Grades, Tuition, Debtor, Scholarship | Accuracy ~ 88% |
 | **SVM (Linear)** | Dropout vs Not Dropout | 2nd Sem Grade, 2nd Sem Approved | Accuracy ~ 87.6% |
