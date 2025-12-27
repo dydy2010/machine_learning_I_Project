@@ -3,8 +3,9 @@
 
 **File to Edit:** `final_report_ml1_group.Rmd`  
 **Deadline:** January 9, 2026 (aiming for January 4)  
-**Status:** ✅ Technical work complete, narrative polish remaining  
-**Remaining Time:** ~45-60 minutes
+**Status:** ✅ GAM section complete, remaining narrative improvements optional  
+**Remaining Work:** Phase 1 (typos/formatting) + Phase 2 Steps 2.2, 2.4-2.8 (narrative flow)  
+**Estimated Time:** ~35-45 minutes
 
 ---
 
@@ -153,37 +154,7 @@ The model structure is: $\log(\lambda) = \beta_0 + \beta_1X_1 + ... + \beta_nX_n
 
 ---
 
-### Step 2.3: Strengthen GAM Intro (Section 7)
 
-**WHY:** Current intro is pure methodology. Should reference the EDA finding about non-linear age effects.
-
-**FIND (lines 958-964):**
-```markdown
-# 7. Generalized Additive Model - GAM
-
-## 7.1 Beyond Linear Relationships
-
-All our previous models assumed **linear relationships**. But reality is rarely this simple. **GAMs** extend **GLMs** by replacing straight lines with **smooth curves**, allowing the model to discover **non-linear patterns** while maintaining interpretability.
-
-The model structure: $Y = \beta_0 + f_1(X_1) + f_2(X_2) + ... + f_n(X_n) + \epsilon$, where $f_i$ are smooth, flexible functions learned from data.
-```
-
-**REPLACE WITH:**
-```markdown
-# 7. Generalized Additive Model - GAM
-
-**Business Question:** *"Are there non-linear relationships that affect student success?"*
-
-Our EDA (Section 2.4) revealed that age has a **non-linear relationship** with graduation: students aged 18-22 have higher success rates, while both younger and older students face elevated dropout risks. Linear models can't capture this "sweet spot" pattern—they can only model straight-line effects.
-
-**GAMs** extend **GLMs** by replacing straight lines with **smooth curves**, allowing the model to discover **non-linear patterns** while remaining interpretable. This lets us test whether the age effect we observed in EDA holds up in a predictive model.
-
-## 7.1 Methodology
-
-The model structure: $Y = \beta_0 + f_1(X_1) + f_2(X_2) + ... + f_n(X_n) + \epsilon$, where $f_i$ are smooth, flexible functions learned from data.
-```
-
-> **Before making this change:** Verify the GAM smooth plot for Age (Section 7.3) actually shows the non-linear pattern. If it doesn't clearly show the 18-22 sweet spot, soften the language to: "Our EDA suggested age might have non-linear effects. GAMs let us test this hypothesis..."
 
 ---
 
