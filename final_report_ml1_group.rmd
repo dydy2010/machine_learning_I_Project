@@ -1269,6 +1269,12 @@ knitr::kable(comparison_df,
 
 ## 7.3 Model 2: Logistic GAM for Graduation Prediction
 
+In Section 5, we used **Binomial GLM** to predict graduation vs dropout, assuming linear relationships. Now we ask: **do non-linear patterns exist for graduation probability?**
+
+We apply the same approach as Model 1: fit a GAM, check which smooths are significant (via edf and p-value), and compare performance with the linear GLM.
+
+### Data Preparation & Model Fitting
+
 ```{r gam2-prep}
 df_success <- df %>%
   filter(Target %in% c('Graduate', 'Dropout')) %>%
@@ -1281,6 +1287,8 @@ features_success <- c(
   'Tuition.fees.up.to.date',
   'Curricular.units.1st.sem..approved.',
   'Curricular.units.1st.sem..grade.',
+  'Curricular.units.2nd.sem..approved.',
+  'Curricular.units.2nd.sem..grade.',
   'Unemployment.rate',
   'GDP'
 )
@@ -1303,6 +1311,8 @@ gam_success <- gam(
     factor(Tuition.fees.up.to.date) +
     s(Curricular.units.1st.sem..approved., bs = "cr", k = 8) +
     s(Curricular.units.1st.sem..grade., bs = "cr", k = 10) +
+    s(Curricular.units.2nd.sem..approved., bs = "cr", k = 8) +
+    s(Curricular.units.2nd.sem..grade., bs = "cr", k = 10) +
     s(Unemployment.rate, bs = "cr", k = 8) +
     s(GDP, bs = "cr", k = 8),
   data = train_s,
@@ -1310,6 +1320,41 @@ gam_success <- gam(
   method = "REML"
 )
 ```
+
+### Interpreting the Summary
+
+```{r gam2-summary, results="asis", echo=FALSE}
+gam2_summary <- summary(gam_success)
+smooth2 <- gam2_summary$s.table
+
+interp2 <- data.frame(
+  Term = rownames(smooth2),
+  EDF = round(smooth2[, "edf"], 2),
+  `p-value` = round(smooth2[, "p-value"], 4),
+  Significant = ifelse(smooth2[, "p-value"] < 0.05, "Yes", "No"),
+  check.names = FALSE
+)
+
+knitr::kable(interp2, caption = "Logistic GAM: Smooth Terms Summary", align = c("l", "r", "r", "c"))
+```
+
+**Interpreting the results:**
+
+**Highly significant & non-linear** (edf > 2, p < 0.05):
+- `2nd Sem Approved` (edf=4.90, p≈0) - strongest predictor
+- `Age` (edf=4.41, p≈0) - curved relationship
+- `Admission Grade` (edf=4.70, p=0.0002)
+- `2nd Sem Grade` (edf=3.74, p=0.0002)
+- `1st Sem Approved` (edf=3.85, p=0.002)
+
+**Nearly linear** (edf ≈ 1):
+- `Unemployment` (edf=1.00, p=0.02) - significant but perfectly linear
+- `1st Sem Grade` (edf=2.34) - moderately curved
+
+**Not significant**:
+- `GDP` (p=0.31) - could be dropped from model
+
+### Model Evaluation
 
 ```{r gam2-eval, results="hide"}
 pred_proba_s <- predict(gam_success, test_s, type = "response")
@@ -1323,41 +1368,23 @@ cat(sprintf("Accuracy: %.4f (%.2f%%)\n", accuracy_s, accuracy_s * 100))
 cat(sprintf("AUC-ROC: %.4f\n", auc_s))
 ```
 
-For the graduation GAM, the test set results are **accuracy = `r round(accuracy_s, 3)`** and **AUC = `r round(auc_s, 3)`**.
-
 ```{r gam2-comparison, results="hide"}
 log_reg <- glm(Success ~ ., data = train_s, family = binomial)
 log_pred_proba <- predict(log_reg, test_s, type = "response")
 log_roc <- roc(test_s$Success, log_pred_proba, quiet = TRUE)
 log_auc <- auc(log_roc)
-
-cat("\nLogistic GAM vs Logistic GLM:\n")
-cat(sprintf("GAM AUC:         %.4f\n", auc_s))
-cat(sprintf("Logistic GLM:    %.4f\n", log_auc))
-cat(sprintf("Improvement:     %.2f percentage points\n", (auc_s - log_auc) * 100))
 ```
 
-The GAM's **AUC** of `r round(auc_s, 4)` versus `r round(log_auc, 4)` for standard logistic regression represents meaningful improvement for **intervention decisions**.
+**Performance Comparison:**
 
-### Non-Linear Risk Patterns
+| Model | AUC |
+|-------|-----|
+| Binomial GLM (Section 5) | `r round(log_auc, 3)` |
+| Logistic GAM | `r round(auc_s, 3)` |
 
-```{r gam2-smooth, fig.height=8, fig.cap="Non-linear graduation probability patterns"}
-par(mfrow = c(2, 3), mar = c(4, 4, 3, 1))
-plot(gam_success, select = 1, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
-     main = "Admission Grade", cex.main = 1.2, ylab = "Log-Odds of Graduation")
-plot(gam_success, select = 2, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
-     main = "Age at Enrollment", cex.main = 1.2, ylab = "Log-Odds of Graduation")
-plot(gam_success, select = 3, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
-     main = "1st Sem Approved", cex.main = 1.2, ylab = "Log-Odds of Graduation")
-plot(gam_success, select = 4, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
-     main = "1st Sem Grade", cex.main = 1.2, ylab = "Log-Odds of Graduation")
-plot(gam_success, select = 5, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
-     main = "Unemployment", cex.main = 1.2, ylab = "Log-Odds of Graduation")
-plot(gam_success, select = 6, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
-     main = "GDP", cex.main = 1.2, ylab = "Log-Odds of Graduation")
-```
+GAM achieves **AUC = `r round(auc_s, 3)`** versus **`r round(log_auc, 3)`** for GLM—an improvement of **`r round((auc_s - log_auc) * 100, 1)` percentage points**.
 
-```{r gam2-roc, fig.cap="Logistic GAM achieves strong discrimination"}
+```{r gam2-roc, fig.height=4, fig.width=5, fig.cap="Logistic GAM ROC curve"}
 plot(roc_s, col = "darkgreen", lwd = 2,
      main = sprintf("ROC Curve - Logistic GAM (AUC = %.3f)", auc_s),
      cex.main = 1.3)
@@ -1367,7 +1394,37 @@ legend("bottomright", legend = c("GAM", "Random"),
 grid()
 ```
 
+### Visualizing Key Non-Linear Effects
 
+We plot variables with **edf > 2 and p < 0.05** (meaningful non-linearity):
+
+```{r gam2-smooth, fig.height=4, fig.width=10, fig.cap="Non-linear graduation probability patterns"}
+par(mfrow = c(1, 3), mar = c(4, 4, 3, 2))
+
+# Plot the 3 most non-linear and significant smooths
+plot(gam_success, select = 5, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
+     main = "2nd Sem Approved", cex.main = 1.1, ylab = "Log-Odds of Graduation")
+
+plot(gam_success, select = 2, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
+     main = "Age at Enrollment", cex.main = 1.1, ylab = "Log-Odds of Graduation")
+
+plot(gam_success, select = 1, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
+     main = "Admission Grade", cex.main = 1.1, ylab = "Log-Odds of Graduation")
+```
+
+**Interpretation:**
+- **2nd Sem Approved/Grade**: Strongest predictors, confirming that later academic data provides the clearest signal
+- **Age**: Young students (18-22) may have different patterns than older students
+- **Note for Early Warning:** While 2nd semester data maximizes accuracy, a 1st-semester-only model (see GLM in Section 5) enables earlier intervention
+
+### Summary
+
+**Summary of Logistic GAM (Model 2):**
+
+- Logistic GAM achieves **AUC = `r round(auc_s, 3)`**, using both 1st and 2nd semester data
+- **2nd semester performance** (edf=4.90) emerges as the dominant non-linear predictor
+- **Age** (edf=4.41) shows strong curved relationship - younger students have different graduation patterns
+- **GDP** was not significant (p=0.31) and could be dropped in a refined model
 
 ------------------------------------------------------------------------
 
