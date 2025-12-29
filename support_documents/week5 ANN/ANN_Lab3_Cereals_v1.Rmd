@@ -1,0 +1,122 @@
+---
+title: "Cereal Ratings using a Neural Network"
+author: "Daniel Meister"
+date: "10/23/2025"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Adapted from _https://www.analyticsvidhya.com/blog/2017/09/creating-visualizing-neural-network-in-r/_
+
+## Load Packages
+
+```{r}
+library(tidyverse)
+library(caret)
+library(neuralnet)
+```
+
+
+## Load the data
+
+```{r}
+cereals <- read_csv("cereals.csv")
+```
+
+```{r}
+str(cereals)
+```
+
+
+## Prepare for Training
+
+```{r}
+set.seed(123)
+indices <- createDataPartition(cereals$rating, p = 0.8, list = FALSE)
+train <- cereals %>% slice(indices)
+test <- cereals %>% slice(-indices)
+boxplot(train$rating, test$rating, cereals %>% sample_frac(0.2) %>% pull(rating))
+```
+
+And this time we will also scale the data (by hand for educational purposes)
+
+```{r}
+max <- apply(cereals, 2, max)
+min <- apply(cereals, 2, min)
+cereals_scaled <- as.data.frame(scale(cereals, center = min, scale = max - min))
+train_scaled <- cereals_scaled %>% slice(indices)
+test_scaled <- cereals_scaled %>% slice(-indices)
+```
+
+## Fit the Network
+
+```{r}
+set.seed(42)
+cereal_net = neuralnet(rating ~ calories + protein + fat + sodium + fiber, train_scaled, hidden = 3 , linear.output = TRUE)
+plot(cereal_net)
+```
+## Predict the test set
+
+```{r}
+pred <- compute(cereal_net, test %>% select(-rating))
+pred$net.result
+```
+So what went wrong here? Obviously we also need to use the scaled data to make predictions and then scale back to real rating values
+
+```{r}
+pred_scaled <- compute(cereal_net, test_scaled %>% select(-rating))
+pred <- pred_scaled$net.result * (max(cereals$rating) - min(cereals$rating)) + min(cereals$rating)
+pred
+```
+
+
+```{r}
+plot(test$rating, pred, col='blue', pch=16, ylab = "predicted rating NN", xlab = "real rating")
+abline(0,1)
+```
+And calculate the RMSE
+```{r}
+sqrt(mean((test$rating - pred)^2))
+```
+
+## Redo with `caret` and Cross Validation
+
+In principle we cannot be sure that we were not simply "lucky" with the train/test split above, so the proper way to run this would be via `caret` using k-fold Cross Validation. And also as we use `caret` anyway let's also run some hyperparameter tuning:
+
+```{r message=FALSE, warning=FALSE}
+set.seed(42)
+tuGrid <- expand.grid(.layer1=c(1:4), .layer2=c(0,2), .layer3=c(0))
+
+trCtrl <- trainControl(
+  method = 'repeatedcv', 
+  number = 5, 
+  repeats = 10, 
+  returnResamp = 'final'
+)
+
+models <- train(
+  x = cereals %>% select(-rating),
+  y = cereals_scaled %>% pull(rating),
+  method = 'neuralnet', metric = 'RMSE', 
+  linear.output = TRUE,
+  # be careful, does only work on x!
+  preProcess = c('center', 'scale'),
+  tuneGrid = tuGrid,
+  trControl = trCtrl
+)
+```
+
+```{r}
+plot(models)
+```
+and extract the best model
+
+```{r}
+plot(models$finalModel)
+```
+

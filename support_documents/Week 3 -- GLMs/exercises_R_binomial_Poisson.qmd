@@ -1,0 +1,280 @@
+---
+title: "exercises_R_Binomial_Quarto"
+format: html
+editor: visual
+---
+
+# Series 3: Applied Machine Learning and Predictive Modelling 1 Binomial binary GLM Poisson
+
+Load the x-ray dataset (file “Xray.RDS”). This study refers to a “study carried out to investigate the connection between X-ray usage and acute myeloid leukemia in childhood” (for further information see the help page about the amlxray dataset in {faraway} package). We work on a subset of the original data, in particular, we consider the following variables:
+
+• disease: is the response variable (1 = diseased, 0 = healthy)
+
+• Sex: Sex of the patient
+
+• age: Age of the child (in years)
+
+• downs: Presence of the Down syndrome
+
+• Mray: Did the mother ever had an Xray
+
+• Fray: Did the father ever had an Xray
+
+• CnRay.num: Total number of Xrays of the child "1" = none; "2" = 1 or 2; "3" = 3 or 4; "4" = 5 or more
+
+```{r}
+d.xray <- readRDS("Xray.RDS")
+str(d.xray)
+
+head(d.xray)
+```
+
+Question
+
+Visualise the data. You may want to take advantage of the pairs() function.
+
+```{r}
+pairs(d.xray)
+help(pairs)
+```
+
+```{r, warning=FALSE}
+# install.packages("GGally")
+library(GGally)
+# Create an advanced pairs plot viusualisation, coloring by the disease status
+ggpairs(d.xray, aes(color = as.factor(disease)))
+
+```
+
+Question
+
+Fit a starting model to the data. Start by assuming linearity for the continuous predictors and assume that no interaction is needed. Comment on the results obtained wit the summary() function.
+
+```{r}
+linearity=lm(disease~CnRay.num+age,d.xray)
+summary(linearity)
+# estimate is 0,154, that means if all other variables are 0, the chance of getting the disease is 0.154
+# CnRay.num coefficient is 0.14 that means, per time X RAY raises the chance of getting disease by 0.14. this is statistically significant.
+# age coefficient is 0.011, that means per year older the person is, it raises the chance of being sick by 0.011. however it is statistically not significant.
+
+```
+
+![correction answer glm](answer%20correction%201.png) ![correction answer glm](answer%20correction%202.png)
+
+Question Interpret the coefficients of SexM and age
+
+```{r}
+linearityglm<-glm(disease~CnRay.num+age+Sex,family="binomial",d.xray)
+summary(linearityglm)
+```
+
+![correction answer glm](answer%20correction%203.png)
+
+![correction answer glm](interpretation%201.png) ![correction answer glm](interpretation%202.png)
+
+Question Look at the estimated effect of the variable downs and its p-value. Do the results make sense to you? Comment.
+
+```{r}
+# including the 'downs' variable
+model_with_downs <- glm(disease ~ CnRay.num + age + Sex + downs, 
+                        family = "binomial", 
+                        data = d.xray)
+
+summary(model_with_downs)
+```
+
+## What the Output Shows（interpretation）
+
+The output for the downsyes variable is highly unusual:
+
+Massive Coefficient (Estimate): The coefficient is extremely large (15.97). This suggests a massive increase in the odds of the disease.
+
+Astronomical Standard Error (Std. Error): The standard error is huge (1455.40). This indicates the model is extremely uncertain about the exact size of the coefficient.
+
+Non-Significant P-value (Pr(\>\|z\|)): The p-value is almost 1 (0.991), which means the effect is statistically not significant at all. It makes sense. almost all children with down has this disease.
+
+## Question
+
+**Differences Between Binomial and Binary Data** The primary difference is that binary data represents the outcome of a single event (or "trial") that has only two possible outcomes (e.g., success/failure, yes/no, 1/0). In contrast, binomial data represents the total number of successes in a fixed number of independent binary trials.
+
+**What Model Should You Fit to Binary Data?** you should fit a logistic regression model. This is a type of Generalized Linear Model (GLM) that is specifically designed for binary outcomes. In R, this is done using the glm() function with the argument family = "binomial".
+
+This model uses a logit link function, logit(p)=log( 1−p/p), to connect the predictors to the probability of the outcome, ensuring that the predicted probabilities are always between 0 and 1
+
+**What Happens When You Fit a Normal Linear Model to Binary Data?** Fitting a normal linear model (using lm() in R) to binary data is inappropriate and leads to Nonsensical Predictions: The model can predict probabilities less than 0 or greater than 1
+
+Constant Variance (Homoscedasticity): Linear models assume the variance of the errors is constant. With binary data, the variance depends on the probability itself and is not constant(heteroscedasticity), which violates a core assumption of the model.
+
+**How to Interpret Coefficients from a Logistic Regression** The coefficients (Estimate in the R summary) from a logistic regression are on the log-odds scale and are not directly interpretable as changes in probability. To interpret them, you must exponentiate the coefficient (e\^β) to get an odds ratio.
+
+For a continuous predictor (e.g., age): If the coefficient for age is β, then e\^β is the odds ratio. This means for a one-year increase in age, the odds of the outcome (e.g., having the disease) are multiplied by a factor of e\^β.
+
+For a categorical predictor (e.g., SexM): If the coefficient for a male patient is β, then e\^β is the odds ratio comparing males to the baseline category (females). The odds of the outcome for a male are e\^β times the odds for a female.
+
+## Poisson part
+
+Load the InsectSprays dataset and have a look at the help page for it. Note that no add-on package needs to be loaded, this is a R “built-in” dataset.
+
+```{r}
+data(InsectSprays)
+help(InsectSprays)
+```
+
+**Question** Use an appropriate function to visualise the data.
+
+```{r boxplot}
+boxplot(count ~ spray, data = InsectSprays,
+        xlab = "Type of spray", ylab = "Insect count",
+        main = "InsectSprays data", varwidth = TRUE, col = "lightgray")
+```
+
+```{r jitter_layer_ggplot}
+library(ggplot2)
+
+ggplot(InsectSprays, aes(x = spray, y = count, fill = spray)) +
+  geom_boxplot(alpha = 0.5) +  # Add a semi-transparent boxplot
+  geom_jitter(width = 0.2, alpha =0.5) +   # Add the raw data points with some jitter
+  labs(title = "Insect Counts by Spray Type",
+       x = "Type of Spray",
+       y = "Insect Count")+
+theme(legend.position = "none")
+```
+
+```{r}
+library(ggplot2)
+
+ggplot(InsectSprays, aes(x = spray, y = count, fill = spray)) +
+  geom_violin() +
+  stat_summary(fun = "median", geom = "point", color = "white") + # Add a dot for the median
+  labs(title = "Distribution of Insect Counts by Spray Type",
+       x = "Type of Spray",
+       y = "Insect Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+```
+
+The width of the violin at any point on the vertical axis shows how many data points are concentrated at that value.
+
+**Question** What do you observe on the graph? Are there differences among groups? Is the variability within each group similar? **answer**: Sprays C, D, and E have very low medians, confirming they are the most effective at reducing insect counts.
+
+Sprays A, B, and F have much higher medians, indicating they were less effective.Most Effective Sprays: C, D, and E are clearly the most effective sprays. They resulted in consistently low insect counts, with most observations clustered near zero.
+
+Least Effective Sprays: A, B, and F were the least effective. They left a much higher number of insects, with counts ranging up to over 20.
+
+Variability: The plot also shows that the results for sprays C, D, and E were less variable (the violins are shorter) than for A, B, and F.
+
+```{r}
+poisson_model<-glm(count~ spray, data=InsectSprays, family="poisson")
+summary(poisson_model)
+```
+
+**interpretation** Intercept (Spray A): The exponentiated intercept, e\^2.667≈14.4, represents the estimated mean insect count for the baseline group, Spray A.
+
+Spray B: The exponentiated coefficient for Spray B is approximately 1.04. This means the mean insect count for Spray B is about 1.04 times that of Spray A (or 4% higher), suggesting it is slightly less effective than Spray A.
+
+Spray C: The exponentiated coefficient for Spray C is approximately 0.14. This means the mean insect count for Spray C is only 0.14 times that of Spray A (an 86% reduction). This indicates that Spray C is much more effective than Spray A.
+
+Spray D: The exponentiated coefficient is 0.34. The mean insect count for Spray D is about one-third of the count for Spray A, making it significantly more effective.
+
+**Question** Check whether the model is overdispersed. If this is the case, fit a quasipoisson model and compare the estimated regression coefficients with those of the Poisson model.
+
+**answer** A rule of thumb is that if the **residual deviance** is substantially larger than the **degrees of freedom**, the data is overdispersed, meaning there is more variability than the Poisson model assumes.
+
+99\>66, so data is overdispersed.
+
+```{r}
+# Fit the quasipoisson model
+quasipoisson_model <- glm(count ~ spray, data = InsectSprays, family = "quasipoisson")
+
+# View the summary
+summary(quasipoisson_model)
+# Compare the coefficients
+coef(poisson_model)
+coef(quasipoisson_model)
+```
+
+the estimated regression coefficients are identical for both the Poisson and quasipoisson models.
+
+What changes are the standard errors of the coefficients, which are larger in the quasipoisson model to account for the extra variability. This leads to more reliable p-values and statistical inference.
+
+**Question** Formally test whether there is any evidence that the predictor spray plays a role in the quasipoisson model.
+
+```{r}
+# First, fit the quasipoisson model again
+quasipoisson_model <- glm(count ~ spray, data = InsectSprays, family = "quasipoisson")
+
+# method 1 drop1, Now, use drop1() to test the significance of the 'spray' term
+drop1(quasipoisson_model, test = "F")
+
+# method 2 anova
+anova(quasipoisson_model)
+
+```
+
+The F-value (41.711): This is the test statistic that measures how much the spray variable improves the model. A large F-value indicates that dropping the spray term significantly worsens the model's fit.
+
+The p-value (Pr(\>F) \< 2.2e-16): This value is extremely small, spray is a highly statistically significant predictor
+
+**Question** We previously tested whether the predictor spray plays a role. Given that this test was statistically significant, we can dig further and test hypotheses that involve some of the levels of this predictor. Use the glht() function in {multcomp} package to test whether the conventional pesticides "C", "D" and "E" differ from the organic pesticides "A", "B" and "F".
+
+Test also whether the newly developed pesticides “A” and “B” differ from the old conventional pesticide “F”. Use the quasipoisson model to test these hypotheses.
+
+```{r}
+library(multcomp)
+quasipoisson_model <- glm(count ~ spray, data = InsectSprays, family = "quasipoisson")
+
+# Define the contrast matrix K. Each row is a hypothesis.
+# The columns correspond to the spray levels: A, B, C, D, E, F
+K <- rbind(
+  "Conventional vs Organic" = c(-1, -1, 1, 1, 1, -1),
+  "New vs Old"              = c(1,  1, 0, 0, 0, -2)
+)
+
+# Perform the general linear hypothesis test using the defined contrasts
+hypotheses_test <- glht(quasipoisson_model, linfct = mcp(spray = K))
+
+# Get the summary of the test results
+summary(hypotheses_test)
+```
+
+![explanation 1](explanation%201.png) ![explanation 2](explanation%202.png)
+
+------------------------------------------------------------------------
+
+**interpretation**\
+Conventional vs. Organic
+
+**reject the null hypothesis**. There is strong statistical evidence that the conventional pesticides (C, D, and E) are significantly more effective than the organic pesticides (A, B, and F).
+
+**New vs. Old**
+
+**fail to reject the null hypothesis**. There is no statistical evidence of a difference in effectiveness between the newly developed pesticides (A and B) and the old conventional pesticide (F).
+
+![explanation 3](explanation%203.png)
+
+**Questions for ai**
+
+#### **1 Differences Between Count and Continuous Data**
+
+The primary difference between count and continuous data lies in the values they can take.
+
+-   **Count Data**: Consists of non-negative integers (0, 1, 2, 3, ...). It represents things that can be counted, like the number of items purchased by a customer or the number of children in a family. The values are discrete and have clear gaps between them.
+
+-   **Continuous Data**: Can take any value within a given range. It represents measurements, like height, weight, or temperature. There are infinite possible values between any two points. For example, a person's height can be 175 cm, 175.1 cm, or 175.11 cm.
+
+#### **2. What Model Should You Fit to Count Data?**
+
+For count data, the standard and most appropriate model is a **Poisson model**. This is a type of Generalized Linear Model (GLM) specifically designed for count outcomes.
+
+The Poisson model is suitable because it assumes the data follows a Poisson distribution and uses a **log link function** to ensure that all predicted counts are non-negative. For data with more variability than the Poisson model assumes (a common issue called overdispersion), a **quasipoisson model** is a better choice.
+
+Overdispersion means that there is more variability (or "scatter") in your data than what your statistical model predicts. It's a common issue when modeling count or proportion data.
+
+#### **4. How to Interpret Coefficients from a Poisson Model**
+
+The coefficients from a Poisson model are on a **logarithmic scale**, so they are not interpreted additively. To interpret them correctly, you must exponentiate the coefficient (eβ) to get a **rate ratio** or **multiplicative factor**.
+
+-   **For a categorical predictor (e.g., `sexM`)**: If the coefficient for males is β, then eβ is the rate ratio. For example, if eβ≈1.12, it means males are expected to have, on average, **1.12 times** the count of females (or 12% more).
+
+-   **For a continuous predictor (e.g., `visits`)**: If the coefficient for visits is β, then for a one-unit increase in visits, the expected count is multiplied by a factor of eβ.
