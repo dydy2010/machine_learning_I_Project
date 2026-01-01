@@ -119,7 +119,7 @@ These changes strengthen the story without requiring major rewrites.
 Course completion counts represent non-negative integers (0, 1, 2, 3...) that don't follow a normal distribution. Poisson regression solves this by:
 
 1.  **Ensuring non-negative predictions** through a log link function
-2.  **Modeling the count distribution** appropriately
+2.  **Modeling the count distribution** more appropriately
 3.  **Accounting for variance** that changes with the mean
 
 The model structure is: $\log(\lambda) = \beta_0 + \beta_1X_1 + ... + \beta_nX_n$, where $\lambda$ represents the expected count.
