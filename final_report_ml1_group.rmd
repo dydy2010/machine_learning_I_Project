@@ -1212,14 +1212,17 @@ feat2 <- top3$Feature[2]
 feat3 <- top3$Feature[3]
 ```
 
-**Key Findings:** Top predictors of 1st semester course approvals:
-- **`r feat1`** (Rate Ratio = `r round(rr1, 2)`) — Students with paid tuition pass significantly more courses
-- **`r feat2`** (Rate Ratio = `r round(rr2, 2)`) — Scholarship holders perform better
-- **`r feat3`** (Rate Ratio = `r round(rr3, 2)`) — Enrolling in more courses correlates with passing more
+**Key Findings — Interpreting Rate Ratios:**
 
-**Negative predictors:** Gender and Debtor status show slight negative effects, suggesting financial stress and certain demographics may need extra support.
+For Poisson models, the Rate Ratio shows how the expected count **multiplies** per unit increase. A Rate Ratio of 1.52 means 52% more courses; 0.87 means 13% fewer.
 
-**Actionable insight:** Financial factors (tuition, scholarship, debt) are the strongest predictors. Early financial support programs could improve 1st semester success rates.
+- **`r feat1`** (RR = `r round(rr1, 2)`): Students with tuition paid are expected to pass `r round((rr1-1)*100, 0)`% more courses
+- **`r feat2`** (RR = `r round(rr2, 2)`): Scholarship holders pass `r round((rr2-1)*100, 0)`% more courses on average
+- **`r feat3`** (RR = `r round(rr3, 2)`): Each additional enrolled course  `r round((rr3-1)*100, 0)`% more approvals
+
+**Negative effects:** Debtor status slightly decrease expected approvals, suggesting this demographic may need extra academic support.
+
+**Actionable insight for advisors:** Financial stability (tuition payment, scholarship) is the strongest predictor of 1st semester success. Early financial interventions could improve outcomes.
 
 ## 6.3 Model Evaluation
 
