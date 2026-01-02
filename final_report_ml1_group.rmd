@@ -1030,8 +1030,9 @@ The **Reduced Model** is the efficient choice—most of the predictive power wit
 # 6. Generalized Linear Model - Poisson
 
 ## 6.1 Why Poisson Regression?
-
-Course completion counts represent non-negative integers (0, 1, 2, 3...) that don't follow a normal distribution. Poisson regression solves this by:
+We use Poisson regression for **1st Semester course completion** prediction because:
+we know that 1st semester performance(including the **passed courses**) is correlated with the dropout outcome, especially for **early dropout prevention** it could be **very useful**.
+We **couldn't** predict this using **linear models** because, course completion counts represent non-negative integers (0, 1, 2, 3...) that don't follow a normal distribution. Poisson regression solves this by:
 
 1.  **Ensuring non-negative predictions** through a log link function
 2.  **Modeling the count distribution** appropriately
@@ -1039,7 +1040,7 @@ Course completion counts represent non-negative integers (0, 1, 2, 3...) that do
 
 The model structure is: $\log(\lambda) = \beta_0 + \beta_1X_1 + ... + \beta_nX_n$, where $\lambda$ represents the expected count.
 
-## 6.2 Model 1: First Semester Course Approvals
+## 6.2 First Semester Course Approvals Prediction
 
 Understanding what predicts first semester success is crucial for early intervention.
 
