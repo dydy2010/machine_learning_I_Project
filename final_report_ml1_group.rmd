@@ -58,6 +58,7 @@ body {
 }
 ```
 
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   echo = TRUE,
@@ -755,52 +756,37 @@ This S-shaped curve ensures predictions stay within valid probability bounds. It
 
 ## 5.2 Quick & Dirty EDA: Key Predictors
 
-To avoid too big of a graph, based on our ANOVA analysis (Section 2.1), we only visualize the **6 most important predictors** before fitting the model:
+We use `pairs()` to explore relationships between dropout and the **top 6 features** from ANOVA (Section 2.1):
 
-```{r binomial-eda, fig.height=6, fig.width=10, fig.cap="Key predictors for graduation prediction"}
-# Prepare data for visualization
-df_eda <- df %>%
-  mutate(Outcome = ifelse(Target == 'Dropout', 'Dropout', 'NotDropout'),
-         Outcome = factor(Outcome, levels = c("NotDropout", "Dropout")))
+```{r binomial-eda, fig.height=8, fig.width=10, fig.cap="Pairs plot: Dropout vs top 6 ANOVA features"}
+# Prepare data for pairs plot - using top 6 from ANOVA F-stat
+df_pairs <- df %>%
+  mutate(Dropout = ifelse(Target == 'Dropout', 1, 0)) %>%
+  select(Dropout, 
+         Curricular.units.2nd.sem..approved.,
+         Curricular.units.2nd.sem..grade.,
+         Curricular.units.1st.sem..approved.,
+         Curricular.units.1st.sem..grade.,
+         Tuition.fees.up.to.date,
+         Debtor) %>%
+  na.omit()
 
-outcome_colors <- c("Dropout" = "#E74C3C", "NotDropout" = "#27AE60")
-
-# Academic performance plots
-p1 <- ggplot(df_eda, aes(x = Outcome, y = Curricular.units.1st.sem..approved., fill = Outcome)) +
-  geom_boxplot(alpha = 0.7) +
-  scale_fill_manual(values = outcome_colors) +
-  labs(title = "1st Sem Approved", y = "# Courses") +
-  theme_minimal() + theme(legend.position = "none")
-
-p2 <- ggplot(df_eda, aes(x = Outcome, y = Curricular.units.1st.sem..grade., fill = Outcome)) +
-  geom_boxplot(alpha = 0.7) +
-  scale_fill_manual(values = outcome_colors) +
-  labs(title = "1st Sem Grade", y = "Grade (0-20)") +
-  theme_minimal() + theme(legend.position = "none")
-
-# Financial factor plots (proportions)
-df_financial <- df_eda %>%
-  mutate(Tuition = factor(Tuition.fees.up.to.date, labels = c("Not Current", "Current")),
-         Debtor_status = factor(Debtor, labels = c("No", "Yes")))
-
-p3 <- ggplot(df_financial, aes(x = Tuition, fill = Outcome)) +
-  geom_bar(position = "fill") +
-  scale_fill_manual(values = outcome_colors) +
-  labs(title = "Tuition Payment", y = "Proportion") +
-  theme_minimal() + theme(legend.position = "none")
-
-p4 <- ggplot(df_financial, aes(x = Debtor_status, fill = Outcome)) +
-  geom_bar(position = "fill") +
-  scale_fill_manual(values = outcome_colors) +
-  labs(title = "Debtor Status", y = "Proportion") +
-  theme_minimal() + theme(legend.position = "none")
-
-gridExtra::grid.arrange(p1, p2, p3, p4, ncol = 2)
+# Pairs plot with smooth lines
+pairs(Dropout ~ Curricular.units.2nd.sem..approved. + 
+               Curricular.units.2nd.sem..grade. + 
+               Curricular.units.1st.sem..approved. + 
+               Curricular.units.1st.sem..grade. + 
+               Tuition.fees.up.to.date + 
+               Debtor,
+      data = df_pairs,
+      upper.panel = panel.smooth,
+      col = ifelse(df_pairs$Dropout == 1, "#E74C3C", "#27AE60"),
+      pch = 16, cex = 0.5)
 ```
 
 **Key Observations:**
-- **1st Semester Performance:** Graduates complete ~5-6 courses with higher grades; dropouts often complete 0-2 courses
-- **Financial Factors:** Students with current tuition and no debt show much higher graduation rates
+- **Semester Performance:** 2nd semester shows strongest separation; students who pass few courses (red) cluster visibly
+- **Financial Factors:** Current tuition payers (1) cluster with non-dropout (green)
 
 ## 5.3 Full Model: Data Preparation and Training
 
@@ -809,7 +795,8 @@ gridExtra::grid.arrange(p1, p2, p3, p4, ncol = 2)
 df_dropout <- df %>%
   mutate(Dropout = ifelse(Target == 'Dropout', 1, 0))
 
-features_success <- c(
+# Include 2nd semester variables for comparison with other models
+features_dropout <- c(
   'Previous.qualification..grade.',
   'Admission.grade',
   'Age.at.enrollment',
@@ -821,115 +808,173 @@ features_success <- c(
   'Tuition.fees.up.to.date',
   'Curricular.units.1st.sem..approved.',
   'Curricular.units.1st.sem..grade.',
+  'Curricular.units.2nd.sem..approved.',
+  'Curricular.units.2nd.sem..grade.',
   'Unemployment.rate',
   'Inflation.rate',
   'GDP'
 )
 
 df_dropout_model <- df_dropout %>%
-  select(all_of(c(features_success, 'Dropout'))) %>%
+  select(all_of(c(features_dropout, 'Dropout'))) %>%
   mutate(across(everything(), as.numeric)) %>%
   na.omit()
 
 # --- Train/test split + scaling
 set.seed(42)
-train_index_suc <- createDataPartition(df_dropout_model$Dropout, p = 0.8, list = FALSE)
-train_suc <- df_dropout_model[train_index_suc, ]
-test_suc <- df_dropout_model[-train_index_suc, ]
+train_index <- createDataPartition(df_dropout_model$Dropout, p = 0.8, list = FALSE)
+train_data <- df_dropout_model[train_index, ]
+test_data <- df_dropout_model[-train_index, ]
 
-preproc_suc <- preProcess(train_suc[, features_success], method = c("center", "scale"))
-train_suc_scaled <- predict(preproc_suc, train_suc)
-test_suc_scaled <- predict(preproc_suc, test_suc)
+preproc <- preProcess(train_data[, features_dropout], method = c("center", "scale"))
+train_scaled <- predict(preproc, train_data)
+test_scaled <- predict(preproc, test_data)
 
-# --- Fit full model
-glm_suc <- glm(Dropout ~ .,
-               data = train_suc_scaled,
-               family = binomial(link = "logit"))
+# --- Fit full model (16 predictors)
+glm_full <- glm(Dropout ~ .,
+                data = train_scaled,
+                family = binomial(link = "logit"))
 ```
 
 ### Model Summary
 
-```{r binomial-summary, echo=FALSE}
-summary(glm_suc)
+```{r binomial-summary, class.source = 'fold-hide', class.output = 'fold-hide'}
+summary(glm_full)
 ```
 
-**Interpreting Coefficients:** Each coefficient represents the **log-odds change** per 1 SD increase in that feature. Positive = increases dropout risk; negative = decreases dropout risk.
+## 5.4 Coefficient Interpretation with ilogit()
 
-## 5.4 Model Refinement: Feature Importance
+We interpret the significant coefficients (p < 0.001) using `ilogit()` to convert log-odds to probabilities:
 
-We use `drop1()` to test which features can be dropped without significantly hurting the model:
+```{r binomial-ilogit, echo=FALSE}
+# Helper function: inverse logit
+ilogit <- function(x) exp(x) / (1 + exp(x))
 
-```{r binomial-drop1, echo=FALSE}
-drop1_result <- drop1(glm_suc, test = "Chisq")
-knitr::kable(drop1_result, caption = "Drop1 Analysis: Testing Feature Removal", digits = 3)
+# Calculate key values for inline display
+or_tuition <- exp(coef(glm_full)["Tuition.fees.up.to.date"])
+or_2nd_approved <- exp(coef(glm_full)["Curricular.units.2nd.sem..approved."])
+or_2nd_grade <- exp(coef(glm_full)["Curricular.units.2nd.sem..grade."])
+or_age <- exp(coef(glm_full)["Age.at.enrollment"])
+
+baseline_prob <- ilogit(coef(glm_full)["(Intercept)"]) * 100
+tuition_prob <- ilogit(coef(glm_full)["(Intercept)"] + coef(glm_full)["Tuition.fees.up.to.date"]) * 100
 ```
 
-**Interpretation:** Features with **high Deviance** and **low p-value** (`Pr(>Chi)`) are important—removing them hurts the model. Features with p > 0.05 could potentially be dropped.
+**Key Interpretation:** The strongest predictors from the full model are:
 
-### Top Predictors (Odds Ratios)
+- **2nd semester approved** (OR = `r round(or_2nd_approved, 2)`, meaning `r round((1 - or_2nd_approved) * 100, 0)`% lower dropout odds per SD)
+- **2nd semester grade** (OR = `r round(or_2nd_grade, 2)`, `r round((1 - or_2nd_grade) * 100, 0)`% lower odds per SD)
+- **Tuition payment** (OR = `r round(or_tuition, 2)`, `r round((1 - or_tuition) * 100, 0)`% lower odds if current)
+- **Age at enrollment** (OR = `r round(or_age, 2)`, `r round((or_age - 1) * 100, 0)`% higher odds per SD for older students)
 
-```{r binomial-odds, results="asis", echo=FALSE}
-coef_df_suc <- data.frame(
-  Feature = features_success,
-  Coefficient = coef(glm_suc)[-1],
-  Odds_Ratio = exp(coef(glm_suc)[-1])
-) %>%
-  arrange(desc(abs(Coefficient)))
+For example, the baseline dropout probability is `r round(baseline_prob, 1)`%, but drops to `r round(tuition_prob, 1)`% for students with tuition paid (+1 SD).
 
-odds_table_suc <- coef_df_suc %>%
-  mutate(Interpretation = ifelse(
-    Odds_Ratio > 1, 
-    paste0("+", round((Odds_Ratio - 1) * 100, 0), "% dropout odds/SD"),
-    paste0("-", round((1 - Odds_Ratio) * 100, 0), "% dropout odds/SD")
-  )) %>%
-  select(Feature, Coefficient, Odds_Ratio, Interpretation) %>%
-  head(5)
+## 5.5 Model Refinement Process
 
-knitr::kable(odds_table_suc, caption = "Top 5 Predictors (by absolute coefficient)", digits = 3)
+```{r binomial-final, echo=FALSE, results='hide'}
+# Reduced model using 2nd semester data (4 significant predictors)
+final_model <- glm(Dropout ~ Tuition.fees.up.to.date + 
+                             Curricular.units.2nd.sem..approved. + 
+                             Curricular.units.2nd.sem..grade. +
+                             Age.at.enrollment,
+                   data = train_scaled,
+                   family = binomial(link = "logit"))
+
+# Early Warning model: 1st semester only (for early intervention)
+glm_early <- glm(Dropout ~ Tuition.fees.up.to.date + 
+                           Curricular.units.1st.sem..approved. + 
+                           Curricular.units.1st.sem..grade. +
+                           Age.at.enrollment,
+                 data = train_scaled,
+                 family = binomial(link = "logit"))
 ```
 
-## 5.5 Model Evaluation
+Based on the summary p-values, we select a **Reduced Model** with 4 predictors (2nd semester performance, Tuition, Age) for our final dropout classifier. This uses the strongest predictors while remaining interpretable.
 
-```{r binomial-eval, results="hide"}
-# --- Predictions
-pred_suc_prob <- predict(glm_suc, test_suc_scaled, type = "response")
-pred_suc <- ifelse(pred_suc_prob > 0.5, 1, 0)
+## 5.6 Model Evaluation (Reduced Model)
 
-# --- AUC
-roc_suc <- roc(test_suc_scaled$Dropout, pred_suc_prob, quiet = TRUE)
-auc_suc <- auc(roc_suc)
+We evaluate the **Reduced Model** on the test set:
 
-# --- Accuracy
-accuracy_suc <- mean(pred_suc == test_suc_scaled$Dropout)
-```
+```{r binomial-eval, fig.height=4, fig.width=10, fig.cap="Final Binomial GLM: Confusion Matrix and ROC Curve"}
+# --- Predictions using final model (reduced)
+pred_prob <- predict(final_model, test_scaled, type = "response")
+pred_class <- ifelse(pred_prob > 0.5, 1, 0)
 
-### Confusion Matrix
+# --- Metrics
+roc_obj <- roc(test_scaled$Dropout, pred_prob, quiet = TRUE)
+auc_val <- auc(roc_obj)
+accuracy_val <- mean(pred_class == test_scaled$Dropout)
 
-```{r binomial-confusion, echo=FALSE}
-conf_matrix <- table(Observed = test_suc_scaled$Dropout, Predicted = pred_suc)
-rownames(conf_matrix) <- c("NotDropout (0)", "Dropout (1)")
-colnames(conf_matrix) <- c("Pred: NotDropout", "Pred: Dropout")
+# --- Combined plot: Confusion Matrix + ROC
+par(mfrow = c(1, 2), mar = c(4, 4, 3, 2))
 
-knitr::kable(conf_matrix, caption = "Confusion Matrix (counts)")
-knitr::kable(round(prop.table(conf_matrix) * 100, 1), caption = "Confusion Matrix (percentages)")
-```
+# Confusion Matrix as heatmap
+conf_matrix <- table(Observed = test_scaled$Dropout, Predicted = pred_class)
+conf_pct <- round(prop.table(conf_matrix) * 100, 1)
 
-### ROC Curve
+# Create confusion matrix heatmap manually
+plot(c(0, 2), c(0, 2), type = "n", xlab = "Predicted", ylab = "Observed",
+     xaxt = "n", yaxt = "n", main = "Confusion Matrix (Reduced Model)")
+axis(1, at = c(0.5, 1.5), labels = c("NotDropout", "Dropout"))
+axis(2, at = c(0.5, 1.5), labels = c("Dropout", "NotDropout"))
 
-```{r binomial-roc, fig.height=4, fig.width=5, fig.cap="Binomial GLM ROC Curve"}
-plot(roc_suc, col = "darkblue", lwd = 2,
-     main = sprintf("ROC Curve - Binomial GLM (AUC = %.3f)", auc_suc))
+# TN (top-left), FP (top-right), FN (bottom-left), TP (bottom-right)
+rect(0, 1, 1, 2, col = rgb(0.2, 0.6, 0.2, 0.7))  # TN - green
+rect(1, 1, 2, 2, col = rgb(0.8, 0.2, 0.2, 0.5))  # FP - red
+rect(0, 0, 1, 1, col = rgb(0.8, 0.2, 0.2, 0.5))  # FN - red
+rect(1, 0, 2, 1, col = rgb(0.2, 0.6, 0.2, 0.7))  # TP - green
+
+text(0.5, 1.5, paste0(conf_matrix[1,1], "\n(", conf_pct[1,1], "%)"), cex = 1.2)
+text(1.5, 1.5, paste0(conf_matrix[1,2], "\n(", conf_pct[1,2], "%)"), cex = 1.2)
+text(0.5, 0.5, paste0(conf_matrix[2,1], "\n(", conf_pct[2,1], "%)"), cex = 1.2)
+text(1.5, 0.5, paste0(conf_matrix[2,2], "\n(", conf_pct[2,2], "%)"), cex = 1.2)
+
+# ROC Curve
+plot(roc_obj, col = "darkblue", lwd = 2,
+     main = sprintf("ROC Curve (AUC = %.3f)", auc_val))
 abline(a = 0, b = 1, lty = 2, col = "gray")
 grid()
 ```
 
 **Performance Summary:**
-- **Accuracy:** `r round(accuracy_suc * 100, 1)`%
-- **AUC:** `r round(auc_suc, 3)`
+- **Accuracy:** `r round(accuracy_val * 100, 1)`%
+- **AUC:** `r round(auc_val, 3)`
 
-**Actionable Insights:** 
-- **1st semester performance** emerges as the dominant predictor
-- **Financial factors** (debtor status, tuition payment) show strong effects, suggesting financial aid could meaningfully impact retention
+### ANOVA: Comparing 3 Models
+
+```{r binomial-anova, class.source = 'fold-hide', class.output = 'fold-hide'}
+# Compare 3 nested models: Early Warning < Reduced < Full
+anova_result <- anova(glm_early, final_model, glm_full, test = "Chisq")
+rownames(anova_result) <- c("Early Warning (1st sem)", "Reduced (2nd sem)", "Full (16 vars)")
+anova_result
+```
+
+```{r binomial-anova-calc, echo=FALSE}
+# Calculate values for inline display
+dev_early <- anova_result["Early Warning (1st sem)", "Resid. Dev"]
+dev_reduced <- anova_result["Reduced (2nd sem)", "Resid. Dev"]
+dev_full <- anova_result["Full (16 vars)", "Resid. Dev"]
+
+early_to_reduced_dev <- dev_early - dev_reduced
+early_to_reduced_pct <- (dev_early - dev_reduced) / dev_early * 100
+reduced_to_full_dev <- dev_reduced - dev_full
+reduced_to_full_pct <- (dev_reduced - dev_full) / dev_reduced * 100
+```
+
+**ANOVA Interpretation:** 
+- **Early to Reduced:** `r round(early_to_reduced_dev, 1)` deviance reduction (`r round(early_to_reduced_pct, 1)`% improvement) by switching to 2nd semester data
+- **Reduced to Full:** `r round(reduced_to_full_dev, 1)` deviance reduction (`r round(reduced_to_full_pct, 1)`% improvement) by adding 12 more variables
+
+The **Reduced Model** is the efficient choice—most of the predictive power with only 4 interpretable features.
+
+## 5.7 Chapter Conclusion
+
+**Final Model Selection:** Based on ANOVA and AUC, we choose the **Reduced Model** (4 predictors: 2nd semester approved/grade, Tuition, Age) as our final Binomial GLM. This uses the strongest predictors from the full model.
+
+**Key Findings:**
+- **2nd semester course performance** (approved + grade) are the dominant predictors
+- **Tuition payment status** is the strongest financial indicator
+- Older students at enrollment have slightly higher dropout risk
 
 ------------------------------------------------------------------------
 
