@@ -57,7 +57,51 @@ body {
   font-size: 2.1rem;
 }
 ```
+<style>
+.fold-hide {
+  display: none;
+  margin-bottom: 20px;
+}
+.fold-hide pre {
+  background-color: #f8f9fa;
+  border-left: 5px solid #2780e3;
+  padding: 15px;
+}
+.output-toggle-btn {
+  margin-bottom: 5px;
+  background-color: #000;
+  color: #fff;
+  border: 1px solid #000;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 0.75em;
+  cursor: pointer;
+  font-family: monospace;
+}
+.output-toggle-btn:hover {
+  background-color: #333;
+  border-color: #333;
+}
+</style>
 
+<script>
+$(document).ready(function() {
+  // Target only the output blocks that have the fold-hide class
+  $('.fold-hide').each(function() {
+    var $this = $(this);
+    // Add the button before the output block
+    var $button = $('<button class="output-toggle-btn">Show Output</button>');
+    $button.insertBefore($this);
+    
+    // Toggle logic
+    $button.on('click', function() {
+      $this.toggle();
+      var isVisible = $this.is(':visible');
+      $(this).text(isVisible ? 'Hide Output' : 'Show Output');
+    });
+  });
+});
+</script>
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
@@ -741,14 +785,14 @@ grid()
 
 This is until now our **most actionable model**—by estimating the **odds of dropout**, we can identify at-risk students and enable targeted interventions.
 
-**Response Variable:** `Dropout` (Dropout=1, NotDropout=0)
+**Response Variable:** `Dropout` =1, `NotDropout`=0. 
 - **Dropout:** Students who dropped out
 - **NotDropout:** Students who are still enrolled OR graduated (both are "surviving")
 
 **Predictors (all 14 features):**Though, From our data preprocessing ANOVA test (Section 2.1), **semester performance** and **financial factors**, 
 are expected to be the strongest predictors, we will use 14 of them and then refine the model in section 5.2.
 
-Classification problems require predicting categorical outcomes rather than continuous values. Binomial logistic regression excels at binary classification by estimating probabilities between 0 and 1 through the logistic (sigmoid) function:
+**Methodology:**Classification problems require predicting categorical outcomes rather than continuous values. Binomial logistic regression excels at binary classification by estimating probabilities between 0 and 1 through the logistic (sigmoid) function:
 
 $$P(Y=1) = \frac{1}{1 + e^{-(\beta_0 + \beta_1X_1 + ... + \beta_nX_n)}}$$
 
@@ -784,12 +828,11 @@ pairs(Dropout ~ Curricular.units.2nd.sem..approved. +
       pch = 16, cex = 0.5)
 ```
 
-**Key Observations:**
-- **Semester Performance:** 2nd semester shows strongest separation; students who pass few courses (red) cluster visibly
-- **Financial Factors:** Current tuition payers (1) cluster with non-dropout (green)
+**Key Interpretations:**
+Most of these factors(pre-filtered by ANOVA) **show linear correlation** with dropout, except **tuition and debtor** are **slightly weaker**. For **example**, 2nd sem approved - Very clear negative linear trend: more courses approved means lower dropout.
 
 ## 5.3 Full Model: Data Preparation and Training
-
+After EDA, We now use binomial GLM to build a full model with all 14 features.
 ```{r binomial-prep, results="hide"}
 # --- Data prep: Dropout=1, NotDropout=0 (consistent with NN/SVM)
 df_dropout <- df %>%
@@ -838,15 +881,17 @@ glm_full <- glm(Dropout ~ .,
 
 ### Model Summary
 
-```{r binomial-summary, class.source = 'fold-hide', class.output = 'fold-hide'}
+<div class="fold-hide">
+```{r binomial-summary, echo=FALSE}
 summary(glm_full)
 ```
+</div>
 
-## 5.4 Coefficient Interpretation with ilogit()
+### Coefficient Interpretation with ilogit() from the above Model Summary Output
 
 We interpret the significant coefficients (p < 0.001) using `ilogit()` to convert log-odds to probabilities:
 
-```{r binomial-ilogit, echo=FALSE}
+```{r binomial-ilogit, echo=TRUE}
 # Helper function: inverse logit
 ilogit <- function(x) exp(x) / (1 + exp(x))
 
@@ -871,7 +916,7 @@ For example, the baseline dropout probability is `r round(baseline_prob, 1)`%, b
 
 ## 5.5 Model Refinement Process
 
-```{r binomial-final, echo=FALSE, results='hide'}
+```{r binomial-final, results='hide'}
 # Reduced model using 2nd semester data (4 significant predictors)
 final_model <- glm(Dropout ~ Tuition.fees.up.to.date + 
                              Curricular.units.2nd.sem..approved. + 
@@ -890,6 +935,7 @@ glm_early <- glm(Dropout ~ Tuition.fees.up.to.date +
 ```
 
 Based on the summary p-values, we select a **Reduced Model** with 4 predictors (2nd semester performance, Tuition, Age) for our final dropout classifier. This uses the strongest predictors while remaining interpretable.
+We also make a **Early Warning Model** with 4 predictors (1st semester performance, Tuition, Age), so that the customer could predict using first sem data for possible early action. These models will be compared in the next part
 
 ## 5.6 Model Evaluation (Reduced Model)
 
@@ -938,16 +984,18 @@ grid()
 
 **Performance Summary:**
 - **Accuracy:** `r round(accuracy_val * 100, 1)`%
-- **AUC:** `r round(auc_val, 3)`
+- **AUC:** `r round(auc_val, 3)` It seems quite good for prediction purpose.
 
 ### ANOVA: Comparing 3 Models
-
-```{r binomial-anova, class.source = 'fold-hide', class.output = 'fold-hide'}
+Now we compare the 3 models using Anova(1st sem focused(early warning), 2nd sem focused(reduced to essential predictors), full model)
+<div class="fold-hide">
+```{r binomial-anova, echo=FALSE}
 # Compare 3 nested models: Early Warning < Reduced < Full
 anova_result <- anova(glm_early, final_model, glm_full, test = "Chisq")
 rownames(anova_result) <- c("Early Warning (1st sem)", "Reduced (2nd sem)", "Full (16 vars)")
 anova_result
 ```
+</div>
 
 ```{r binomial-anova-calc, echo=FALSE}
 # Calculate values for inline display
@@ -966,6 +1014,7 @@ reduced_to_full_pct <- (dev_reduced - dev_full) / dev_reduced * 100
 - **Reduced to Full:** `r round(reduced_to_full_dev, 1)` deviance reduction (`r round(reduced_to_full_pct, 1)`% improvement) by adding 12 more variables
 
 The **Reduced Model** is the efficient choice—most of the predictive power with only 4 interpretable features.
+**However**, for the **business case**, predicting only with 2nd semester data might be **too late for action**. So we could choose the **Early Warning Model** (1st semester focused) as our final Binomial GLM. This will be elaborated more in conclusion chapter.
 
 ## 5.7 Chapter Conclusion
 
