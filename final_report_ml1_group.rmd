@@ -67,6 +67,16 @@ body {
   border-left: 5px solid #2780e3;
   padding: 15px;
 }
+@keyframes breathe {
+  0%, 100% { 
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 1;
+    transform: scale(1.03);
+  }
+}
 .output-toggle-btn {
   margin-bottom: 5px;
   background-color: #000;
@@ -77,10 +87,14 @@ body {
   font-size: 0.75em;
   cursor: pointer;
   font-family: monospace;
+  animation: breathe 2s ease-in-out infinite;
 }
 .output-toggle-btn:hover {
   background-color: #333;
   border-color: #333;
+  opacity: 1;
+  transform: scale(1);
+  animation: none;
 }
 </style>
 
@@ -1040,12 +1054,14 @@ We **couldn't** predict this using **linear models** because, course completion 
 
 The model structure is: $\log(\lambda) = \beta_0 + \beta_1X_1 + ... + \beta_nX_n$, where $\lambda$ represents the expected count.
 
-## 6.2 First Semester Course Approvals Prediction
+## 6.2 Predicting First Semester Course Approvals (Poisson GLM Model)
 
-Understanding what predicts first semester success is crucial for early intervention.
+**Business case:** Early identification of students likely to pass fewer courses in 1st semester enables timely support interventions. We use only **pre-enrollment data** (admission grades, background, financial status) plus **enrolled courses count** as predictors—data available before semester 1 ends.
 
-### Data Preparation
+We'll evaluate using: **RMSE** (average prediction error in courses), **MAE** (mean absolute deviation), and **R²** (proportion of variance explained). We'll also interpret which factors most strongly affect 1st semester success via the **Rate Ratio** (how much the expected count changes per unit increase).
 
+### Data Preparation & Poisson Model Training
+We used similar approach as in previous section. We select the features to train on and split the data into training and testing sets(for later evaluation)
 ```{r poisson1-prep, results="hide"}
 TARGET_1 <- 'Curricular.units.1st.sem..approved.'
 
@@ -1069,7 +1085,6 @@ df_model1 <- df %>%
     mutate(across(everything(), ~ as.numeric(as.character(.)))) %>%
     drop_na()
 
-cat(sprintf("Poisson dataset (1st semester approvals): %d students\n", nrow(df_model1)))
 set.seed(42)
 X1 <- df_model1 %>% dplyr::select(all_of(FEATURES_1))
 y1 <- df_model1[[TARGET_1]]
@@ -1089,21 +1104,16 @@ poisson_model1 <- glm(
   data = train_data1
 )
 
-# --- Performance
+# --- Performance metrics (for inline display)
 y_pred_train1 <- predict(poisson_model1, newdata = X_train1, type = "response")
 y_pred_test1 <- predict(poisson_model1, newdata = X_test1, type = "response")
 
 train_rmse1 <- sqrt(mean((y_train1 - y_pred_train1)^2))
-train_mae1 <- mean(abs(y_train1 - y_pred_train1))
-
 test_rmse1 <- sqrt(mean((y_test1 - y_pred_test1)^2))
 test_mae1 <- mean(abs(y_test1 - y_pred_test1))
 test_r2_1 <- cor(y_test1, y_pred_test1)^2
 
-cat(sprintf("Poisson GLM performance | Train RMSE=%.4f MAE=%.4f | Test RMSE=%.4f MAE=%.4f R²=%.4f\n",
-            train_rmse1, train_mae1, test_rmse1, test_mae1, test_r2_1))
-
-# --- Rate ratios (top 3)
+# --- Rate ratios for top predictors
 coef_summary1 <- summary(poisson_model1)$coefficients
 coef_df1 <- data.frame(
     Feature = rownames(coef_summary1),
@@ -1113,48 +1123,112 @@ coef_df1 <- data.frame(
 ) %>%
     mutate(Abs_Coef = abs(Coefficient)) %>%
     arrange(desc(Abs_Coef))
+```
 
-top_poisson_tbl <- coef_df1[, c("Feature", "Coefficient", "Rate_Ratio", "P_value")] %>%
-  head(3)
+### Model Summary
 
-knitr::kable(top_poisson_tbl, caption = "Top 3 Poisson GLM predictors (coefficient and rate ratio)")
+<div class="fold-hide">
+```{r poisson1-summary, echo=FALSE}
+summary(poisson_model1)
+```
+</div>
 
-# --- Coefficient bar plot (inline, compact)
+**Addressing overdispersion:** The residual deviance (5021) exceeds degrees of freedom (3528), indicating overdispersion. We fit a **quasi-Poisson model** to correct the standard errors:
+
+```{r poisson1-quasi, results='hide'}
+# Quasi-Poisson to handle overdispersion
+quasi_model <- glm(
+  formula = as.formula(paste(TARGET_1, "~ .")),
+  family = quasipoisson(link = "log"),
+  data = train_data1
+)
+
+# Use quasi model for predictions (same coefficients, corrected SEs)
+y_pred_train1 <- predict(quasi_model, newdata = X_train1, type = "response")
+y_pred_test1 <- predict(quasi_model, newdata = X_test1, type = "response")
+
+# Recalculate metrics with quasi model
+train_rmse1 <- sqrt(mean((y_train1 - y_pred_train1)^2))
+test_rmse1 <- sqrt(mean((y_test1 - y_pred_test1)^2))
+test_mae1 <- mean(abs(y_test1 - y_pred_test1))
+test_r2_1 <- cor(y_test1, y_pred_test1)^2
+
+# Update rate ratios
+coef_summary1 <- summary(quasi_model)$coefficients
+coef_df1 <- data.frame(
+    Feature = rownames(coef_summary1),
+    Coefficient = coef_summary1[, "Estimate"],
+    Rate_Ratio = exp(coef_summary1[, "Estimate"]),
+    P_value = coef_summary1[, "Pr(>|t|)"]
+) %>%
+    mutate(Abs_Coef = abs(Coefficient)) %>%
+    arrange(desc(Abs_Coef))
+
+dispersion <- summary(quasi_model)$dispersion
+```
+
+<div class="fold-hide">
+```{r poisson1-quasi-summary, echo=FALSE}
+summary(quasi_model)
+```
+</div>
+
+The quasi-Poisson dispersion parameter is `r round(dispersion, 2)`. With corrected standard errors:
+- **Highly significant** (p < 0.001): Tuition fees, Scholarship, Enrolled courses, Gender, Age, Admission grade, GDP
+- **Marginally significant** (p < 0.1): Debtor
+- **Not significant** (p > 0.1): Previous qualification, Mother/Father qualification
+
+### Feature Effects on Course Approvals
+
+We plot the top 10 features with the largest coefficients(exponentialized), and analyze their effects on course approvals(1st sem passed courses).
+
+```{r poisson1-barplot, fig.height=5, fig.width=8}
+# Rate Ratio bar plot (more intuitive than log coefficients)
 coef_plot_df <- coef_df1 %>%
     filter(Feature != "(Intercept)") %>%
     head(10)
 
 par(mar = c(5, 10, 3, 2), cex = 0.8)
-colors <- ifelse(coef_plot_df$Coefficient > 0, "green", "red")
-barplot(coef_plot_df$Coefficient,
+colors <- ifelse(coef_plot_df$Rate_Ratio > 1, "green", "red")
+barplot(coef_plot_df$Rate_Ratio - 1,
         names.arg = coef_plot_df$Feature,
         horiz = TRUE,
         las = 1,
         col = adjustcolor(colors, alpha.f = 0.7),
-        xlab = "Coefficient (Log Rate)",
-        main = "Feature Effects on Course Approvals")
+        xlab = "Rate Ratio Change (0 = no effect, +0.5 = 50% more courses)",
+        main = "Feature Effects on 1st Semester Course Approvals (Rate Ratio)")
 abline(v = 0, col = "black", lwd = 1)
 grid()
-
-# Store for plots below
-assign("coef_df1", coef_df1, envir = .GlobalEnv)
-assign("y_pred_train1", y_pred_train1, envir = .GlobalEnv)
-assign("y_pred_test1", y_pred_test1, envir = .GlobalEnv)
-assign("y_train1", y_train1, envir = .GlobalEnv)
-assign("y_test1", y_test1, envir = .GlobalEnv)
 ```
 
-**Interpreting Rate Ratios:** Rate ratios show how the expected course count changes per unit increase. For example, a rate ratio of **1.30** means **30% more courses** on average; **0.80** means **20% fewer**.
+```{r poisson1-ratios, echo=FALSE}
+# Get top 3 predictors for inline display
+top3 <- coef_df1 %>% filter(Feature != "(Intercept)") %>% head(3)
+rr1 <- top3$Rate_Ratio[1]
+rr2 <- top3$Rate_Ratio[2]
+rr3 <- top3$Rate_Ratio[3]
+feat1 <- top3$Feature[1]
+feat2 <- top3$Feature[2]
+feat3 <- top3$Feature[3]
+```
 
-### Visualization of RMSE
+**Key Findings:** Top predictors of 1st semester course approvals:
+- **`r feat1`** (Rate Ratio = `r round(rr1, 2)`) — Students with paid tuition pass significantly more courses
+- **`r feat2`** (Rate Ratio = `r round(rr2, 2)`) — Scholarship holders perform better
+- **`r feat3`** (Rate Ratio = `r round(rr3, 2)`) — Enrolling in more courses correlates with passing more
 
-```{r poisson1-plots, fig.cap="Model predictions for course approvals"}
+**Negative predictors:** Gender and Debtor status show slight negative effects, suggesting financial stress and certain demographics may need extra support.
+
+**Actionable insight:** Financial factors (tuition, scholarship, debt) are the strongest predictors. Early financial support programs could improve 1st semester success rates.
+
+## 6.3 Model Evaluation
+
+```{r poisson1-rmse, echo=FALSE, fig.cap="RMSE: Predicted vs Actual Course Approvals"}
 par(mfrow = c(1, 2))
 
 plot(y_train1, y_pred_train1,
      xlab = "Actual Courses", ylab = "Predicted Courses",
-     main = sprintf("Training (RMSE = %.3f)",
-                    sqrt(mean((y_train1 - y_pred_train1)^2))),
+     main = sprintf("Training (RMSE = %.3f)", train_rmse1),
      pch = 16, col = rgb(0, 0, 1, 0.5))
 abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2)
 grid()
@@ -1167,9 +1241,37 @@ abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2)
 grid()
 ```
 
-**RMSE reminder:** is the square-root of the average squared error; lower values mean predictions stay closer to actual course counts. Here the test RMSE shows the typical error distance (in courses) between predicted and actual approvals. The plots show a reasonable fit for common counts, but the model tends to underpredict for very high course approvals, so extreme tails are harder to capture.
+**Performance Summary:**  
+- **Test RMSE:** `r round(test_rmse1, 2)` courses (average prediction error)  
+- **Test MAE:** `r round(test_mae1, 2)` courses  
+- **Test R²:** `r round(test_r2_1, 3)` (variance explained)
 
-------------------------------------------------------------------------
+<div class="fold-hide">
+```{r poisson1-mae-r2, echo=FALSE, fig.height=4, fig.width=10, fig.cap="Additional Metrics: MAE and R² Visualization"}
+par(mfrow = c(1, 2))
+
+# MAE visualization: Residuals
+residuals <- y_test1 - y_pred_test1
+hist(residuals, breaks = 30, col = "steelblue", border = "white",
+     main = sprintf("Residual Distribution (MAE = %.2f)", test_mae1),
+     xlab = "Prediction Error (Courses)")
+abline(v = 0, col = "red", lwd = 2)
+
+# R² visualization: Correlation
+plot(y_test1, y_pred_test1,
+     xlab = "Actual Courses", ylab = "Predicted Courses",
+     main = sprintf("Model Fit (R² = %.3f)", test_r2_1),
+     pch = 16, col = rgb(0.2, 0.6, 0.2, 0.5))
+abline(lm(y_pred_test1 ~ y_test1), col = "blue", lwd = 2)
+grid()
+```
+</div>
+
+The model captures the general trend **reasonably well**, though it **underpredicts** for students with very **high course approvals** (extreme tails are harder to capture).
+
+## 6.4 Chapter Conclusion
+
+This **Poisson GLM** predicts **1st semester course** approvals using pre-enrollment data. The key predictors are enrollment-related factors. While the model has **moderate** predictive power (R² = `r round(test_r2_1, 2)`), it provides useful **insights** for identifying students who may **struggle in their first semester**.
 
 # 7. Generalized Additive Model - GAM
 
