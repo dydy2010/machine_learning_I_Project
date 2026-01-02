@@ -23,9 +23,9 @@ A fictional university has engaged our consulting firm to diagnose why students 
 ---
 
 ## Quick Start
+### 1. Read the final_report_ml1_group.html directly in your browser, use the **show** and **output** toggle **buttons** to read the code and output
 
-### 1. Install R Packages before newly rendering the html
-
+### 2. Or if you want to render the html yourself, install R Packages before newly rendering the html
 Run once in R console if packages are not installed:
 
 ```r
@@ -50,7 +50,7 @@ install.packages(c(
 ))
 ```
 
-### 2. Knit the Report
+### 3. Knit the Report
 
 ```r
 rmarkdown::render("final_report_ml1_group.rmd")
