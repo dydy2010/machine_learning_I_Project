@@ -1018,7 +1018,7 @@ The **Reduced Model** is the efficient choice—most of the predictive power wit
 
 ## 5.7 Chapter Conclusion
 
-**Final Model Selection:** Based on ANOVA and AUC, we choose the **Reduced Model** (4 predictors: 2nd semester approved/grade, Tuition, Age) as our final Binomial GLM. This uses the strongest predictors from the full model.
+**Final Model Selection:** Based on **ANOVA** and **AUC**, we choose the **Early Warning Model** (1st semester focused) as our final Binomial GLM. This uses the relatively strong but early predictors from the full model.
 
 **Key Findings:**
 - **2nd semester course performance** (approved + grade) are the dominant predictors
