@@ -736,27 +736,78 @@ grid()
 
 ## 5.1 Introduction to Classification
 
+**Business Question:** *"Can we predict which student is more at risk of dropping out?"*
+
+This is until now our **most actionable model**—by estimating the **odds of dropout**, we can identify at-risk students and enable targeted interventions.
+
+**Response Variable:** `Dropout` (Dropout=1, NotDropout=0)
+- **Dropout:** Students who dropped out
+- **NotDropout:** Students who are still enrolled OR graduated (both are "surviving")
+
+**Predictors (all 14 features):**Though, From our data preprocessing ANOVA test (Section 2.1), **semester performance** and **financial factors**, 
+are expected to be the strongest predictors, we will use 14 of them and then refine the model in section 5.2.
+
 Classification problems require predicting categorical outcomes rather than continuous values. Binomial logistic regression excels at binary classification by estimating probabilities between 0 and 1 through the logistic (sigmoid) function:
 
 $$P(Y=1) = \frac{1}{1 + e^{-(\beta_0 + \beta_1X_1 + ... + \beta_nX_n)}}$$
 
-This S-shaped curve ensures predictions stay within valid probability bounds while allowing us to model how predictor variables influence the odds of an outcome.
+This S-shaped curve ensures predictions stay within valid probability bounds. It allows us to model how predictor variables influence the **odds of dropping out**.
 
-## 5.2 Binomial GLM: Graduation vs Dropout
+## 5.2 Quick & Dirty EDA: Key Predictors
 
-**This is our most actionable model**—identifying students **at risk of dropping out** enables **targeted interventions**.
+To avoid too big of a graph, based on our ANOVA analysis (Section 2.1), we only visualize the **6 most important predictors** before fitting the model:
 
-### Data Preparation and Model Training
+```{r binomial-eda, fig.height=6, fig.width=10, fig.cap="Key predictors for graduation prediction"}
+# Prepare data for visualization
+df_eda <- df %>%
+  mutate(Outcome = ifelse(Target == 'Dropout', 'Dropout', 'NotDropout'),
+         Outcome = factor(Outcome, levels = c("NotDropout", "Dropout")))
 
-```{r binomial2-all, results="asis", echo=FALSE}
-# --- Data prep
-df_success <- df %>%
-  filter(Target %in% c('Graduate', 'Dropout')) %>%
-  mutate(Success = ifelse(Target == 'Graduate', 1, 0))
+outcome_colors <- c("Dropout" = "#E74C3C", "NotDropout" = "#27AE60")
 
-cat(sprintf("Graduation dataset | Dropout=%d | Graduate=%d\n",
-            sum(df_success$Success == 0),
-            sum(df_success$Success == 1)))
+# Academic performance plots
+p1 <- ggplot(df_eda, aes(x = Outcome, y = Curricular.units.1st.sem..approved., fill = Outcome)) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_manual(values = outcome_colors) +
+  labs(title = "1st Sem Approved", y = "# Courses") +
+  theme_minimal() + theme(legend.position = "none")
+
+p2 <- ggplot(df_eda, aes(x = Outcome, y = Curricular.units.1st.sem..grade., fill = Outcome)) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_manual(values = outcome_colors) +
+  labs(title = "1st Sem Grade", y = "Grade (0-20)") +
+  theme_minimal() + theme(legend.position = "none")
+
+# Financial factor plots (proportions)
+df_financial <- df_eda %>%
+  mutate(Tuition = factor(Tuition.fees.up.to.date, labels = c("Not Current", "Current")),
+         Debtor_status = factor(Debtor, labels = c("No", "Yes")))
+
+p3 <- ggplot(df_financial, aes(x = Tuition, fill = Outcome)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual(values = outcome_colors) +
+  labs(title = "Tuition Payment", y = "Proportion") +
+  theme_minimal() + theme(legend.position = "none")
+
+p4 <- ggplot(df_financial, aes(x = Debtor_status, fill = Outcome)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual(values = outcome_colors) +
+  labs(title = "Debtor Status", y = "Proportion") +
+  theme_minimal() + theme(legend.position = "none")
+
+gridExtra::grid.arrange(p1, p2, p3, p4, ncol = 2)
+```
+
+**Key Observations:**
+- **1st Semester Performance:** Graduates complete ~5-6 courses with higher grades; dropouts often complete 0-2 courses
+- **Financial Factors:** Students with current tuition and no debt show much higher graduation rates
+
+## 5.3 Full Model: Data Preparation and Training
+
+```{r binomial-prep, results="hide"}
+# --- Data prep: Dropout=1, NotDropout=0 (consistent with NN/SVM)
+df_dropout <- df %>%
+  mutate(Dropout = ifelse(Target == 'Dropout', 1, 0))
 
 features_success <- c(
   'Previous.qualification..grade.',
@@ -775,42 +826,49 @@ features_success <- c(
   'GDP'
 )
 
-df_success_model <- df_success %>%
-  select(all_of(c(features_success, 'Success'))) %>%
+df_dropout_model <- df_dropout %>%
+  select(all_of(c(features_success, 'Dropout'))) %>%
   mutate(across(everything(), as.numeric)) %>%
   na.omit()
 
-cat(sprintf("Binomial (Graduation) dataset: %d students\n", nrow(df_success_model)))
-
 # --- Train/test split + scaling
 set.seed(42)
-train_index_suc <- createDataPartition(df_success_model$Success, p = 0.8, list = FALSE)
-train_suc <- df_success_model[train_index_suc, ]
-test_suc <- df_success_model[-train_index_suc, ]
+train_index_suc <- createDataPartition(df_dropout_model$Dropout, p = 0.8, list = FALSE)
+train_suc <- df_dropout_model[train_index_suc, ]
+test_suc <- df_dropout_model[-train_index_suc, ]
 
 preproc_suc <- preProcess(train_suc[, features_success], method = c("center", "scale"))
 train_suc_scaled <- predict(preproc_suc, train_suc)
 test_suc_scaled <- predict(preproc_suc, test_suc)
 
-# --- Model training
-glm_suc <- glm(Success ~ .,
+# --- Fit full model
+glm_suc <- glm(Dropout ~ .,
                data = train_suc_scaled,
                family = binomial(link = "logit"))
+```
 
-# --- Performance
-pred_suc_prob <- predict(glm_suc, test_suc_scaled, type = "response")
-pred_suc <- ifelse(pred_suc_prob > 0.5, 1, 0)
+### Model Summary
 
-accuracy_suc <- mean(pred_suc == test_suc_scaled$Success)
+```{r binomial-summary, echo=FALSE}
+summary(glm_suc)
+```
 
-cat(sprintf("Binomial GLM (Graduation) accuracy: %.4f (%.2f%%)\n", accuracy_suc, accuracy_suc * 100))
+**Interpreting Coefficients:** Each coefficient represents the **log-odds change** per 1 SD increase in that feature. Positive = increases dropout risk; negative = decreases dropout risk.
 
-roc_suc <- roc(test_suc_scaled$Success, pred_suc_prob, quiet = TRUE)
-auc_suc <- auc(roc_suc)
+## 5.4 Model Refinement: Feature Importance
 
-cat(sprintf("Binomial GLM (Graduation) AUC: %.3f\n", auc_suc))
+We use `drop1()` to test which features can be dropped without significantly hurting the model:
 
-# --- Risk/protective factors
+```{r binomial-drop1, echo=FALSE}
+drop1_result <- drop1(glm_suc, test = "Chisq")
+knitr::kable(drop1_result, caption = "Drop1 Analysis: Testing Feature Removal", digits = 3)
+```
+
+**Interpretation:** Features with **high Deviance** and **low p-value** (`Pr(>Chi)`) are important—removing them hurts the model. Features with p > 0.05 could potentially be dropped.
+
+### Top Predictors (Odds Ratios)
+
+```{r binomial-odds, results="asis", echo=FALSE}
 coef_df_suc <- data.frame(
   Feature = features_success,
   Coefficient = coef(glm_suc)[-1],
@@ -818,33 +876,60 @@ coef_df_suc <- data.frame(
 ) %>%
   arrange(desc(abs(Coefficient)))
 
-cat("\nTop 5 Predictors Interpretation:\n")
-for (i in 1:min(5, nrow(coef_df_suc))) {
-  row <- coef_df_suc[i, ]
-  if (row$Odds_Ratio > 1) {
-    pct_change <- (row$Odds_Ratio - 1) * 100
-    cat(sprintf("✓ %s: %.1f%% increase in graduation odds per SD increase\n",
-                row$Feature, pct_change))
-  } else {
-    pct_change <- (1 - row$Odds_Ratio) * 100
-    cat(sprintf("✗ %s: %.1f%% decrease in graduation odds per SD increase\n",
-                row$Feature, pct_change))
-  }
-}
-
-# --- Top predictors table
 odds_table_suc <- coef_df_suc %>%
-  mutate(Abs_Coefficient = abs(Coefficient)) %>%
-  arrange(desc(Abs_Coefficient)) %>%
-  select(Feature, Coefficient, Odds_Ratio) %>%
-  head(3)
+  mutate(Interpretation = ifelse(
+    Odds_Ratio > 1, 
+    paste0("+", round((Odds_Ratio - 1) * 100, 0), "% dropout odds/SD"),
+    paste0("-", round((1 - Odds_Ratio) * 100, 0), "% dropout odds/SD")
+  )) %>%
+  select(Feature, Coefficient, Odds_Ratio, Interpretation) %>%
+  head(5)
 
-knitr::kable(odds_table_suc, caption = "Top 3 graduation predictors (log-odds and odds ratio)")
+knitr::kable(odds_table_suc, caption = "Top 5 Predictors (by absolute coefficient)", digits = 3)
 ```
 
-We model graduation vs dropout in one step: build the binary target, split/scale, train a binomial GLM, and summarize discrimination (AUC) plus odds ratios for the most influential features. The model delivers **AUC = `r round(auc_suc, 3)`**, showing strong ability to predict graduates and dropouts. First-semester performance and financial factors are proven to be top factors.
+## 5.5 Model Evaluation
 
-**Actionable Insights:** **First semester performance** emerges as the dominant predictor. **Financial factors** (debtor status, tuition payment) also show strong effects, suggesting that financial aid could meaningfully impact retention.
+```{r binomial-eval, results="hide"}
+# --- Predictions
+pred_suc_prob <- predict(glm_suc, test_suc_scaled, type = "response")
+pred_suc <- ifelse(pred_suc_prob > 0.5, 1, 0)
+
+# --- AUC
+roc_suc <- roc(test_suc_scaled$Dropout, pred_suc_prob, quiet = TRUE)
+auc_suc <- auc(roc_suc)
+
+# --- Accuracy
+accuracy_suc <- mean(pred_suc == test_suc_scaled$Dropout)
+```
+
+### Confusion Matrix
+
+```{r binomial-confusion, echo=FALSE}
+conf_matrix <- table(Observed = test_suc_scaled$Dropout, Predicted = pred_suc)
+rownames(conf_matrix) <- c("NotDropout (0)", "Dropout (1)")
+colnames(conf_matrix) <- c("Pred: NotDropout", "Pred: Dropout")
+
+knitr::kable(conf_matrix, caption = "Confusion Matrix (counts)")
+knitr::kable(round(prop.table(conf_matrix) * 100, 1), caption = "Confusion Matrix (percentages)")
+```
+
+### ROC Curve
+
+```{r binomial-roc, fig.height=4, fig.width=5, fig.cap="Binomial GLM ROC Curve"}
+plot(roc_suc, col = "darkblue", lwd = 2,
+     main = sprintf("ROC Curve - Binomial GLM (AUC = %.3f)", auc_suc))
+abline(a = 0, b = 1, lty = 2, col = "gray")
+grid()
+```
+
+**Performance Summary:**
+- **Accuracy:** `r round(accuracy_suc * 100, 1)`%
+- **AUC:** `r round(auc_suc, 3)`
+
+**Actionable Insights:** 
+- **1st semester performance** emerges as the dominant predictor
+- **Financial factors** (debtor status, tuition payment) show strong effects, suggesting financial aid could meaningfully impact retention
 
 ------------------------------------------------------------------------
 
