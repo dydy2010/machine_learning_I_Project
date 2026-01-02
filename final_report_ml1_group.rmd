@@ -1020,7 +1020,7 @@ The **Reduced Model** is the efficient choice—most of the predictive power wit
 
 **Final Model Selection:** Based on **ANOVA** and **AUC**, we choose the **Early Warning Model** (1st semester focused) as our final Binomial GLM. This uses the relatively strong but early predictors from the full model.
 
-**Key Findings:**
+**Key Observations:**
 - **2nd semester course performance** (approved + grade) are the dominant predictors
 - **Tuition payment status** is the strongest financial indicator
 - Older students at enrollment have slightly higher dropout risk
