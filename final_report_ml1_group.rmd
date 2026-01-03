@@ -1,7 +1,7 @@
 ---
 title: "Predicting Student Success:<br>A Multi-Model Machine Learning Approach"
 subtitle: "-- Early Warning System for Student Dropout Risk"
-author: "Dongyuan Gao, Ramiro, Cyriel"
+author: "Dongyuan Gao, Ramiro Díez-Liébana, Cyriel Van Helleputte"
 date: "`r Sys.Date()`"
 output:
   html_document:
