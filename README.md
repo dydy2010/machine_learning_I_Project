@@ -12,6 +12,22 @@ A fictional university has engaged our consulting firm to diagnose why students 
 
 ---
 
+## Data Source
+
+| Attribute | Value |
+|-----------|-------|
+| **Dataset** | Predict Students' Dropout and Academic Success |
+| **Source** | UCI Machine Learning Repository |
+| **URL** | https://archive.ics.uci.edu/dataset/697 |
+| **Size** | 4,424 students × 36 features |
+| **Target** | Dropout / Graduate / *Enrolled |
+
+**Data Files:**
+- `data/input/raw_data.csv` — Original dataset from UCI repository
+- `data/preprocessed_data.csv` — Cleaned data (categorical encoding, factor conversion) used by all models
+
+---
+
 ## Team Members
 
 | Member | Responsibilities |
@@ -97,17 +113,7 @@ machine_learning_I_Project/
 
 ---
 
-## Data Source
 
-| Attribute | Value |
-|-----------|-------|
-| **Dataset** | Predict Students' Dropout and Academic Success |
-| **Source** | UCI Machine Learning Repository |
-| **URL** | https://archive.ics.uci.edu/dataset/697 |
-| **Size** | 4,424 students × 36 features |
-| **Target** | Dropout / Graduate / *Enrolled |
-
----
 
 ## Key Findings
 
