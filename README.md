@@ -32,7 +32,7 @@ A fictional university has engaged our consulting firm to diagnose why students 
 
 | Member | Responsibilities |
 |--------|------------------|
-| **Cyriel**| Linear Regression, GLM (Binomial & Poisson), Exploratory Analysis|
+| **Cyriel**| Linear Regression, GAM, GLM (Binomial & Poisson), Exploratory Analysis|
 | **Ramiro** | Support Vector Machines, Data Pre-processing |
 | **Dongyuan Gao**  | Neural Networks, Report Integration & Editing, Cross Validation & All-model Improvement |
 
