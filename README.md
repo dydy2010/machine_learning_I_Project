@@ -18,7 +18,7 @@ A fictional university has engaged our consulting firm to diagnose why students 
 |--------|------------------|
 | **Cyriel**| Linear Regression, GLM (Binomial & Poisson), Exploratory Analysis|
 | **Ramiro** | Support Vector Machines, Data Pre-processing |
-| **Dongyuan Gao**  | Neural Networks, Report Integration & Editing, Cross Validation |
+| **Dongyuan Gao**  | Neural Networks, Report Integration & Editing, Cross Validation & All-model Improvement |
 
 ---
 
@@ -68,8 +68,9 @@ machine_learning_I_Project/
 │   ├── data_choosing_process/       # Raw data exploration
 │   └── preprocessed_data.csv        # Cleaned data for modeling
 │
-├── final_report_ml1_group.rmd       # Main deliverable (knit this)
-├── appendix_models.Rmd              # Supplementary models that are not included in final report
+├── final_report_ml1_group.html      # Main deliverable (open in browser)
+├── final_report_ml1_group.rmd       # Rmd file (knit this)
+├── appendix_models.Rmd              # Supplementary models not in final report
 ├── Evaluation_and_Hints.pdf         # Course requirements
 └── README.md                        # This file
 ```
@@ -110,12 +111,12 @@ machine_learning_I_Project/
 
 ## Key Findings
 
-1. **1st semester performance** is the strongest predictor across all models
-2. **Financial stability** (tuition fees up to date) significantly increases graduation rates
-3. **Non-linear patterns** captured by GAMs outperform linear models by 2-5%
-4. **Neural networks** score about 0.87 AUC when telling graduates apart from others (overall comparison)
-5. **SVM** (linear kernel) achieves ~87% accuracy on Dropout vs Graduate classification (best kernel: radial at ~87.7%, slightly higher)
-6. **Early intervention** after 1st semester, with targeted support, can significantly change student outcomes
+1. **1st/2nd semester performance** is the strongest predictor across all models (~88% accuracy with NN/SVM)
+2. **Financial stability** (tuition fees up to date) significantly increases graduation odds (~52% more courses approved)
+3. **Scholarship holders** demonstrate better outcomes across all models
+4. **Non-linear age effects**: Students aged 18-22 have optimal success rates (GAM finding)
+5. **Quasi-Poisson** model addresses overdispersion in 1st semester course prediction
+6. **Early Warning System** achievable with ~88% accuracy after 1st semester data
 
 ---
 

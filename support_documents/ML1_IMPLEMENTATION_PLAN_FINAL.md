@@ -3,9 +3,9 @@
 
 **File to Edit:** `final_report_ml1_group.Rmd`  
 **Deadline:** January 9, 2026 (aiming for January 4)  
-**Status:** ✅ GAM section complete, remaining narrative improvements optional  
-**Remaining Work:** Phase 1 (typos/formatting) + Phase 2 Steps 2.2, 2.4-2.8 (narrative flow)  
-**Estimated Time:** ~35-45 minutes
+**Status:** ✅ Major improvements complete (Jan 2-3, 2026)  
+**Completed:** Sections 5, 6, 9, 10.1, 11 improved with better flow, toggles, interpretation  
+**Remaining:** Final review + ReadMe.md
 
 ---
 
