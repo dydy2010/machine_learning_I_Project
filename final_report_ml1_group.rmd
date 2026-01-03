@@ -1,6 +1,6 @@
 ---
-title: "Predicting Student Success: A Multi-Model Machine Learning Approach"
-subtitle: "Early Warning System for Student Dropout Risk"
+title: "Predicting Student Success:<br>A Multi-Model Machine Learning Approach"
+subtitle: "-- Early Warning System for Student Dropout Risk"
 author: "Dongyuan Gao, Ramiro, Cyriel"
 date: "`r Sys.Date()`"
 output:
@@ -9,35 +9,114 @@ output:
     toc_float: true
     toc_depth: 3
     code_folding: hide
-    theme: flatly
+    theme: cosmo
     df_print: paged
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
-header-includes:
-  - |
-    <style>
-      h1, h2, h3, h4, h5, h6 {
-        color: #222222;
-        font-weight: 600;
-      }
-      .caption, caption {
-        color: #222222;
-        font-weight: 600;
-      }
-      body {
-        color: #222222;
-      }
-      /* Compact chunk toggle buttons */
-      .btn.btn-default.btn-xs.code-folding-btn {
-        padding: 2px 6px;
-        font-size: 10px;
-        line-height: 1.1;
-        margin: 2px 0 4px 0;
-      }
-    </style>
 ---
+
+```{css custom-styles, echo=FALSE}
+h1, h2, h3, h4, h5, h6 {
+  color: #111111;
+  font-weight: 700;
+}
+h1 {
+  font-size: 2.3rem;
+}
+h2 {
+  font-size: 2.1rem;
+}
+h3 {
+  font-size: 1.8rem;
+}
+h4 {
+  font-size: 1.5rem;
+}
+.caption, caption {
+  color: #111111;
+  font-weight: 600;
+}
+body {
+  color: #222222;
+  font-size: 1.8rem;
+  font-weight: 470;
+}
+/* Compact chunk toggle buttons */
+.btn.btn-default.btn-xs.code-folding-btn {
+  padding: 2px 6px;
+  font-size: 10px;
+  line-height: 1.1;
+  margin: 2px 0 4px 0;
+}
+/* Title block */
+.title {
+  font-size: 2.4rem;
+}
+.subtitle {
+  font-size: 2.3rem;
+}
+.author, .date {
+  font-size: 2.1rem;
+}
+```
+<style>
+.fold-hide {
+  display: none;
+  margin-bottom: 20px;
+}
+.fold-hide pre {
+  background-color: #f8f9fa;
+  border-left: 5px solid #2780e3;
+  padding: 15px;
+}
+@keyframes breathe {
+  0%, 100% { 
+    background-color: #2c3e50;
+    box-shadow: 0 0 0 0 rgba(44, 62, 80, 0);
+    transform: scale(1);
+  }
+  50% { 
+    background-color: #3498db;
+    box-shadow: 0 0 8px 2px rgba(52, 152, 219, 0.4);
+    transform: scale(1.02);
+  }
+}
+.output-toggle-btn {
+  margin-bottom: 5px;
+  background-color: #2c3e50;
+  color: #fff;
+  border: 1px solid #000;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 0.75em;
+  cursor: pointer;
+  font-family: monospace;
+  animation: breathe 1.5s ease-in-out infinite;
+}
+.output-toggle-btn:hover {
+  background-color: #1abc9c;
+  box-shadow: 0 0 6px 2px rgba(26, 188, 156, 0.5);
+  transform: scale(1.05);
+  animation: none;
+}
+</style>
+
+<script>
+$(document).ready(function() {
+  // Target only the output blocks that have the fold-hide class
+  $('.fold-hide').each(function() {
+    var $this = $(this);
+    // Add the button before the output block
+    var $button = $('<button class="output-toggle-btn">Show Output</button>');
+    $button.insertBefore($this);
+    
+    // Toggle logic
+    $button.on('click', function() {
+      $this.toggle();
+      var isVisible = $this.is(':visible');
+      $(this).text(isVisible ? 'Hide Output' : 'Show Output');
+    });
+  });
+});
+</script>
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
@@ -105,33 +184,38 @@ options(warn = -1)
 
 # Summary
 
-**Our Storyline:** Higher education institutions face significant challenges with **student drop-outs**. A fictional university has engaged our education consulting firm to diagnose why students drop out. The university wants to **understand and improve academic performance**, and design **interventions** that reduce failed academic lives. Understanding which students are **at risk of dropping out**, and timely support that can change academic and life trajectories.
+**Our Storyline:** Higher education institutions face significant challenges with **student drop-outs**. A fictional university has engaged our education consulting firm to understand what influences student dropout and how to better prevent dropouts. The university wants to **understand and improve academic performance**, and design **interventions** that reduce failed academic lives. Understanding which students are **at risk of dropping out**, and timely support that can change academic and life trajectories.
 
-**Our Data:** We have chosen a real case dataset from **University of California, Irvine (UCI)**, to simulate the fictional case. We found the dataset because the data repository website appeared once in our Machine Learning 1 lecture.
+**Our Data:** We have chosen a real case dataset from **University of California, Irvine (UCI)**, to simulate the fictional case. We found the dataset because the renowned data repository appeared in our Machine Learning 1 lecture.
 
-**Our Approach:** We analyzed **4,424 students** from a Portuguese higher education institution using **six** machine learning models to predict student outcomes (**Dropout**, **Enrolled**, **Graduate**) and **understand the factors that drive academic success**.
+**Our Approach:** We analyzed **4,424 students** from a Portuguese higher education institution using **six** machine learning models to predict student outcomes (**Dropout**, **Graduate(not dropout)**) and **understand the factors that drive academic success**.
+**Project Repository:** [Click here to view full code & repository on GitHub](https://github.com/dydy2010/machine_learning_I_Project)
 
 ## Key Findings:
 
--   **First semester performance is the strongest predictor** of subsequent academic outcomes across all models
--   **Non-linear relationships exist** between age, course load, and success rates—captured by GAMs but missed by traditional linear models
--   **Economic and financial factors** (GDP, unemployment, scholarship status, tuition payment) show systematic effects on student success
--   **GAMs consistently outperform traditional GLMs** by 2-5 percentage points, revealing curved relationships in the data
--   **Model accuracy ranges from 75-90%** depending on the prediction task, with graduation prediction achieving the highest discrimination (**AUC ≈ 0.87**)
+-   **First & Second semester performance is the strongest predictor** of academic outcomes across all models.
+-   **2 Early warning systems** could be built upon our models.
+-   **Non-linear relationships exist** between age, course load, and success.
+-   **Model accuracy ranges from 70-90%** depending on the prediction task, with graduation prediction(test set) achieving the highest reliability (**AUC ≈ 0.87**)
 
-**Business Impact:** These models enable institutions to **identify at-risk students early**, **allocate resources efficiently**, and implement **targeted interventions** that can improve graduation rates by **10-15%**.
+**Business Impact:** These models enable our client university to **identify at-risk students early**, **allocate resources**, and implement **targeted interventions** that can improve graduation rates.
 
 ------------------------------------------------------------------------
 
 # 1. Introduction & Data Context
 
-## 1.1 Motivation
+## 1.1 Business Questions & Model Mapping
 
-**Student dropout** is a critical issue in higher education with consequences for:
+**Student dropout** is a critical issue in higher education. As noted by the OECD, "In Switzerland, STEM completion rates are 68%, lower than those for health and welfare, at 81%" (OECD, 2025). To address it, we deploy six modeling approaches, each answering a specific business question:
 
--   **Students:** Lost time, financial burden, and psychological impact
--   **Institutions:** Revenue loss, reduced graduation rates, reputational damage
--   **Society:** Lost human capital and economic potential
+1.  **How do 1st-semester results predict students' final graduation/dropout?** (Binomial GLM / GAM)
+    *   *Purpose:* Early intervention based on initial performance.
+2.  **Can we predict 2nd-semester grades?** (Linear Regression / Gaussian GAM)
+    *   *Purpose:* Forecasting academic performance. The prediction result could be beneficial for intervention methods.
+3.  **Can we predict how many courses will a student pass in the 1st semester?** (Poisson GLM)
+    *   *Purpose:* Identifying students struggling with studies. The prediction result could be beneficial for intervention methods.
+4.  **How do major factors like 2nd semester performance and finance predict students' final graduation/dropout?** (SVM / Neural Net)
+    *   *Purpose:* High-accuracy classification for targeted support.
 
 By predicting **dropout risk early**, institutions can intervene with:
 
@@ -140,15 +224,26 @@ By predicting **dropout risk early**, institutions can intervene with:
 -   Mental health services
 -   Personalized study plans
 
-## 1.2 Data Source and Selection Process
+## 1.2 Team Contributions
+
+This project was completed collaboratively by three team members, with each member taking the lead on specific models:
+
+| Team Member | Models Led | Contributions |
+|-------------|------------|---------------|
+| **Cyriel**| Linear Regression, GLM (Binomial & Poisson), GAM | Exploratory Analysis |
+| **Ramiro** | Support Vector Machines | Data Preprocessing |
+| **Dongyuan Gao** | Neural Networks | Cross-validation, <br> All-models improvement & Report Editing |
+
+
+## 1.3 Data Source and Selection Process
 
 ### Choosing Our Dataset
 
-Our goal for this project is to deliver a solid report while using it as an opportunity to enhance our understanding of machine learning concepts and practices. With this in mind, we explored several potential datasets for our final analysis.
+**Our goal** for this project is to deliver a **solid report** while using it as an opportunity to **enhance our understanding** of **machine learning concepts** and practices. With this in mind, we explored several *potential datasets* for our final analysis.
 
-We considered three main options. First, the Social Media Fact Sheet from PEW Research Center, which would have allowed us to analyze social media usage patterns. Second, medical quality service data in Switzerland from the Federal Office of Public Health (available through opendata.swiss). Third, student data for predicting dropout and academic success from the UC Irvine Machine Learning Repository.
+We considered **three main dataset options**. First, the Social Media Fact Sheet from PEW Research Center, which would have allowed us to analyze social media usage patterns. Second, medical quality service data in Switzerland from the Federal Office of Public Health (available through opendata.swiss). Third, student data for predicting dropout and academic success from the UC Irvine Machine Learning Repository.
 
-After careful consideration, we chose the third option from the UC Irvine repository. The **data structure and scope align well with our goal** of getting familiarized with machine learning concepts and practices while producing a solid report as our first attempt in the ML world. While the other two datasets were interesting to explore, their structure, diversity, and scope did not suit our learning objectives as well as the student success dataset. We didn't read any papers related to the dataset online while doing the project.
+After careful consideration, we chose the third option from the UC Irvine repository. The **data structure and scope align well with our goal** of getting familiarized with machine learning concepts and practices and producing a solid report as our first attempt in the ML world. Though the other two datasets were interesting to explore, their structure, diversity, and scope did not suit our *learning objectives* as well as the student success dataset. For the exploration experience, we didn't read any papers related to the dataset online while doing the project.
 
 ### Dataset Characteristics
 
@@ -157,7 +252,7 @@ After careful consideration, we chose the third option from the UC Irvine reposi
 **Time Period:** Multiple academic years\
 **Sample Size:** 4,424 students with 37 variables (e.g., age, 1st-semester grades, credits completed)
 
-The dataset provides a comprehensive view of student characteristics and outcomes, making it well-suited for applying multiple machine learning models.
+The dataset provides a comprehensive view of student characteristics and outcomes. It is well-suited for applying multiple machine learning models.
 
 **Target Variable (3 factors):**
 
@@ -185,7 +280,7 @@ for (col in numeric_cols) {
   }
 }
 ```
-## 1.3 Feature Categories and detailed variables
+## 1.4 Feature Categories and detailed variables
 
 Our dataset includes **36 predictors** in the following categories: Demographic Information, Socioeconomic Factors, Academic Background, Academic Performance, Financial Indicators, and Macroeconomic Context.
 To make the business case and model results easier to follow, the table below summarizes the most important variables used.
@@ -265,126 +360,182 @@ The dataset is suitable for applying all required machine learning methods:
 
 **For Poisson GLM:** **Count variables** are present (approved courses, evaluations, failed courses), making it ideal for count-based modeling.
 
-**For GAM, Neural Networks, and SVM:** The mix of **continuous and categorical predictors** plus a **classification task** lets us explore **non-linear relationships** and **complex interactions**.
+**For GAM, Neural Networks, and SVM:** The mix of **continuous and categorical predictors** plus a **classification task** allow us to explore **non-linear relationships** and **interactions**.
 
-The dataset contains **4,424 observations**—large enough for robust train-test splits and complex training, yet manageable. With **36 predictors** across demographic, academic, financial, and socioeconomic domains, we have the complexity to deliver **insights for our client**.
+The dataset contains **4,424 observations**—large **enough** for robust train-test splits and complex **training**, yet manageable. With **36 predictors** across demographic, academic, financial, and socioeconomic domains, we have the sources to deliver **insights for our client**.
 
 ------------------------------------------------------------------------
 
 # 2. Exploratory Data Analysis
 
-## 2.1 Target Variable Distribution
+Before all teammates exploring models, we cast categorical/binary fields to factors and ran one-way ANOVAs of each numeric feature vs the three-level `Target` (see `data/preprocessing`), then saved `data/preprocessed_data.csv`. We also quickly check for missing values below, we found out that there are no missing values (it is not common in real world cases, but it fit our goal of focusing on exploring machine learning concepts and models in this project.)  
+Secondly, we did a simple **Anova** important features screening, to have an overview of the importance features for each teammate to work on. Higher F means that feature’s average differs a lot across Dropout/Enrolled/Graduate; in our Anova chart, **semester grades/approvals** differ the most between groups, financial next, and demographics least. So each of our teammates can explore the important features first, and use features that are model specific to their models.  
 
-```{r target-distribution, fig.height=5}
+## 2.1 Data Preprocessing
+```{r missing-values, fig.height=5}
+# Simple ANOVA screening: each numeric feature vs Target (see data/preprocessing)
+# Missing value counts per column
+missing_summary <- df %>%
+  summarise(across(everything(), ~ sum(is.na(.)))) %>%
+  pivot_longer(cols = everything(),
+               names_to = "variable",
+               values_to = "n_missing") %>%
+  mutate(percentage = round(n_missing / nrow(df) * 100, 2)) %>%
+  arrange(desc(n_missing))
+
+p_missing <- ggplot(missing_summary, aes(x = reorder(variable, n_missing), y = n_missing)) +
+  geom_col(fill = "#6C8EBF") +
+  coord_flip() +
+  labs(title = "Missing values (count)",
+       x = "Feature",
+       y = "Count of missing values") +
+  theme(axis.text.y = element_text(angle = 5, hjust = 0),
+        plot.title = element_text(size = 10))
+
+# One-way ANOVA per numeric feature vs Target (univariate screening)
+numeric_feats <- names(df)[sapply(df, is.numeric)]
+anova_results <- lapply(numeric_feats, function(feat) {
+  fit <- aov(as.formula(paste(feat, "~ Target")), data = df)
+  f_val <- summary(fit)[[1]]$`F value`[1]
+  data.frame(Feature = feat, F_value = f_val)
+}) %>%
+  bind_rows() %>%
+  arrange(desc(F_value))
+
+top_anova <- head(anova_results, 10)
+
+ggplot(top_anova, aes(x = reorder(Feature, F_value), y = F_value)) +
+  geom_col(fill = "#2E86AB") +
+  coord_flip() +
+  labs(title = "Top 10 features (ANOVA F-stat)",
+       x = "Feature",
+       y = "F-statistic") +
+  theme(axis.text.y = element_text(angle = 5, hjust = 0),
+        plot.title = element_text(size = 10)) -> p_anova
+
+gridExtra::grid.arrange(p_missing, p_anova, ncol = 2, widths = c(0.9, 1.1))
+```
+
+## 2.2 Target Variable Distribution & Age Distribution
+
+```{r target&age-distribution, fig.height=5}
 # Create a bar plot with percentages
 target_summary <- df %>%
   group_by(Target) %>%
   summarise(count = n()) %>%
   mutate(percentage = count / sum(count) * 100)
 
-ggplot(target_summary, aes(x = Target, y = count, fill = Target)) +
+p_target <- ggplot(target_summary, aes(x = Target, y = count, fill = Target)) +
   geom_bar(stat = "identity", alpha = 0.8) +
-  geom_text(aes(label = paste0(round(percentage, 1), "%\n(n=", count, ")")),
-            vjust = -0.5, size = 4) +
   scale_fill_manual(values = c("Dropout" = "#E74C3C",
                                 "Enrolled" = "#F39C12",
                                 "Graduate" = "#27AE60")) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
   labs(title = "Distribution of Student Outcomes",
        x = "Outcome", y = "Number of Students", fill = "Outcome") +
   theme(legend.position = "none",
         plot.title = element_text(hjust = 0.5, face = "bold"))
-```
 
-**Key Observation:** The dataset shows a reasonable distribution with 50% graduates, 32% dropouts, and 18% still enrolled. This balance allows models to learn patterns for all three outcomes effectively.
-
-## 2.2 First Semester Performance Analysis
-
-```{r first-sem-analysis, fig.height=5}
-# Prepare data for first semester grades
-first_sem_data <- df %>%
-  filter(!is.na(Curricular.units.1st.sem..grade.) &
-         Curricular.units.1st.sem..grade. > 0) %>%
-  select(Target, Curricular.units.1st.sem..grade.,
-         Curricular.units.1st.sem..approved.)
-
-# Box plot for first semester grades
-p1 <- ggplot(first_sem_data, aes(x = Target, y = Curricular.units.1st.sem..grade., fill = Target)) +
-  geom_boxplot(alpha = 0.7) +
-  scale_fill_manual(values = c("Dropout" = "#E74C3C",
-                                "Enrolled" = "#F39C12",
-                                "Graduate" = "#27AE60")) +
-  labs(title = "First Semester Grades by Outcome",
-       x = "Outcome", y = "First Semester Grade (0-20)") +
-  theme(legend.position = "none")
-
-# Box plot for courses approved
-p2 <- ggplot(first_sem_data, aes(x = Target, y = Curricular.units.1st.sem..approved., fill = Target)) +
-  geom_boxplot(alpha = 0.7) +
-  scale_fill_manual(values = c("Dropout" = "#E74C3C",
-                                "Enrolled" = "#F39C12",
-                                "Graduate" = "#27AE60")) +
-  labs(title = "Courses Approved in First Semester",
-       x = "Outcome", y = "Number of Courses Approved") +
-  theme(legend.position = "none")
-
-grid.arrange(p1, p2, ncol = 2)
-```
-
-**Insight:** First semester performance shows dramatic differences across outcomes. Graduate students average **13+ grade points** and complete most enrolled courses, while dropout students struggle with grades around **9-10** and complete fewer courses. This early divergence makes **first semester performance** the most critical intervention point.
-
-## 2.3 Financial & Socioeconomic Factors
-
-```{r financial-factors, fig.height=5}
-# Prepare financial data
-financial_data <- df %>%
-  select(Target, Tuition.fees.up.to.date, Scholarship.holder, Debtor) %>%
-  mutate(Tuition.fees.up.to.date = factor(Tuition.fees.up.to.date,
-                                           levels = c(0, 1),
-                                           labels = c("Not Current", "Current")),
-         Scholarship.holder = factor(Scholarship.holder,
-                                     levels = c(0, 1),
-                                     labels = c("No", "Yes")),
-         Debtor = factor(Debtor,
-                        levels = c(0, 1),
-                        labels = c("No", "Yes")))
-
-# Tuition status
-p1 <- ggplot(financial_data, aes(x = Tuition.fees.up.to.date, fill = Target)) +
-  geom_bar(position = "fill") +
-  scale_fill_manual(values = c("Dropout" = "#E74C3C",
-                                "Enrolled" = "#F39C12",
-                                "Graduate" = "#27AE60")) +
-  labs(title = "Tuition Payment Status",
-       x = "Tuition Fees Status", y = "Proportion", fill = "Outcome")
-
-# Scholarship status
-p2 <- ggplot(financial_data, aes(x = Scholarship.holder, fill = Target)) +
-  geom_bar(position = "fill") +
-  scale_fill_manual(values = c("Dropout" = "#E74C3C",
-                                "Enrolled" = "#F39C12",
-                                "Graduate" = "#27AE60")) +
-  labs(title = "Scholarship Holder Status",
-       x = "Has Scholarship", y = "Proportion", fill = "Outcome")
-
-grid.arrange(p1, p2, ncol = 2)
-```
-
-**Insight:** Financial stability strongly correlates with graduation. Students current on tuition fees show significantly higher graduation rates. Scholarship holders also demonstrate better outcomes, suggesting that financial support programs contribute meaningfully to student success.
-
-## 2.4 Age Distribution
-
-```{r age-distribution, fig.height=4}
-ggplot(df, aes(x = Age.at.enrollment, fill = Target)) +
+p_age <- ggplot(df, aes(x = Age.at.enrollment, fill = Target)) +
   geom_density(alpha = 0.6) +
   scale_fill_manual(values = c("Dropout" = "#E74C3C",
                                 "Enrolled" = "#F39C12",
                                 "Graduate" = "#27AE60")) +
   labs(title = "Age Distribution by Student Outcome",
        x = "Age at Enrollment", y = "Density", fill = "Outcome") +
-  theme(legend.position = "bottom")
+  theme(legend.position = "none")
+
+p_target_noleg <- p_target + theme(legend.position = "none")
+p_age_noleg <- p_age + theme(legend.position = "none")
+
+gridExtra::grid.arrange(
+  gridExtra::arrangeGrob(p_target_noleg, p_age_noleg, ncol = 2, widths = c(1, 1))
+)
 ```
 
-**Insight:** Age shows interesting patterns - traditional-age students (18-22) have higher graduation rates, while both younger and significantly older students face elevated dropout risks. This suggests non-linear age effects that GAMs can capture better than linear models.
+**Key Observation:** The dataset shows a **reasonable distribution** for modeling, with 50% graduates, 32% dropouts, and 18% still enrolled. This balance allows models to learn patterns for all outcomes effectively. Depending on the model and task, we may need to **adjust** the classes to **binary(dropout or not dropout)**.
+
+**Insight:** Age shows interesting patterns: common students age **(18-22)** have **higher graduation rates**, while both younger and significantly older students face elevated dropout risks. This pattern suggests that age effects may not follow a linear trend, which we could explore using models that can capture such **non-linear** relationships (e.g., *GAMs* with smooth terms, or GLMs with *polynomial/spline* features). Though Age is possibly not an important factor (as Anova shows).
+
+## 2.3 Semester Performance-Financial Factor Effect Overview
+
+To have a **first overview** of the **important factors** from Anova test, we show the *second semester performance* plots together with the key *financial factors* in one combined figure below.
+
+```{r sem-and-financial-factors, fig.height=7, fig.width=11}
+# Prepare data for second semester grades
+second_sem_data <- df %>%
+  filter(!is.na(Curricular.units.2nd.sem..grade.) &
+         Curricular.units.2nd.sem..grade. > 0) %>%
+  select(Target, Curricular.units.2nd.sem..grade.,
+         Curricular.units.2nd.sem..approved.)
+
+# Prepare financial data
+financial_data <- df %>%
+  select(Target, Tuition.fees.up.to.date, Scholarship.holder, Debtor) %>%
+  mutate(Tuition.fees.up.to.date = factor(Tuition.fees.up.to.date,
+                                          levels = c(0, 1),
+                                          labels = c("Not Current", "Current")),
+         Scholarship.holder = factor(Scholarship.holder,
+                                     levels = c(0, 1),
+                                     labels = c("No", "Yes")),
+         Debtor = factor(Debtor,
+                         levels = c(0, 1),
+                         labels = c("No", "Yes")))
+
+outcome_colors <- c("Dropout" = "#E74C3C",
+                    "Enrolled" = "#F39C12",
+                    "Graduate" = "#27AE60")
+
+# Box plot for second semester grades
+p_grade <- ggplot(second_sem_data,
+                  aes(x = Target, y = Curricular.units.2nd.sem..grade., fill = Target)) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_manual(values = outcome_colors) +
+  labs(title = "Second Semester Grades",
+       x = "Outcome", y = "Grade (0-20)", fill = "Outcome") +
+  theme_minimal(base_size = 11)
+
+# Box plot for courses approved
+p_approved <- ggplot(second_sem_data,
+                     aes(x = Target, y = Curricular.units.2nd.sem..approved., fill = Target)) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_manual(values = outcome_colors) +
+  labs(title = "Second Semester Approved",
+       x = "Outcome", y = "# Courses Approved", fill = "Outcome") +
+  theme_minimal(base_size = 11)
+
+# Tuition status
+p_tuition <- ggplot(financial_data, aes(x = Tuition.fees.up.to.date, fill = Target)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual(values = outcome_colors) +
+  labs(title = "Tuition Payment Status",
+       x = "Tuition Fees Status", y = "Proportion", fill = "Outcome") +
+  theme_minimal(base_size = 11)
+
+# Scholarship status
+p_scholarship <- ggplot(financial_data, aes(x = Scholarship.holder, fill = Target)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual(values = outcome_colors) +
+  labs(title = "Scholarship Holder Status",
+       x = "Has Scholarship", y = "Proportion", fill = "Outcome") +
+  theme_minimal(base_size = 11)
+
+p_grade_noleg <- p_grade + theme(legend.position = "none")
+p_approved_noleg <- p_approved + theme(legend.position = "none")
+p_tuition_noleg <- p_tuition + theme(legend.position = "none")
+p_scholarship_noleg <- p_scholarship + theme(legend.position = "none")
+
+gridExtra::grid.arrange(
+  p_grade_noleg, p_approved_noleg,
+  p_tuition_noleg, p_scholarship_noleg,
+  ncol = 2,
+  widths = c(1, 1)
+)
+```
+
+**Insight:** *Second semester performance* shows noticeable differences across outcomes. Graduate students average **13+ grade points** and complete most enrolled courses(approved), while dropout students struggle with grades around **9-10** and complete fewer courses. This suggests that *first semester performance* *could be a critical indicator* for dropout prediction.
+
+**Insight (financial factors):** Students who **pay tuition on time** and who **hold scholarships** show much higher graduation rates and lower dropout proportions. Financial stability appears to be a strong protective factor.
 
 ------------------------------------------------------------------------
 
@@ -405,13 +556,13 @@ We employ six modeling techniques, each with distinct strengths:
 
 ## 3.2 Research Questions
 
-Each model addresses specific questions:
+Each model could address specific questions we have in mind:
 
 1.  **Linear Regression:** How do student characteristics linearly predict **second semester grades**?
-2.  **GLM (Binomial):** What factors distinguish **graduates from dropouts** in probabilistic terms?
-3.  **GLM (Poisson):** What predicts the **count of approved courses** in each semester?
-4.  **GAM:** Are there **non-linear relationships** that traditional linear models miss?
-5.  **Neural Networks:** Can **deep learning** uncover **hidden interaction patterns**?
+2.  **GLM (Binomial):** How factors distinguish **graduates from dropouts** in probabilistic terms?
+3.  **GLM (Poisson):** How it predicts the **count of approved courses** in each semester?
+4.  **GAM:** Can GAM with **non-linear relationships** better predict dropout?
+5.  **Neural Networks:** Can **neural deep learning** better **predict dropout**?
 6.  **SVM:** Can we build a **robust classifier** that maximizes the margin between success and failure?
 
 ## 3.3 Evaluation Strategy
@@ -419,7 +570,7 @@ Each model addresses specific questions:
 -   **Training/Test Split:** **80/20 stratified split** to maintain class balance
 -   **Regression Metrics:** **R²**, **RMSE**, **MAE**
 -   **Classification Metrics:** **Accuracy**, **AUC-ROC**, **Confusion Matrix**
--   **Cross-Model Comparison:** Identify **consistent predictors** across methods
+-   **Cross Validation:** Compare models
 
 ------------------------------------------------------------------------
 
@@ -427,17 +578,18 @@ Each model addresses specific questions:
 
 ## 4.1 Introduction to the Problem
 
-Predicting student grades is fundamental to early intervention strategies. Linear regression provides an interpretable framework for understanding how various factors—from prior academic preparation to socioeconomic conditions—combine to influence academic performance. While simple in concept, this approach reveals which factors matter most and by how much.
+In this section, we use **linear regression** as a simple and interpretable baseline model. It helps us see which factors are linked to most important factorper, and in which direction. The prediction could be used for later early-warning system.
+For example, "a 1-point drop in first semester grades predicts a 0.7-point drop in second semester.
 
 ## 4.2 Methodology
 
-Linear regression models the relationship between predictor variables and a continuous outcome through the equation:
+Linear regression models a continuous outcome (here: **2nd semester grade**) as a weighted sum of input features:
 
 $$Y = \beta_0 + \beta_1X_1 + \beta_2X_2 + ... + \beta_nX_n + \epsilon$$
 
-where $Y$ represents second semester grades, $X_i$ are our predictor variables, $\beta_i$ are coefficients indicating the strength and direction of each relationship, and $\epsilon$ captures random error.
+Here, $Y$ is the 2nd semester grade, $X_i$ are the input variables, and $\beta_i$ are the estimated coefficients. Each $\beta_i$ tells us how $Y$ is expected to change when $X_i$ increases by 1 unit (while keeping other variables constant). The term $\epsilon$ represents unexplained variation.
 
-We predict second semester grades based on 13 carefully selected features including demographic factors, previous academic performance, and economic indicators. This multi-factor approach recognizes that student success results from the interplay of personal, academic, and contextual variables.
+We predict **2nd semester grades** using **13 features**, including demographics, earlier academic information, and macroeconomic indicators. This matches the idea that student outcomes depend on multiple factors, not just one.
 
 ## 4.3 Data Preparation
 
@@ -467,11 +619,11 @@ df_model <- df %>%
     filter(get(TARGET) > 0)
 ```
 
-After filtering missing values and excluding zero grades, the linear regression model uses **`r nrow(df_model)` students**. The target variable (**2nd semester grade**) has **mean** **`r round(mean(df_model[[TARGET]]), 2)`** and **standard deviation** **`r round(sd(df_model[[TARGET]]), 2)`**.
+After preparing the dataset (we did not observe missing values in EDA, but we keep `drop_na()` as a safety check) and excluding zero grades, the linear regression model uses **`r nrow(df_model)` students**. The target variable (**2nd semester grade**) has **mean** **`r round(mean(df_model[[TARGET]]), 2)`** and **standard deviation** **`r round(sd(df_model[[TARGET]]), 2)`**.
 
 The dataset is filtered to **exclude students with zero grades**, as these typically represent withdrawals or incomplete coursework rather than actual performance. This ensures our model focuses on **predicting outcomes for actively enrolled students**.
 
-## 4.4 Exploratory Analysis
+## 4.4 Linear EDA
 
 ```{r linear-eda, results="asis"}
 correlations <- cor(df_model[FEATURES], df_model[[TARGET]])
@@ -487,7 +639,7 @@ knitr::kable(top5_cor, caption = "Top 5 correlations with 2nd semester grade")
 
 ### Feature Relationships
 
-```{r linear-correlation, fig.height=8}
+```{r linear-correlation, fig.height=8, fig.width=10}
 correlation_matrix <- cor(df_model[c(FEATURES, TARGET)])
 
 corrplot(correlation_matrix,
@@ -495,10 +647,10 @@ corrplot(correlation_matrix,
          type = "upper",
          tl.col = "black",
          tl.srt = 45,
-         tl.cex = 0.7,
+         tl.cex = 1.1,        # Increased from 0.7 for bigger text
          col = colorRampPalette(c("blue", "white", "red"))(200),
          addCoef.col = "black",
-         number.cex = 0.4,
+         number.cex = 0.9,    # Increased from 0.4 for readable numbers
          title = "Feature Correlation Heatmap",
          mar = c(0, 0, 2, 0))
 ```
@@ -514,69 +666,78 @@ trainIndex <- createDataPartition(df_model[[TARGET]], p = 0.8, list = FALSE)
 
 train_data <- df_model[trainIndex, ]
 test_data <- df_model[-trainIndex, ]
-
-X_train <- train_data %>% dplyr::select(all_of(FEATURES))
 y_train <- train_data[[TARGET]]
-X_test <- test_data %>% dplyr::select(all_of(FEATURES))
 y_test <- test_data[[TARGET]]
 
 train_n <- nrow(train_data)
 test_n <- nrow(test_data)
 ```
 
-We use an **80/20 train-test split**, resulting in **`r train_n`** training observations and **`r test_n`** test observations.
-
-```{r linear-scale}
-preProc <- preProcess(X_train, method = c("center", "scale"))
-X_train_scaled <- predict(preProc, X_train)
-X_test_scaled <- predict(preProc, X_test)
-```
-
-**Feature Scaling:** Standardization (**z-score normalization**) ensures all features contribute proportionally to the model regardless of their original scales.
+We use an **80/20 train-test split**, resulting in **`r train_n`** training observations and **`r test_n`** test observations, even for the linear model.
 
 ```{r linear-train, results="asis", echo=FALSE}
-train_data_scaled <- X_train_scaled
-train_data_scaled[[TARGET]] <- y_train
-
 formula_str <- paste(TARGET, "~", paste(FEATURES, collapse = " + "))
 formula_obj <- as.formula(formula_str)
 
-model <- lm(formula_obj, data = train_data_scaled)
-coef_summary <- data.frame(
-  Feature = names(coef(model)),
-  Coefficient = coef(model)
-)
-coef_table <- coef_summary %>%
-  dplyr::filter(Feature != "(Intercept)") %>%
-  dplyr::mutate(Abs_Coefficient = abs(Coefficient)) %>%
-  dplyr::arrange(desc(Abs_Coefficient)) %>%
-  dplyr::select(Feature, Coefficient) %>%
-  utils::head(3)
+model <- lm(formula_obj, data = train_data)
 
-rownames(coef_table) <- NULL
+cat("**Fitted equation (with coefficients):**\n\n")
+cat("```\n")
+b <- coef(model)
+eq <- paste0(
+  "Predicted ", TARGET, " = ",
+  round(b[1], 3), " + ",
+  paste0(round(b[-1], 3), " * ", names(b)[-1], collapse = " + ")
+)
+cat(paste(strwrap(eq, width = 90), collapse = "\n"))
+cat("\n```\n\n")
+
+drop1_tbl <- drop1(model, test = "F")
+drop1_df <- as.data.frame(drop1_tbl)
+drop1_df$Feature <- rownames(drop1_df)
+drop1_df <- drop1_df[drop1_df$Feature != "<none>", c("Feature", "Df", "F value", "Pr(>F)")]
+drop1_df <- drop1_df[order(drop1_df$`Pr(>F)`), ]
+drop1_df$`Pr(>F)` <- signif(drop1_df$`Pr(>F)`, 3)
+rownames(drop1_df) <- NULL
+
+age_row <- which(drop1_df$Feature == "Age.at.enrollment")
+if (length(age_row) == 1) {
+  drop1_df <- drop1_df[seq_len(age_row), ]
+}
 
 if (requireNamespace("kableExtra", quietly = TRUE)) {
   knitr::kable(
-    coef_table,
-    caption = "Top 3 linear regression coefficients (by absolute value)",
-    align = c("l", "r")
+    drop1_df,
+    caption = "Drop-one (partial) F-tests: top predictors",
+    align = c("l", "r", "r", "r"),
+    row.names = FALSE
   ) %>%
     kableExtra::kable_styling(full_width = FALSE) %>%
     kableExtra::column_spec(1, bold = TRUE)
 } else {
   knitr::kable(
-    coef_table,
-    caption = "Top 3 linear regression coefficients (by absolute value)",
-    align = c("l", "r")
+    drop1_df,
+    caption = "Drop-one (partial) F-tests: top predictors (lower p-value = more useful)",
+    align = c("l", "r", "r", "r"),
+    row.names = FALSE
   )
 }
 ```
 
-## 4.6 Model Performance
+**Interpretation:** `drop1(model, test = "F")` checks each feature one by one. It asks: *if we remove this feature from the linear model, does the model get noticeably worse?* If yes, the feature is considered more useful.
 
-```{r linear-predict, results="hide"}
-y_train_pred <- predict(model, X_train_scaled)
-y_test_pred <- predict(model, X_test_scaled)
+**What we see in our results table:**
+
+- **Curricular.units.1st.sem..grade.** is by far the strongest predictor (very large F). Its coefficient ≈ `r round(coef(model)["Curricular.units.1st.sem..grade."], 2)` means: **each 1-point increase in 1st semester grade predicts a `r abs(round(coef(model)["Curricular.units.1st.sem..grade."], 2))`-point change in 2nd semester grade**.
+- **Curricular.units.1st.sem..approved.** (coef ≈ `r round(coef(model)["Curricular.units.1st.sem..approved."], 2)`) and **Curricular.units.1st.sem..credited.** are also strong. For example, for each course approved(passed), the predicted 2nd semester grade increases by `r abs(round(coef(model)["Curricular.units.1st.sem..approved."], 2))` points.
+- **Admission.grade** (coef ≈ `r round(coef(model)["Admission.grade"], 3)`) shows meaningful contribution—higher admission grades predict slightly better 2nd semester performance.
+- **Age.at.enrollment** is weaker (smaller F and borderline p-value).
+
+## 4.7 Visual Assessment & Performance Interpretation
+
+```{r linear-metrics, include=FALSE}
+y_train_pred <- predict(model, newdata = train_data)
+y_test_pred <- predict(model, newdata = test_data)
 
 train_r2 <- cor(y_train, y_train_pred)^2
 train_rmse <- sqrt(mean((y_train - y_train_pred)^2))
@@ -587,12 +748,13 @@ test_rmse <- sqrt(mean((y_test - y_test_pred)^2))
 test_mae <- mean(abs(y_test - y_test_pred))
 ```
 
-**Performance Interpretation:** The R² score of `r round(test_r2, 4)` indicates that `r round(test_r2 * 100, 1)`% of variance in second semester grades can be explained by our selected features. The Mean Absolute Error (MAE) of `r round(test_mae, 2)` means our predictions are typically within `r round(test_mae, 2)` grade points of actual values.
+**Performance Interpretation:** The R² score of `r round(test_r2, 4)` indicates that `r round(test_r2 * 100, 1)`% of variance in second semester grades can be explained by our selected features. **The Mean Absolute Error (MAE)** of `r round(test_mae, 2)` means our predictions are typically within `r round(test_mae, 2)` grade points of actual values.  
+It provides a **solid baseline**, but there is room for more flexible models.
 
-## 4.7 Visual Assessment
+**How to read the 4-panel plot:** In the two scatter plots, points closer to the red dashed line mean better predictions; here we see a clear trend but with spread (so it’s not perfect). The two residual plots show errors are mostly centered around 0 with a few outliers, which is acceptable for a simple baseline model.
 
 ```{r linear-plots, fig.cap="Actual vs. Predicted Grades"}
-par(mfrow = c(1, 2))
+par(mfrow = c(2, 2))
 
 plot(y_train, y_train_pred,
      xlab = "Actual Grade", ylab = "Predicted Grade",
@@ -607,56 +769,27 @@ plot(y_test, y_test_pred,
      pch = 16, col = rgb(0, 1, 0, 0.5))
 abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2)
 grid()
-```
 
-### Residual Analysis
-
-```{r linear-residuals, fig.cap="Residual diagnostics"}
 residuals_test <- y_test - y_test_pred
-
-par(mfrow = c(1, 2))
 
 plot(y_test_pred, residuals_test,
      xlab = "Predicted Grade", ylab = "Residuals",
-     main = "Residual Plot",
+     main = "Residual Plot (Test)",
      pch = 16, col = rgb(0, 0, 1, 0.5))
 abline(h = 0, col = "red", lwd = 2, lty = 2)
 grid()
 
 hist(residuals_test, breaks = 30,
      xlab = "Residuals", ylab = "Frequency",
-     main = "Residual Distribution",
+     main = "Residual Distribution (Test)",
      col = rgb(0, 0, 1, 0.7), border = "black")
 abline(v = 0, col = "red", lwd = 2, lty = 2)
 grid()
 ```
 
-## 4.8 Feature Importance
+**Final takeaway (linear regression):** Using the selected features, the linear regression model can produce a **reasonable prediction** of **2nd semester grades**. With a test R² of about **`r round(test_r2, 2)`** and MAE around **`r round(test_mae, 2)`**, it works well as a **simple and interpretable baseline**. We could later use this prediction tool to predict dropout on top. In the next section we move to a **Binomial GLM (logistic regression)** for dropout prediction.
 
-```{r linear-importance, fig.height=8, fig.cap="Feature importance"}
-feature_importance <- data.frame(
-    Feature = names(coef(model))[-1],
-    Coefficient = coef(model)[-1]
-) %>%
-    mutate(Abs_Coefficient = abs(Coefficient)) %>%
-    arrange(desc(Abs_Coefficient))
 
-par(mar = c(5, 12, 4, 2))
-colors <- ifelse(feature_importance$Coefficient > 0, "green", "red")
-barplot(feature_importance$Coefficient,
-        names.arg = feature_importance$Feature,
-        horiz = TRUE,
-        las = 1,
-        col = adjustcolor(colors, alpha.f = 0.7),
-        xlab = "Coefficient Value (Standardized)",
-        main = "Feature Importance in Grade Prediction",
-        xlim = c(min(feature_importance$Coefficient) * 1.2,
-                 max(feature_importance$Coefficient) * 1.2))
-abline(v = 0, col = "black", lwd = 1)
-grid()
-```
-
-**Key Insights:** First semester grades have the strongest positive effect—students who perform well initially tend to continue succeeding. Course approvals and enrollments in the first semester significantly impact second semester outcomes. Economic indicators show measurable but smaller effects.
 
 ------------------------------------------------------------------------
 
@@ -664,155 +797,65 @@ grid()
 
 ## 5.1 Introduction to Classification
 
-Classification problems require predicting categorical outcomes rather than continuous values. Binomial logistic regression excels at binary classification by estimating probabilities between 0 and 1 through the logistic (sigmoid) function:
+**Business Question:** *"Can we predict which student is more at risk of dropping out?"*
+
+This is until now our **most actionable model**—by estimating the **odds of dropout**, we can identify at-risk students and enable targeted interventions.
+
+**Response Variable:** `Dropout` =1, `NotDropout`=0. 
+- **Dropout:** Students who dropped out
+- **NotDropout:** Students who are still enrolled OR graduated (both are "surviving")
+
+**Predictors (all 14 features):**Though, From our data preprocessing ANOVA test (Section 2.1), **semester performance** and **financial factors**, 
+are expected to be the strongest predictors, we will use 14 of them and then refine the model in section 5.2.
+
+**Methodology:**Classification problems require predicting categorical outcomes rather than continuous values. Binomial logistic regression excels at binary classification by estimating probabilities between 0 and 1 through the logistic (sigmoid) function:
 
 $$P(Y=1) = \frac{1}{1 + e^{-(\beta_0 + \beta_1X_1 + ... + \beta_nX_n)}}$$
 
-This S-shaped curve ensures predictions stay within valid probability bounds while allowing us to model how predictor variables influence the odds of an outcome.
+This S-shaped curve ensures predictions stay within valid probability bounds. It allows us to model how predictor variables influence the **odds of dropping out**.
 
-## 5.2 Model 1: Predicting High vs Low Admission Scores
+## 5.2 Quick & Dirty EDA: Key Predictors
 
-Understanding what characteristics lead to high admission scores helps institutions identify strong candidates and understand enrollment patterns.
+We use `pairs()` to explore relationships between dropout and the **top 6 features** from ANOVA (Section 2.1):
 
-### Binomial GLM Pre-processing: High vs Low Admission
-
-```{r binomial1-all, results="hide", echo=FALSE}
-cat(sprintf("Admission.grade check | total=%d | non-NA=%d\n",
-            length(df$Admission.grade), sum(!is.na(df$Admission.grade))))
-
-median_admission <- median(df$Admission.grade, na.rm = TRUE)
-df$High_Admission <- ifelse(df$Admission.grade >= median_admission, 1, 0)
-
-cat(sprintf("Median admission grade: %.2f | Low admission: %d | High admission: %d\n",
-            median_admission,
-            sum(df$High_Admission == 0, na.rm = TRUE),
-            sum(df$High_Admission == 1, na.rm = TRUE)))
-
-features_admission <- c(
-  'Previous.qualification..grade.',
-  'Age.at.enrollment',
-  'Mother.s.qualification',
-  'Father.s.qualification',
-  'Application.order',
-  'Scholarship.holder',
-  'Gender',
-  'Displaced',
-  'International'
-)
-
-df_admission <- df %>%
-  select(all_of(c(features_admission, 'High_Admission'))) %>%
-  mutate(across(everything(), ~ as.numeric(as.character(.)))) %>%
+```{r binomial-eda, fig.height=8, fig.width=10, fig.cap="Pairs plot: Dropout vs top 6 ANOVA features"}
+# Prepare data for pairs plot - using top 6 from ANOVA F-stat
+df_pairs <- df %>%
+  mutate(Dropout = ifelse(Target == 'Dropout', 1, 0)) %>%
+  select(Dropout, 
+         Curricular.units.2nd.sem..approved.,
+         Curricular.units.2nd.sem..grade.,
+         Curricular.units.1st.sem..approved.,
+         Curricular.units.1st.sem..grade.,
+         Tuition.fees.up.to.date,
+         Debtor) %>%
   na.omit()
 
-cat(sprintf("Binomial (Admission) dataset: %d students\n", nrow(df_admission)))
-if (nrow(df_admission) > 0) {
-  cat("High_Admission distribution (count):\n")
-  print(table(df_admission$High_Admission))
-}
-### binomial1-split
-set.seed(42)
-train_index_adm <- createDataPartition(df_admission$High_Admission, p = 0.8, list = FALSE)
-train_adm <- df_admission[train_index_adm, ]
-test_adm <- df_admission[-train_index_adm, ]
-
-preproc_adm <- preProcess(train_adm[, features_admission], method = c("center", "scale"))
-train_adm_scaled <- predict(preproc_adm, train_adm)
-test_adm_scaled <- predict(preproc_adm, test_adm)
-
-### Model Training
-glm_adm <- glm(High_Admission ~ .,
-               data = train_adm_scaled,
-               family = binomial(link = "logit"))
-
-cat("Binomial GLM (Admission) summary:\n")
-print(summary(glm_adm))
+# Pairs plot with smooth lines
+pairs(Dropout ~ Curricular.units.2nd.sem..approved. + 
+               Curricular.units.2nd.sem..grade. + 
+               Curricular.units.1st.sem..approved. + 
+               Curricular.units.1st.sem..grade. + 
+               Tuition.fees.up.to.date + 
+               Debtor,
+      data = df_pairs,
+      upper.panel = panel.smooth,
+      col = ifelse(df_pairs$Dropout == 1, "#E74C3C", "#27AE60"),
+      pch = 16, cex = 0.5)
 ```
 
-We convert `Admission.grade` into a binary target (**High** vs **Low** admission) using the median cutoff (**`r round(median_admission, 2)`**). After removing missing values, we model **`r nrow(df_admission)`** students.
+**Key Interpretations:**
+Most of these factors(pre-filtered by ANOVA) **show linear correlation** with dropout, except **tuition and debtor** are **slightly weaker**. For **example**, 2nd sem approved - Very clear negative linear trend: more courses approved means lower dropout. The patterns seem to be quite suitable for GLM models.
 
-### Model Performance
+## 5.3 Full Model: Data Preparation and Training
+After EDA, We now use binomial GLM to build a full model with all 14 features.
+```{r binomial-prep, results="hide"}
+# --- Data prep: Dropout=1, NotDropout=0 (consistent with NN/SVM)
+df_dropout <- df %>%
+  mutate(Dropout = ifelse(Target == 'Dropout', 1, 0))
 
-```{r binomial1-eval, results="hide"}
-pred_adm_prob <- predict(glm_adm, test_adm_scaled, type = "response")
-pred_adm <- ifelse(pred_adm_prob > 0.5, 1, 0)
-
-accuracy_adm <- mean(pred_adm == test_adm_scaled$High_Admission)
-
-cat(sprintf("Binomial GLM (Admission) accuracy: %.4f (%.2f%%)\n", accuracy_adm, accuracy_adm * 100))
-
-cm_adm <- confusionMatrix(factor(pred_adm, levels = c(0, 1)),
-                          factor(test_adm_scaled$High_Admission, levels = c(0, 1)))
-print(cm_adm)
-
-# Confusion matrix plot
-cm_plot_df <- as.data.frame(cm_adm$table)
-names(cm_plot_df) <- c("Prediction", "Reference", "Freq")
-cm_plot_df$Prediction <- factor(cm_plot_df$Prediction, levels = c("0", "1"))
-cm_plot_df$Reference <- factor(cm_plot_df$Reference, levels = c("0", "1"))
-
-ggplot(cm_plot_df, aes(x = Prediction, y = Reference, fill = Freq)) +
-  geom_tile(color = "white") +
-  geom_text(aes(label = Freq), size = 4, fontface = "bold") +
-  scale_fill_gradient(low = "#e0f7fa", high = "#00838f") +
-  labs(title = "Confusion Matrix: High vs Low Admission", x = "Predicted", y = "Actual") +
-  theme_minimal(base_size = 10) +
-  theme(legend.position = "none",
-        plot.title = element_text(size = 10, face = "bold", hjust = 0.5))
-```
-On the test set, the admission model achieves **accuracy = `r round(accuracy_adm, 3)`** (~70% correct classifications). This is better than random guessing but leaves room for improvement; it correctly flags most high/low admission cases, but about 3 in 10 are still misclassified.
-
-
-### ROC Curve Analysis
-
-```{r binomial1-roc, fig.cap="ROC Curve - High Admission", fig.width=6.4, fig.height=4.8}
-roc_adm <- roc(test_adm_scaled$High_Admission, pred_adm_prob, quiet = TRUE)
-auc_adm <- auc(roc_adm)
-
-plot(roc_adm, col = "darkorange", lwd = 2,
-     main = sprintf("ROC Curve - High Admission (AUC = %.3f)", auc_adm))
-abline(a = 0, b = 1, lty = 2, col = "navy", lwd = 2)
-grid()
-```
-
-**Understanding the ROC Curve:** The **AUC** of `r round(auc_adm, 3)` quantifies overall discrimination ability. **AUC > 0.7** indicates acceptable discrimination, while **AUC > 0.8** represents excellent performance.
-
-### Interpreting Odds Ratios
-
-```{r binomial1-odds, results="asis"}
-coef_df_adm <- data.frame(
-  Feature = features_admission,
-  Coefficient = coef(glm_adm)[-1],
-  Odds_Ratio = exp(coef(glm_adm)[-1])
-) %>%
-  arrange(desc(abs(Coefficient)))
-
-odds_table_adm <- coef_df_adm %>%
-  mutate(Abs_Coefficient = abs(Coefficient)) %>%
-  arrange(desc(Abs_Coefficient)) %>%
-  select(Feature, Coefficient, Odds_Ratio) %>%
-  head(10)
-
-knitr::kable(odds_table_adm, caption = "Top 10 admission predictors (log-odds and odds ratio)")
-```
-
-## 5.3 Model 2: Predicting Graduation vs Dropout
-
-**This is our most actionable model**—identifying students **at risk of dropping out** enables **targeted interventions**.
-
-### 5.3 Binomial GLM: Graduation vs Dropout
-
-```{r binomial2-all, results="asis", echo=FALSE}
-# --- Data prep
-df_success <- df %>%
-  filter(Target %in% c('Graduate', 'Dropout')) %>%
-  mutate(Success = ifelse(Target == 'Graduate', 1, 0))
-
-cat(sprintf("Graduation dataset | Dropout=%d | Graduate=%d\n",
-            sum(df_success$Success == 0),
-            sum(df_success$Success == 1)))
-
-features_success <- c(
+# Include 2nd semester variables for comparison with other models
+features_dropout <- c(
   'Previous.qualification..grade.',
   'Admission.grade',
   'Age.at.enrollment',
@@ -824,89 +867,188 @@ features_success <- c(
   'Tuition.fees.up.to.date',
   'Curricular.units.1st.sem..approved.',
   'Curricular.units.1st.sem..grade.',
+  'Curricular.units.2nd.sem..approved.',
+  'Curricular.units.2nd.sem..grade.',
   'Unemployment.rate',
   'Inflation.rate',
   'GDP'
 )
 
-df_success_model <- df_success %>%
-  select(all_of(c(features_success, 'Success'))) %>%
+df_dropout_model <- df_dropout %>%
+  select(all_of(c(features_dropout, 'Dropout'))) %>%
   mutate(across(everything(), as.numeric)) %>%
   na.omit()
 
-cat(sprintf("Binomial (Graduation) dataset: %d students\n", nrow(df_success_model)))
-
 # --- Train/test split + scaling
 set.seed(42)
-train_index_suc <- createDataPartition(df_success_model$Success, p = 0.8, list = FALSE)
-train_suc <- df_success_model[train_index_suc, ]
-test_suc <- df_success_model[-train_index_suc, ]
+train_index <- createDataPartition(df_dropout_model$Dropout, p = 0.8, list = FALSE)
+train_data <- df_dropout_model[train_index, ]
+test_data <- df_dropout_model[-train_index, ]
 
-preproc_suc <- preProcess(train_suc[, features_success], method = c("center", "scale"))
-train_suc_scaled <- predict(preproc_suc, train_suc)
-test_suc_scaled <- predict(preproc_suc, test_suc)
+preproc <- preProcess(train_data[, features_dropout], method = c("center", "scale"))
+train_scaled <- predict(preproc, train_data)
+test_scaled <- predict(preproc, test_data)
 
-# --- Model training
-glm_suc <- glm(Success ~ .,
-               data = train_suc_scaled,
-               family = binomial(link = "logit"))
-
-# --- Performance
-pred_suc_prob <- predict(glm_suc, test_suc_scaled, type = "response")
-pred_suc <- ifelse(pred_suc_prob > 0.5, 1, 0)
-
-accuracy_suc <- mean(pred_suc == test_suc_scaled$Success)
-
-cat(sprintf("Binomial GLM (Graduation) accuracy: %.4f (%.2f%%)\n", accuracy_suc, accuracy_suc * 100))
-
-roc_suc <- roc(test_suc_scaled$Success, pred_suc_prob, quiet = TRUE)
-auc_suc <- auc(roc_suc)
-
-cat(sprintf("Binomial GLM (Graduation) AUC: %.3f\n", auc_suc))
-
-# --- Risk/protective factors
-coef_df_suc <- data.frame(
-  Feature = features_success,
-  Coefficient = coef(glm_suc)[-1],
-  Odds_Ratio = exp(coef(glm_suc)[-1])
-) %>%
-  arrange(desc(abs(Coefficient)))
-
-cat("\nTop 5 Predictors Interpretation:\n")
-for (i in 1:min(5, nrow(coef_df_suc))) {
-  row <- coef_df_suc[i, ]
-  if (row$Odds_Ratio > 1) {
-    pct_change <- (row$Odds_Ratio - 1) * 100
-    cat(sprintf("✓ %s: %.1f%% increase in graduation odds per SD increase\n",
-                row$Feature, pct_change))
-  } else {
-    pct_change <- (1 - row$Odds_Ratio) * 100
-    cat(sprintf("✗ %s: %.1f%% decrease in graduation odds per SD increase\n",
-                row$Feature, pct_change))
-  }
-}
-
-# --- Top predictors table
-odds_table_suc <- coef_df_suc %>%
-  mutate(Abs_Coefficient = abs(Coefficient)) %>%
-  arrange(desc(Abs_Coefficient)) %>%
-  select(Feature, Coefficient, Odds_Ratio) %>%
-  head(3)
-
-knitr::kable(odds_table_suc, caption = "Top 3 graduation predictors (log-odds and odds ratio)")
+# --- Fit full model (16 predictors)
+glm_full <- glm(Dropout ~ .,
+                data = train_scaled,
+                family = binomial(link = "logit"))
 ```
 
-We model graduation vs dropout in one step: build the binary target, split/scale, train a binomial GLM, and summarize discrimination (AUC) plus odds ratios for the most influential features. The model delivers **AUC = `r round(auc_suc, 3)`**, showing strong abilit to predict graduates and dropouts. First-semester performance and financial factors are proven to be top factors.
+### Model Summary
 
-**Actionable Insights:** **First semester performance** emerges as the dominant predictor. **Financial factors** (debtor status, tuition payment) also show strong effects, suggesting that financial aid could meaningfully impact retention.
+<div class="fold-hide">
+```{r binomial-summary, echo=FALSE}
+summary(glm_full)
+```
+</div>
+
+### Coefficient Interpretation with ilogit() from the above Model Summary Output
+
+We interpret the significant coefficients (p < 0.001) using `ilogit()` to convert log-odds to probabilities:
+
+```{r binomial-ilogit, echo=TRUE}
+# Helper function: inverse logit
+ilogit <- function(x) exp(x) / (1 + exp(x))
+
+# Calculate key values for inline display
+or_tuition <- exp(coef(glm_full)["Tuition.fees.up.to.date"])
+or_2nd_approved <- exp(coef(glm_full)["Curricular.units.2nd.sem..approved."])
+or_2nd_grade <- exp(coef(glm_full)["Curricular.units.2nd.sem..grade."])
+or_age <- exp(coef(glm_full)["Age.at.enrollment"])
+
+baseline_prob <- ilogit(coef(glm_full)["(Intercept)"]) * 100
+tuition_prob <- ilogit(coef(glm_full)["(Intercept)"] + coef(glm_full)["Tuition.fees.up.to.date"]) * 100
+```
+
+**Key Interpretation:** The strongest predictors from the full model are:
+
+- **2nd semester approved** (OR = `r round(or_2nd_approved, 2)`, meaning `r round((1 - or_2nd_approved) * 100, 0)`% lower dropout odds per SD)
+- **2nd semester grade** (OR = `r round(or_2nd_grade, 2)`, `r round((1 - or_2nd_grade) * 100, 0)`% lower odds per SD)
+- **Tuition payment** (OR = `r round(or_tuition, 2)`, `r round((1 - or_tuition) * 100, 0)`% lower odds if current)
+- **Age at enrollment** (OR = `r round(or_age, 2)`, `r round((or_age - 1) * 100, 0)`% higher odds per SD for older students)
+
+For example, the baseline dropout probability is `r round(baseline_prob, 1)`%, but drops to `r round(tuition_prob, 1)`% for students with tuition paid (+1 SD).
+
+## 5.5 Model Refinement Process
+
+```{r binomial-final, results='hide'}
+# Reduced model using 2nd semester data (4 significant predictors)
+final_model <- glm(Dropout ~ Tuition.fees.up.to.date + 
+                             Curricular.units.2nd.sem..approved. + 
+                             Curricular.units.2nd.sem..grade. +
+                             Age.at.enrollment,
+                   data = train_scaled,
+                   family = binomial(link = "logit"))
+
+# Early Warning model: 1st semester only (for early intervention)
+glm_early <- glm(Dropout ~ Tuition.fees.up.to.date + 
+                           Curricular.units.1st.sem..approved. + 
+                           Curricular.units.1st.sem..grade. +
+                           Age.at.enrollment,
+                 data = train_scaled,
+                 family = binomial(link = "logit"))
+```
+
+Based on the summary p-values, we create additionally a **Reduced Model** with 4 predictors (2nd semester performance, Tuition, Age) for our final dropout classifier. This uses the **strongest predictors** while remaining interpretable.
+We also make another **Early Warning Model** with 4 predictors (1st semester performance, Tuition, Age), so that the customer could predict using first sem data for possible **early action**. These models will be **compared** in the next part.
+
+## 5.6 Model Evaluation (Reduced Model)
+
+We evaluate the **Reduced Model** on the test set:
+
+```{r binomial-eval, fig.height=4, fig.width=10, fig.cap="Final Binomial GLM: Confusion Matrix and ROC Curve"}
+# --- Predictions using final model (reduced)
+pred_prob <- predict(final_model, test_scaled, type = "response")
+pred_class <- ifelse(pred_prob > 0.5, 1, 0)
+
+# --- Metrics
+roc_obj <- roc(test_scaled$Dropout, pred_prob, quiet = TRUE)
+auc_val <- auc(roc_obj)
+accuracy_val <- mean(pred_class == test_scaled$Dropout)
+
+# --- Combined plot: Confusion Matrix + ROC
+par(mfrow = c(1, 2), mar = c(4, 4, 3, 2))
+
+# Confusion Matrix as heatmap
+conf_matrix <- table(Observed = test_scaled$Dropout, Predicted = pred_class)
+conf_pct <- round(prop.table(conf_matrix) * 100, 1)
+
+# Create confusion matrix heatmap manually
+plot(c(0, 2), c(0, 2), type = "n", xlab = "Predicted", ylab = "Observed",
+     xaxt = "n", yaxt = "n", main = "Confusion Matrix (Reduced Model)")
+axis(1, at = c(0.5, 1.5), labels = c("NotDropout", "Dropout"))
+axis(2, at = c(0.5, 1.5), labels = c("Dropout", "NotDropout"))
+
+# TN (top-left), FP (top-right), FN (bottom-left), TP (bottom-right)
+rect(0, 1, 1, 2, col = rgb(0.2, 0.6, 0.2, 0.7))  # TN - green
+rect(1, 1, 2, 2, col = rgb(0.8, 0.2, 0.2, 0.5))  # FP - red
+rect(0, 0, 1, 1, col = rgb(0.8, 0.2, 0.2, 0.5))  # FN - red
+rect(1, 0, 2, 1, col = rgb(0.2, 0.6, 0.2, 0.7))  # TP - green
+
+text(0.5, 1.5, paste0(conf_matrix[1,1], "\n(", conf_pct[1,1], "%)"), cex = 1.2)
+text(1.5, 1.5, paste0(conf_matrix[1,2], "\n(", conf_pct[1,2], "%)"), cex = 1.2)
+text(0.5, 0.5, paste0(conf_matrix[2,1], "\n(", conf_pct[2,1], "%)"), cex = 1.2)
+text(1.5, 0.5, paste0(conf_matrix[2,2], "\n(", conf_pct[2,2], "%)"), cex = 1.2)
+
+# ROC Curve
+plot(roc_obj, col = "darkblue", lwd = 2,
+     main = sprintf("ROC Curve (AUC = %.3f)", auc_val))
+abline(a = 0, b = 1, lty = 2, col = "gray")
+grid()
+```
+
+**Performance Summary:**
+- **Accuracy:** `r round(accuracy_val * 100, 1)`%
+- **AUC:** `r round(auc_val, 3)` It seems quite good for prediction purpose.
+
+### ANOVA: Comparing 3 Models
+Now we compare the 3 models using Anova(1st sem focused(early warning), 2nd sem focused(reduced to essential predictors), full model)
+<div class="fold-hide">
+```{r binomial-anova, echo=FALSE}
+# Compare 3 nested models: Early Warning < Reduced < Full
+anova_result <- anova(glm_early, final_model, glm_full, test = "Chisq")
+rownames(anova_result) <- c("Early Warning (1st sem)", "Reduced (2nd sem)", "Full (16 vars)")
+anova_result
+```
+</div>
+
+```{r binomial-anova-calc, echo=FALSE}
+# Calculate values for inline display
+dev_early <- anova_result["Early Warning (1st sem)", "Resid. Dev"]
+dev_reduced <- anova_result["Reduced (2nd sem)", "Resid. Dev"]
+dev_full <- anova_result["Full (16 vars)", "Resid. Dev"]
+
+early_to_reduced_dev <- dev_early - dev_reduced
+early_to_reduced_pct <- (dev_early - dev_reduced) / dev_early * 100
+reduced_to_full_dev <- dev_reduced - dev_full
+reduced_to_full_pct <- (dev_reduced - dev_full) / dev_reduced * 100
+```
+
+**ANOVA Interpretation:** 
+- **Early to Reduced:** as above output shows `r round(early_to_reduced_dev, 1)` deviance reduction (`r round(early_to_reduced_pct, 1)`% improvement) by switching to 2nd semester data
+- **Reduced to Full:** `r round(reduced_to_full_dev, 1)` deviance reduction (`r round(reduced_to_full_pct, 1)`% improvement) by adding 12 more variables
+
+The **Reduced Model** is the efficient choice—most of the predictive power with only 4 interpretable features.
+**However**, for the **business case**, predicting only with 2nd semester data might be **too late for action**. So we could choose the **Early Warning Model** (1st semester focused) as our final Binomial GLM. This will be elaborated more in conclusion chapter.
+
+## 5.7 Chapter Conclusion
+
+**Final Model Selection:** Based on **ANOVA** and **AUC**, we choose the **Early Warning Model** (1st semester focused) as our final Binomial GLM. This uses the relatively strong but early predictors from the full model.
+
+**Key Observations:**
+- **2nd semester course performance** (approved + grade) are the dominant predictors
+- **Tuition payment status** is the strongest financial indicator
+- Older students at enrollment have slightly higher dropout risk
 
 ------------------------------------------------------------------------
 
 # 6. Generalized Linear Model - Poisson
 
 ## 6.1 Why Poisson Regression?
-
-Course completion counts represent non-negative integers (0, 1, 2, 3...) that don't follow a normal distribution. Poisson regression solves this by:
+We use Poisson regression for **1st Semester course completion** prediction because:
+we know that 1st semester performance(including the **passed courses**) is correlated with the dropout outcome, especially for **early dropout prevention** it could be **very useful**.
+We **couldn't** predict this using **linear models** because, course completion counts represent non-negative integers (0, 1, 2, 3...) that don't follow a normal distribution. Poisson regression solves this by:
 
 1.  **Ensuring non-negative predictions** through a log link function
 2.  **Modeling the count distribution** appropriately
@@ -914,12 +1056,14 @@ Course completion counts represent non-negative integers (0, 1, 2, 3...) that do
 
 The model structure is: $\log(\lambda) = \beta_0 + \beta_1X_1 + ... + \beta_nX_n$, where $\lambda$ represents the expected count.
 
-## 6.2 Model 1: First Semester Course Approvals
+## 6.2 Predicting First Semester Course Approvals (Poisson GLM Model)
 
-Understanding what predicts first semester success is crucial for early intervention.
+**Business case:** Early identification of students likely to pass fewer courses in 1st semester enables timely support interventions. We use only **pre-enrollment data** (admission grades, background, financial status) plus **enrolled courses count** as predictors—data available before semester 1 ends.
 
-### Data Preparation
+We'll evaluate using: **RMSE** (average prediction error in courses), **MAE** (mean absolute deviation), and **R²** (proportion of variance explained). We'll also interpret which factors most strongly affect 1st semester success via the **Rate Ratio** (how much the expected count changes per unit increase).
 
+### Data Preparation & Poisson Model Training
+We used similar approach as in previous section. We select the features to train on and split the data into training and testing sets(for later evaluation)
 ```{r poisson1-prep, results="hide"}
 TARGET_1 <- 'Curricular.units.1st.sem..approved.'
 
@@ -943,7 +1087,6 @@ df_model1 <- df %>%
     mutate(across(everything(), ~ as.numeric(as.character(.)))) %>%
     drop_na()
 
-cat(sprintf("Poisson dataset (1st semester approvals): %d students\n", nrow(df_model1)))
 set.seed(42)
 X1 <- df_model1 %>% dplyr::select(all_of(FEATURES_1))
 y1 <- df_model1[[TARGET_1]]
@@ -963,21 +1106,16 @@ poisson_model1 <- glm(
   data = train_data1
 )
 
-# --- Performance
+# --- Performance metrics (for inline display)
 y_pred_train1 <- predict(poisson_model1, newdata = X_train1, type = "response")
 y_pred_test1 <- predict(poisson_model1, newdata = X_test1, type = "response")
 
 train_rmse1 <- sqrt(mean((y_train1 - y_pred_train1)^2))
-train_mae1 <- mean(abs(y_train1 - y_pred_train1))
-
 test_rmse1 <- sqrt(mean((y_test1 - y_pred_test1)^2))
 test_mae1 <- mean(abs(y_test1 - y_pred_test1))
 test_r2_1 <- cor(y_test1, y_pred_test1)^2
 
-cat(sprintf("Poisson GLM performance | Train RMSE=%.4f MAE=%.4f | Test RMSE=%.4f MAE=%.4f R²=%.4f\n",
-            train_rmse1, train_mae1, test_rmse1, test_mae1, test_r2_1))
-
-# --- Rate ratios (top 3)
+# --- Rate ratios for top predictors
 coef_summary1 <- summary(poisson_model1)$coefficients
 coef_df1 <- data.frame(
     Feature = rownames(coef_summary1),
@@ -987,48 +1125,115 @@ coef_df1 <- data.frame(
 ) %>%
     mutate(Abs_Coef = abs(Coefficient)) %>%
     arrange(desc(Abs_Coef))
+```
 
-top_poisson_tbl <- coef_df1[, c("Feature", "Coefficient", "Rate_Ratio", "P_value")] %>%
-  head(3)
+### Model Summary
 
-knitr::kable(top_poisson_tbl, caption = "Top 3 Poisson GLM predictors (coefficient and rate ratio)")
+<div class="fold-hide">
+```{r poisson1-summary, echo=FALSE}
+summary(poisson_model1)
+```
+</div>
 
-# --- Coefficient bar plot (inline, compact)
+**Addressing overdispersion:** The residual deviance (5021) exceeds degrees of freedom (3528), indicating overdispersion. We fit a **quasi-Poisson model** to correct the standard errors:
+
+```{r poisson1-quasi, results='hide'}
+# Quasi-Poisson to handle overdispersion
+quasi_model <- glm(
+  formula = as.formula(paste(TARGET_1, "~ .")),
+  family = quasipoisson(link = "log"),
+  data = train_data1
+)
+
+# Use quasi model for predictions (same coefficients, corrected SEs)
+y_pred_train1 <- predict(quasi_model, newdata = X_train1, type = "response")
+y_pred_test1 <- predict(quasi_model, newdata = X_test1, type = "response")
+
+# Recalculate metrics with quasi model
+train_rmse1 <- sqrt(mean((y_train1 - y_pred_train1)^2))
+test_rmse1 <- sqrt(mean((y_test1 - y_pred_test1)^2))
+test_mae1 <- mean(abs(y_test1 - y_pred_test1))
+test_r2_1 <- cor(y_test1, y_pred_test1)^2
+
+# Update rate ratios
+coef_summary1 <- summary(quasi_model)$coefficients
+coef_df1 <- data.frame(
+    Feature = rownames(coef_summary1),
+    Coefficient = coef_summary1[, "Estimate"],
+    Rate_Ratio = exp(coef_summary1[, "Estimate"]),
+    P_value = coef_summary1[, "Pr(>|t|)"]
+) %>%
+    mutate(Abs_Coef = abs(Coefficient)) %>%
+    arrange(desc(Abs_Coef))
+
+dispersion <- summary(quasi_model)$dispersion
+```
+
+<div class="fold-hide">
+```{r poisson1-quasi-summary, echo=FALSE}
+summary(quasi_model)
+```
+</div>
+
+The quasi-Poisson dispersion parameter is `r round(dispersion, 2)`. With corrected standard errors:
+- **Highly significant** (p < 0.001): Tuition fees, Scholarship, Enrolled courses, Gender, Age, Admission grade, GDP
+- **Marginally significant** (p < 0.1): Debtor
+- **Not significant** (p > 0.1): Previous qualification, Mother/Father qualification
+
+### Feature Effects on Course Approvals
+
+We plot the top 10 features with the largest coefficients(exponentialized), and analyze their effects on course approvals(1st sem passed courses).
+
+```{r poisson1-barplot, fig.height=5, fig.width=8}
+# Rate Ratio bar plot (more intuitive than log coefficients)
 coef_plot_df <- coef_df1 %>%
     filter(Feature != "(Intercept)") %>%
     head(10)
 
 par(mar = c(5, 10, 3, 2), cex = 0.8)
-colors <- ifelse(coef_plot_df$Coefficient > 0, "green", "red")
-barplot(coef_plot_df$Coefficient,
+colors <- ifelse(coef_plot_df$Rate_Ratio > 1, "green", "red")
+barplot(coef_plot_df$Rate_Ratio - 1,
         names.arg = coef_plot_df$Feature,
         horiz = TRUE,
         las = 1,
         col = adjustcolor(colors, alpha.f = 0.7),
-        xlab = "Coefficient (Log Rate)",
-        main = "Feature Effects on Course Approvals")
+        xlab = "Rate Ratio Change (0 = no effect, +0.5 = 50% more courses)",
+        main = "Feature Effects on 1st Semester Course Approvals (Rate Ratio)")
 abline(v = 0, col = "black", lwd = 1)
 grid()
-
-# Store for plots below
-assign("coef_df1", coef_df1, envir = .GlobalEnv)
-assign("y_pred_train1", y_pred_train1, envir = .GlobalEnv)
-assign("y_pred_test1", y_pred_test1, envir = .GlobalEnv)
-assign("y_train1", y_train1, envir = .GlobalEnv)
-assign("y_test1", y_test1, envir = .GlobalEnv)
 ```
 
-**Interpreting Rate Ratios:** Rate ratios show how the expected course count changes per unit increase. For example, a rate ratio of **1.30** means **30% more courses** on average; **0.80** means **20% fewer**.
+```{r poisson1-ratios, echo=FALSE}
+# Get top 3 predictors for inline display
+top3 <- coef_df1 %>% filter(Feature != "(Intercept)") %>% head(3)
+rr1 <- top3$Rate_Ratio[1]
+rr2 <- top3$Rate_Ratio[2]
+rr3 <- top3$Rate_Ratio[3]
+feat1 <- top3$Feature[1]
+feat2 <- top3$Feature[2]
+feat3 <- top3$Feature[3]
+```
 
-### Visualization of RMSE
+**Key Findings — Interpreting Rate Ratios:**
 
-```{r poisson1-plots, fig.cap="Model predictions for course approvals"}
+For Poisson models, the Rate Ratio shows how the expected count **multiplies** per unit increase. A Rate Ratio of 1.52 means 52% more courses; 0.87 means 13% fewer.
+
+- **`r feat1`** (RR = `r round(rr1, 2)`): Students with tuition paid are expected to pass `r round((rr1-1)*100, 0)`% more courses
+- **`r feat2`** (RR = `r round(rr2, 2)`): Scholarship holders pass `r round((rr2-1)*100, 0)`% more courses on average
+- **`r feat3`** (RR = `r round(rr3, 2)`): Each additional enrolled course  `r round((rr3-1)*100, 0)`% more approvals
+
+**Negative effects:** Debtor status slightly decrease expected approvals, suggesting this demographic may need extra academic support.
+
+**Actionable insight for advisors:** Financial stability (tuition payment, scholarship) is the strongest predictor of 1st semester success. Early financial interventions could improve outcomes.
+
+## 6.3 Model Evaluation
+
+```{r poisson1-rmse, echo=FALSE, fig.cap="RMSE: Predicted vs Actual Course Approvals"}
 par(mfrow = c(1, 2))
 
 plot(y_train1, y_pred_train1,
      xlab = "Actual Courses", ylab = "Predicted Courses",
-     main = sprintf("Training (RMSE = %.3f)",
-                    sqrt(mean((y_train1 - y_pred_train1)^2))),
+     main = sprintf("Training (RMSE = %.3f)", train_rmse1),
      pch = 16, col = rgb(0, 0, 1, 0.5))
 abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2)
 grid()
@@ -1041,103 +1246,114 @@ abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2)
 grid()
 ```
 
-**RMSE reminder:** is the square-root of the average squared error; lower values mean predictions stay closer to actual course counts. Here the test RMSE shows the typical error distance (in courses) between predicted and actual approvals. The plots show a reasonable fit for common counts, but the model tends to underpredict for very high course approvals, so extreme tails are harder to capture.
+**Performance Summary:**  
+- **Test RMSE:** `r round(test_rmse1, 2)` courses (average prediction error)  
+- **Test MAE:** `r round(test_mae1, 2)` courses  
+- **Test R²:** `r round(test_r2_1, 3)` (variance explained)
 
-## 6.3 Model 2: Second Semester Course Approvals
+<div class="fold-hide">
+```{r poisson1-mae-r2, echo=FALSE, fig.height=4, fig.width=10, fig.cap="Additional Metrics: MAE and R² Visualization"}
+par(mfrow = c(1, 2))
 
-```{r poisson2-prep, results="hide"}
-TARGET_2 <- 'Curricular.units.2nd.sem..approved.'
+# MAE visualization: Residuals
+residuals <- y_test1 - y_pred_test1
+hist(residuals, breaks = 30, col = "steelblue", border = "white",
+     main = sprintf("Residual Distribution (MAE = %.2f)", test_mae1),
+     xlab = "Prediction Error (Courses)")
+abline(v = 0, col = "red", lwd = 2)
 
-FEATURES_2 <- c(
-    'Previous.qualification..grade.',
-    'Admission.grade',
-    'Age.at.enrollment',
-    'Scholarship.holder',
-    'Debtor',
-    'Tuition.fees.up.to.date',
-    'Curricular.units.1st.sem..approved.',
-    'Curricular.units.1st.sem..grade.',
-    'Curricular.units.2nd.sem..enrolled.',
-    'Unemployment.rate',
-    'GDP'
-)
-
-df_model2 <- df %>%
-    select(all_of(c(FEATURES_2, TARGET_2))) %>%
-    mutate(across(everything(), ~ as.numeric(as.character(.)))) %>%
-    drop_na()
-
-cat(sprintf("Poisson dataset (2nd semester approvals): %d students\n", nrow(df_model2)))
+# R² visualization: Correlation
+plot(y_test1, y_pred_test1,
+     xlab = "Actual Courses", ylab = "Predicted Courses",
+     main = sprintf("Model Fit (R² = %.3f)", test_r2_1),
+     pch = 16, col = rgb(0.2, 0.6, 0.2, 0.5))
+abline(lm(y_pred_test1 ~ y_test1), col = "blue", lwd = 2)
+grid()
 ```
+</div>
 
-For second semester approvals (count of courses passed), we again use a Poisson model on **`r nrow(df_model2)`** students.
+The model captures the general trend **reasonably well**, though it **underpredicts** for students with very **high course approvals** (extreme tails are harder to capture).
 
-```{r poisson2-train, results="hide"}
-set.seed(42)
+## 6.4 Chapter Conclusion
 
-X2 <- df_model2 %>% select(all_of(FEATURES_2))
-y2 <- df_model2[[TARGET_2]]
-
-trainIndex2 <- createDataPartition(y2, p = 0.8, list = FALSE)
-
-X_train2 <- X2[trainIndex2, ]
-X_test2 <- X2[-trainIndex2, ]
-y_train2 <- y2[trainIndex2]
-y_test2 <- y2[-trainIndex2]
-
-train_data2 <- X_train2
-train_data2[[TARGET_2]] <- y_train2
-
-formula_2 <- as.formula(paste(TARGET_2, "~", paste(FEATURES_2, collapse = " + ")))
-
-poisson_model2 <- glm(formula_2, data = train_data2, family = poisson(link = "log"))
-```
-
-```{r poisson2-eval, results="hide"}
-y_pred_test2 <- predict(poisson_model2, newdata = X_test2, type = "response")
-
-test_rmse2 <- sqrt(mean((y_test2 - y_pred_test2)^2))
-test_mae2 <- mean(abs(y_test2 - y_pred_test2))
-test_r2_2 <- cor(y_test2, y_pred_test2)^2
-
-cat(sprintf("Performance Metrics: RMSE=%.4f MAE=%.4f R²=%.4f\n",
-          test_rmse2, test_mae2, test_r2_2))
-```
-
-The second semester Poisson model achieves **RMSE = `r round(test_rmse2, 3)`**, **MAE = `r round(test_mae2, 3)`**, and **R² = `r round(test_r2_2, 3)`** on the test set.
-
-## 6.4 Why Poisson Over Linear Regression?
-
-```{r poisson-comparison, results="hide"}
-lr_model <- lm(as.formula(paste(TARGET_1, "~", paste(FEATURES_1, collapse = " + "))),
-               data = train_data1)
-y_pred_lr <- predict(lr_model, newdata = X_test1)
-
-lr_rmse <- sqrt(mean((y_test1 - y_pred_lr)^2))
-lr_mae <- mean(abs(y_test1 - y_pred_lr))
-
-cat(sprintf("Model comparison | Poisson GLM: RMSE=%.4f MAE=%.4f | Linear Reg: RMSE=%.4f MAE=%.4f\n",
-            test_rmse1, test_mae1, lr_rmse, lr_mae))
-
-n_negative <- sum(y_pred_lr < 0)
-cat(sprintf("Linear regression negative predictions: %d | Poisson GLM keeps predictions non-negative\n", n_negative))
-```
-
-This comparison highlights a advantage: linear regression can produce **negative course counts** (here: **`r n_negative`** cases), while Poisson regression keeps the non-negative nature of the outcome.
-
-**Critical Advantage:** Poisson regression maintains **logical constraints** by preventing **negative course counts**, making it more suitable for decision-making.
-
-------------------------------------------------------------------------
+This **Poisson GLM** predicts **1st semester course** approvals using pre-enrollment data. The key predictors are enrollment-related factors. While the model has **moderate** predictive power (R² = `r round(test_r2_1, 2)`), it provides useful **insights** for identifying students who may **struggle in their first semester**.
 
 # 7. Generalized Additive Model - GAM
 
-## 7.1 Beyond Linear Relationships
+## 7.1 Introduction: Two GAM Models
 
-All our previous models assumed **linear relationships**. But reality is rarely this simple. **GAMs** extend **GLMs** by replacing straight lines with **smooth curves**, allowing the model to discover **non-linear patterns** while maintaining interpretability.
+All our previous models assumed **linear relationships**. But reality is rarely this simple.
 
-The model structure: $Y = \beta_0 + f_1(X_1) + f_2(X_2) + ... + f_n(X_n) + \epsilon$, where $f_i$ are smooth, flexible functions learned from data.
+**GAMs** extend **GLMs** by replacing straight lines with **smooth curves**, allowing the model to discover **non-linear patterns** while maintaining interpretability. The model structure: $Y = \beta_0 + f_1(X_1) + f_2(X_2) + ... + f_n(X_n) + \epsilon$, where $f_i$ are smooth, flexible functions learned from data.
 
-## 7.2 Model 1: Gaussian GAM for Grade Prediction
+**In this section, we build two GAM models:**
+
+1. **Model 1 - Gaussian GAM (Section 7.2)**: Predicts **2nd semester grades** (continuous outcome), similar to the Linear Model in Section 4, but with curves instead of straight lines. Like the linear model, this is not a direct prediction of our business question, but as a step stone, it could help later for more complex prediction systems (multi-step prediction).
+
+2. **Model 2 - Logistic GAM (Section 7.3)**: Predicts **Graduation vs Dropout** (binary outcome), similar to the Binomial GLM in Section 5, but allowing for non-linear risk patterns.
+
+**Our approach:** First, we visually check if non-linearity exists. Then we fit the model, interpret which smooths are significant, and compare performance with simpler linear models.
+
+## 7.2 Model 1: Gaussian GAM for 2nd-Semester Grade Prediction
+
+### Exploratory Analysis: Is Non-Linearity Present?
+
+Before fitting GAM, we check whether predictors actually have **non-linear relationships** with 2nd semester grades. We plot scatter plots with a **linear fit** (red dashed line). If the data deviates systematically from the straight line, we need GAM.
+
+```{r gam1-eda-prep, include=FALSE}
+TARGET_GRADE <- 'Curricular.units.2nd.sem..grade.'
+
+features_grade <- c(
+  'Previous.qualification..grade.',
+  'Admission.grade',
+  'Age.at.enrollment',
+  'Scholarship.holder',
+  'Curricular.units.1st.sem..approved.',
+  'Curricular.units.1st.sem..grade.',
+  'Unemployment.rate',
+  'GDP'
+)
+
+df_grade <- df %>%
+  select(all_of(c(features_grade, TARGET_GRADE))) %>%
+  mutate(across(everything(), as.numeric)) %>%
+  na.omit() %>%
+  filter(!!sym(TARGET_GRADE) > 0)
+```
+
+```{r gam1-eda-visual, fig.height=8, fig.width=10, fig.cap="Visual inspection: Do predictors have non-linear relationships?"}
+# Reshape data to long format for faceting (exclude Scholarship.holder - it's categorical)
+continuous_predictors <- features_grade[features_grade != 'Scholarship.holder']
+
+df_long <- df_grade %>%
+  select(all_of(c(continuous_predictors, TARGET_GRADE))) %>%
+  pivot_longer(cols = all_of(continuous_predictors),
+               names_to = "Predictor",
+               values_to = "Value")
+
+# Single ggplot with facet_wrap
+ggplot(df_long, aes(x = Value, y = .data[[TARGET_GRADE]])) +
+  geom_point(alpha = 0.3, size = 0.8) +
+  geom_smooth(color = "red", linetype = "dashed", linewidth = 0.8) +
+  facet_wrap(~ Predictor, scales = "free_x", ncol = 3) +
+  labs(x = "Predictor Value", y = "2nd Semester Grade")
+```
+
+**What we observe:**
+
+- **1st Sem Grade**: Strong **non-linear curve** at lower values—students who barely pass in semester 1 show a curved pattern, not a straight relationship.
+
+- **1st Sem Approved**: Clear **non-linearity**—passing 0-5 courses vs. 15-20 courses has different effects on 2nd semester outcomes.
+
+- **Admission Grade & Previous Qualification**: These look **fairly linear**—the straight red line fits the data reasonably well. Smoothing might not help much.
+
+- **Age, GDP, Unemployment**: These are **discrete/categorical** variables with limited variation. Less clear if smoothing adds value.
+
+**Decision:** Non-linearity is clearly present for **semester performance variables**. We'll fit a GAM with smooths on all continuous predictors, then use **effective degrees of freedom (edf) and p-value** to determine which smooths are truly needed.
+
+### Fitting the GAM for 2nd Semester Grade Prediction
+
+Now that we've confirmed non-linearity exists, we fit a GAM model. We'll start by smoothing all continuous predictors, then examine which smooths are actually needed.
 
 ```{r gam1-all, results="hide"}
 TARGET_GRADE <- 'Curricular.units.2nd.sem..grade.'
@@ -1193,42 +1409,110 @@ cat(sprintf("GAM performance: R²=%.4f RMSE=%.4f MAE=%.4f\n",
             test_r2_g, test_rmse_g, test_mae_g))
 ```
 
-### Comparison with Linear Model
+### Interpreting the GAM Summary
+
+The GAM summary provides two critical pieces of information for each smooth term:
+
+1. **Effective Degrees of Freedom (edf)**: How "wiggly" the smooth is
+   - **edf ≈ 1**: The relationship is essentially **linear** (smooth isn't needed)
+   - **edf ≈ 2-3**: Moderately non-linear
+   - **edf > 3**: Highly non-linear, complex curve
+   
+2. **p-value**: Is this term statistically significant?
+   - **p < 0.05**: Significant predictor
+   - **p > 0.05**: Not significant (could be removed)
+
+```{r gam1-summary-interpretation, results="asis", echo=FALSE}
+# Extract smooth terms information from GAM summary
+gam_summary <- summary(gam_grade)
+smooth_terms <- gam_summary$s.table
+
+# Create interpretation table
+interpretation_df <- data.frame(
+  Term = rownames(smooth_terms),
+  EDF = round(smooth_terms[, "edf"], 2),
+  `p-value` = round(smooth_terms[, "p-value"], 4),
+  Significance = ifelse(smooth_terms[, "p-value"] < 0.001, "***",
+                       ifelse(smooth_terms[, "p-value"] < 0.01, "**",
+                             ifelse(smooth_terms[, "p-value"] < 0.05, "*", ""))),
+  Interpretation = c(
+    ifelse(smooth_terms[1, "edf"] < 1.5, "Nearly linear", 
+           ifelse(smooth_terms[1, "edf"] < 3, "Moderately non-linear", "Highly non-linear")),
+    ifelse(smooth_terms[2, "edf"] < 1.5, "Nearly linear", 
+           ifelse(smooth_terms[2, "edf"] < 3, "Moderately non-linear", "Highly non-linear")),
+    ifelse(smooth_terms[3, "edf"] < 1.5, "Nearly linear", 
+           ifelse(smooth_terms[3, "edf"] < 3, "Moderately non-linear", "Highly non-linear")),
+    ifelse(smooth_terms[4, "edf"] < 1.5, "Nearly linear", 
+           ifelse(smooth_terms[4, "edf"] < 3, "Moderately non-linear", "Highly non-linear")),
+    ifelse(smooth_terms[5, "edf"] < 1.5, "Nearly linear", 
+           ifelse(smooth_terms[5, "edf"] < 3, "Moderately non-linear", "Highly non-linear")),
+    ifelse(smooth_terms[6, "edf"] < 1.5, "Nearly linear", 
+           ifelse(smooth_terms[6, "edf"] < 3, "Moderately non-linear", "Highly non-linear")),
+    ifelse(smooth_terms[7, "edf"] < 1.5, "Nearly linear", 
+           ifelse(smooth_terms[7, "edf"] < 3, "Moderately non-linear", "Highly non-linear"))
+  ),
+  check.names = FALSE
+)
+
+knitr::kable(interpretation_df, 
+             caption = "GAM Smooth Terms: Significance and Non-linearity",
+             align = c("l", "r", "r", "c", "l"))
+```
+
+**Key Findings from GAM Summary:**
+
+- **Highly significant & non-linear** (edf > 3, p < 0.001):
+  - `s(Curricular.units.1st.sem..approved.)` - edf ≈ 5.4
+  - `s(Curricular.units.1st.sem..grade.)` - edf ≈ 5.5
+  
+  These **justify using GAM** - they show complex curved relationships that linear models can't capture.
+
+- **Nearly linear** (edf ≈ 1):
+  - `s(Admission.grade)` - edf ≈ 1.0
+  - `s(Unemployment.rate)` - edf ≈ 1.0
+  
+  These smooths are **essentially straight lines** - they could be replaced with regular linear terms to save complexity.
+
+- **Not significant** (p > 0.05):
+  - `s(Age.at.enrollment)` - p ≈ 0.37
+  
+  Age doesn't significantly improve grade prediction in this model, despite our EDA suggesting some pattern.
+
+### Visualizing the Key Non-Linear Effects
+
+Based on our summary interpretation, we plot only the **significant AND truly non-linear smooths** (edf > 2, p < 0.05).
+
+```{r gam1-smooth, fig.height=4, fig.width=10, fig.cap="Smooth terms showing true non-linear patterns"}
+par(mfrow = c(1, 3), mar = c(4, 4, 3, 2))
+
+# Plot only the 3 most meaningful smooths
+plot(gam_grade, select = 4, shade = TRUE, col = "darkblue", shade.col = "lightblue",
+     main = "1st Sem Approved Courses", cex.main = 1.1, ylab = "Effect on 2nd Sem Grade")
+
+plot(gam_grade, select = 5, shade = TRUE, col = "darkblue", shade.col = "lightblue",
+     main = "1st Sem Grade", cex.main = 1.1, ylab = "Effect on 2nd Sem Grade")
+
+plot(gam_grade, select = 7, shade = TRUE, col = "darkblue", shade.col = "lightblue",
+     main = "GDP", cex.main = 1.1, ylab = "Effect on 2nd Sem Grade")
+```
+
+**Interpretation:**
+
+- **1st Sem Approved**: Non-linear pattern—students who pass very few OR complete all courses show different effects than mid-range students.
+- **1st Sem Grade**: Strong curve at lower grades—struggling students follow a different trajectory than average performers.
+- **GDP**: Moderate curve showing economic factors have some non-linear influence.
+
+### Model Evaluation & Summary
 
 ```{r gam1-comparison, results="hide"}
 lm_model <- lm(Curricular.units.2nd.sem..grade. ~ ., data = train_g)
 lm_pred <- predict(lm_model, test_g)
 lm_r2 <- cor(test_g[[TARGET_GRADE]], lm_pred)^2
-
-cat(sprintf("GAM vs Linear | GAM R²=%.4f | Linear R²=%.4f | Improvement=%.2f pp\n",
-            test_r2_g, lm_r2, (test_r2_g - lm_r2) * 100))
+lm_rmse <- sqrt(mean((test_g[[TARGET_GRADE]] - lm_pred)^2))
+lm_mae <- mean(abs(test_g[[TARGET_GRADE]] - lm_pred))
 ```
 
-The GAM achieves an **R²** of `r round(test_r2_g, 4)` versus `r round(lm_r2, 4)` for the linear model—demonstrating that **non-linear relationships** exist and capturing them improves predictions.
-
-### Visualizing Non-Linear Effects
-
-```{r gam1-smooth, fig.height=8, fig.cap="Smooth functions reveal non-linear patterns"}
-par(mfrow = c(2, 4), mar = c(4, 4, 3, 1))
-plot(gam_grade, select = 1, shade = TRUE, col = "blue", shade.col = "lightblue",
-     main = "Previous Qualification", cex.main = 1.2)
-plot(gam_grade, select = 2, shade = TRUE, col = "blue", shade.col = "lightblue",
-     main = "Admission Grade", cex.main = 1.2)
-plot(gam_grade, select = 3, shade = TRUE, col = "blue", shade.col = "lightblue",
-     main = "Age at Enrollment", cex.main = 1.2)
-plot(gam_grade, select = 4, shade = TRUE, col = "blue", shade.col = "lightblue",
-     main = "1st Sem Approved", cex.main = 1.2)
-plot(gam_grade, select = 5, shade = TRUE, col = "blue", shade.col = "lightblue",
-     main = "1st Sem Grade", cex.main = 1.2)
-plot(gam_grade, select = 6, shade = TRUE, col = "blue", shade.col = "lightblue",
-     main = "Unemployment Rate", cex.main = 1.2)
-plot(gam_grade, select = 7, shade = TRUE, col = "blue", shade.col = "lightblue",
-     main = "GDP", cex.main = 1.2)
-```
-
-**Key Non-Linear Patterns:** Age effects may show optimal ranges, course load might reveal sweet spots, and economic variables might display threshold effects that linear models cannot capture.
-
-```{r gam1-predictions, fig.cap="GAM predictions maintain strong accuracy"}
+```{r gam1-predictions, fig.cap="GAM prediction accuracy on test set"}
 par(mfrow = c(1, 2))
 
 plot(test_g[[TARGET_GRADE]], pred_test_g,
@@ -1249,7 +1533,34 @@ abline(h = 0, col = "red", lwd = 2, lty = 2)
 grid()
 ```
 
+```{r gam1-comparison-table, echo=FALSE}
+comparison_df <- data.frame(
+  Model = c("Linear Model (Section 4)", "GAM"),
+  `R²` = c(sprintf("%.4f", lm_r2), sprintf("%.4f", test_r2_g)),
+  RMSE = c(sprintf("%.4f", lm_rmse), sprintf("%.4f", test_rmse_g)),
+  MAE = c(sprintf("%.4f", lm_mae), sprintf("%.4f", test_mae_g)),
+  check.names = FALSE
+)
+
+knitr::kable(comparison_df,
+             caption = "GAM vs Linear Model Performance",
+             align = c("l", "r", "r", "r"))
+```
+
+**Summary of Gaussian GAM (Model 1):**
+
+- GAM achieves **R² = `r round(test_r2_g, 3)`** versus **`r round(lm_r2, 3)`** for Linear Model—an improvement of **`r round((test_r2_g - lm_r2) * 100, 1)` percentage points**.
+- The improvement comes from capturing **curved relationships** in 1st semester performance variables.
+- Residuals are centered around zero with no systematic bias, indicating a well-fitted model.
+- Some variance remains unexplained (~45%), likely due to unmeasured factors like study habits or motivation.
+
 ## 7.3 Model 2: Logistic GAM for Graduation Prediction
+
+In Section 5, we used **Binomial GLM** to predict graduation vs dropout, assuming linear relationships. Now we ask: **do non-linear patterns exist for graduation probability?**
+
+We apply the same approach as Model 1: fit a GAM, check which smooths are significant (via edf and p-value), and compare performance with the linear GLM.
+
+### Data Preparation & Model Fitting
 
 ```{r gam2-prep}
 df_success <- df %>%
@@ -1263,6 +1574,8 @@ features_success <- c(
   'Tuition.fees.up.to.date',
   'Curricular.units.1st.sem..approved.',
   'Curricular.units.1st.sem..grade.',
+  'Curricular.units.2nd.sem..approved.',
+  'Curricular.units.2nd.sem..grade.',
   'Unemployment.rate',
   'GDP'
 )
@@ -1285,6 +1598,8 @@ gam_success <- gam(
     factor(Tuition.fees.up.to.date) +
     s(Curricular.units.1st.sem..approved., bs = "cr", k = 8) +
     s(Curricular.units.1st.sem..grade., bs = "cr", k = 10) +
+    s(Curricular.units.2nd.sem..approved., bs = "cr", k = 8) +
+    s(Curricular.units.2nd.sem..grade., bs = "cr", k = 10) +
     s(Unemployment.rate, bs = "cr", k = 8) +
     s(GDP, bs = "cr", k = 8),
   data = train_s,
@@ -1292,6 +1607,41 @@ gam_success <- gam(
   method = "REML"
 )
 ```
+
+### Interpreting the Summary
+
+```{r gam2-summary, results="asis", echo=FALSE}
+gam2_summary <- summary(gam_success)
+smooth2 <- gam2_summary$s.table
+
+interp2 <- data.frame(
+  Term = rownames(smooth2),
+  EDF = round(smooth2[, "edf"], 2),
+  `p-value` = round(smooth2[, "p-value"], 4),
+  Significant = ifelse(smooth2[, "p-value"] < 0.05, "Yes", "No"),
+  check.names = FALSE
+)
+
+knitr::kable(interp2, caption = "Logistic GAM: Smooth Terms Summary", align = c("l", "r", "r", "c"))
+```
+
+**Interpreting the results:**
+
+**Highly significant & non-linear** (edf > 2, p < 0.05):
+- `2nd Sem Approved` (edf=4.90, p≈0) - strongest predictor
+- `Age` (edf=4.41, p≈0) - curved relationship
+- `Admission Grade` (edf=4.70, p=0.0002)
+- `2nd Sem Grade` (edf=3.74, p=0.0002)
+- `1st Sem Approved` (edf=3.85, p=0.002)
+
+**Nearly linear** (edf ≈ 1):
+- `Unemployment` (edf=1.00, p=0.02) - significant but perfectly linear
+- `1st Sem Grade` (edf=2.34) - moderately curved
+
+**Not significant**:
+- `GDP` (p=0.31) - could be dropped from model
+
+### Model Evaluation
 
 ```{r gam2-eval, results="hide"}
 pred_proba_s <- predict(gam_success, test_s, type = "response")
@@ -1305,41 +1655,23 @@ cat(sprintf("Accuracy: %.4f (%.2f%%)\n", accuracy_s, accuracy_s * 100))
 cat(sprintf("AUC-ROC: %.4f\n", auc_s))
 ```
 
-For the graduation GAM, the test set results are **accuracy = `r round(accuracy_s, 3)`** and **AUC = `r round(auc_s, 3)`**.
-
 ```{r gam2-comparison, results="hide"}
 log_reg <- glm(Success ~ ., data = train_s, family = binomial)
 log_pred_proba <- predict(log_reg, test_s, type = "response")
 log_roc <- roc(test_s$Success, log_pred_proba, quiet = TRUE)
 log_auc <- auc(log_roc)
-
-cat("\nLogistic GAM vs Logistic GLM:\n")
-cat(sprintf("GAM AUC:         %.4f\n", auc_s))
-cat(sprintf("Logistic GLM:    %.4f\n", log_auc))
-cat(sprintf("Improvement:     %.2f percentage points\n", (auc_s - log_auc) * 100))
 ```
 
-The GAM's **AUC** of `r round(auc_s, 4)` versus `r round(log_auc, 4)` for standard logistic regression represents meaningful improvement for **intervention decisions**.
+**Performance Comparison:**
 
-### Non-Linear Risk Patterns
+| Model | AUC |
+|-------|-----|
+| Binomial GLM (Section 5) | `r round(log_auc, 3)` |
+| Logistic GAM | `r round(auc_s, 3)` |
 
-```{r gam2-smooth, fig.height=8, fig.cap="Non-linear graduation probability patterns"}
-par(mfrow = c(2, 3), mar = c(4, 4, 3, 1))
-plot(gam_success, select = 1, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
-     main = "Admission Grade", cex.main = 1.2, ylab = "Log-Odds of Graduation")
-plot(gam_success, select = 2, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
-     main = "Age at Enrollment", cex.main = 1.2, ylab = "Log-Odds of Graduation")
-plot(gam_success, select = 3, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
-     main = "1st Sem Approved", cex.main = 1.2, ylab = "Log-Odds of Graduation")
-plot(gam_success, select = 4, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
-     main = "1st Sem Grade", cex.main = 1.2, ylab = "Log-Odds of Graduation")
-plot(gam_success, select = 5, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
-     main = "Unemployment", cex.main = 1.2, ylab = "Log-Odds of Graduation")
-plot(gam_success, select = 6, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
-     main = "GDP", cex.main = 1.2, ylab = "Log-Odds of Graduation")
-```
+GAM achieves **AUC = `r round(auc_s, 3)`** versus **`r round(log_auc, 3)`** for GLM—an improvement of **`r round((auc_s - log_auc) * 100, 1)` percentage points**.
 
-```{r gam2-roc, fig.cap="Logistic GAM achieves strong discrimination"}
+```{r gam2-roc, fig.height=4, fig.width=5, fig.cap="Logistic GAM ROC curve"}
 plot(roc_s, col = "darkgreen", lwd = 2,
      main = sprintf("ROC Curve - Logistic GAM (AUC = %.3f)", auc_s),
      cex.main = 1.3)
@@ -1349,92 +1681,37 @@ legend("bottomright", legend = c("GAM", "Random"),
 grid()
 ```
 
-## 7.4 Model 3: Poisson GAM for Course Counts
+### Visualizing Key Non-Linear Effects
 
-```{r gam3-all, results="hide", echo=FALSE}
-TARGET_COUNT <- 'Curricular.units.2nd.sem..approved.'
+We plot variables with **edf > 2 and p < 0.05** (meaningful non-linearity):
 
-features_count <- c(
-  'Admission.grade',
-  'Age.at.enrollment',
-  'Scholarship.holder',
-  'Tuition.fees.up.to.date',
-  'Curricular.units.1st.sem..approved.',
-  'Curricular.units.1st.sem..grade.',
-  'Curricular.units.2nd.sem..enrolled.'
-)
+```{r gam2-smooth, fig.height=4, fig.width=10, fig.cap="Non-linear graduation probability patterns"}
+par(mfrow = c(1, 3), mar = c(4, 4, 3, 2))
 
-df_count <- df %>%
-  select(all_of(c(features_count, TARGET_COUNT))) %>%
-  mutate(across(everything(), as.numeric)) %>%
-  na.omit()
+# Plot the 3 most non-linear and significant smooths
+plot(gam_success, select = 5, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
+     main = "2nd Sem Approved", cex.main = 1.1, ylab = "Log-Odds of Graduation")
 
-set.seed(42)
-train_index_c <- createDataPartition(df_count[[TARGET_COUNT]], p = 0.8, list = FALSE)
-train_c <- df_count[train_index_c, ]
-test_c <- df_count[-train_index_c, ]
+plot(gam_success, select = 2, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
+     main = "Age at Enrollment", cex.main = 1.1, ylab = "Log-Odds of Graduation")
 
-gam_count <- gam(
-  Curricular.units.2nd.sem..approved. ~
-    s(Admission.grade, bs = "cr", k = 10) +
-    s(Age.at.enrollment, bs = "cr", k = 8) +
-    factor(Scholarship.holder) +
-    factor(Tuition.fees.up.to.date) +
-    s(Curricular.units.1st.sem..approved., bs = "cr", k = 8) +
-    s(Curricular.units.1st.sem..grade., bs = "cr", k = 10) +
-    s(Curricular.units.2nd.sem..enrolled., bs = "cr", k = 8),
-  data = train_c,
-  family = poisson(link = "log"),
-  method = "REML"
-)
-
-pred_test_c <- predict(gam_count, test_c, type = "response")
-
-test_rmse_c <- sqrt(mean((test_c[[TARGET_COUNT]] - pred_test_c)^2))
-test_mae_c <- mean(abs(test_c[[TARGET_COUNT]] - pred_test_c))
-test_r2_c <- cor(test_c[[TARGET_COUNT]], pred_test_c)^2
-
-cat(sprintf("Test R²: %.4f | RMSE: %.4f | MAE: %.4f\n",
-            test_r2_c, test_rmse_c, test_mae_c))
-
-poisson_glm <- glm(Curricular.units.2nd.sem..approved. ~ .,
-                   data = train_c, family = poisson)
-glm_pred_c <- predict(poisson_glm, test_c, type = "response")
-glm_r2_c <- cor(test_c[[TARGET_COUNT]], glm_pred_c)^2
-
-cat("\nPoisson GAM vs Poisson GLM:\n")
-cat(sprintf("GAM R²:          %.4f\n", test_r2_c))
-cat(sprintf("Poisson GLM R²:  %.4f\n", glm_r2_c))
-cat(sprintf("Improvement:     %.2f percentage points\n", (test_r2_c - glm_r2_c) * 100))
+plot(gam_success, select = 1, shade = TRUE, col = "darkgreen", shade.col = "lightgreen",
+     main = "Admission Grade", cex.main = 1.1, ylab = "Log-Odds of Graduation")
 ```
 
-For course count prediction, the Poisson GAM achieves **R² = `r round(test_r2_c, 3)`** with **RMSE = `r round(test_rmse_c, 3)`** on the test set.
+**Interpretation:**
+- **2nd Sem Approved/Grade**: Strongest predictors, confirming that later academic data provides the clearest signal
+- **Age**: Young students (18-22) may have different patterns than older students
+- **Note for Early Warning:** While 2nd semester data maximizes accuracy, a 1st-semester-only model (see GLM in Section 5) enables earlier intervention
 
-### Course Load Dynamics
+### Summary
 
-```{r gam3-smooth, fig.height=6, fig.cap="Non-linear effects on course completion"}
-par(mfrow = c(2, 3), mar = c(4, 4, 3, 1))
-plot(gam_count, select = 1, shade = TRUE, col = "orange", shade.col = "lightyellow",
-     main = "Admission Grade", cex.main = 1.2, ylab = "Effect on Log(Count)")
-plot(gam_count, select = 2, shade = TRUE, col = "orange", shade.col = "lightyellow",
-     main = "Age at Enrollment", cex.main = 1.2, ylab = "Effect on Log(Count)")
-plot(gam_count, select = 3, shade = TRUE, col = "orange", shade.col = "lightyellow",
-     main = "1st Sem Approved", cex.main = 1.2, ylab = "Effect on Log(Count)")
-plot(gam_count, select = 4, shade = TRUE, col = "orange", shade.col = "lightyellow",
-     main = "1st Sem Grade", cex.main = 1.2, ylab = "Effect on Log(Count)")
-plot(gam_count, select = 5, shade = TRUE, col = "orange", shade.col = "lightyellow",
-     main = "2nd Sem Enrolled", cex.main = 1.2, ylab = "Effect on Log(Count)")
-```
+**Summary of Logistic GAM (Model 2):**
 
-```{r gam3-predictions, fig.cap="Poisson GAM predictions"}
-plot(test_c[[TARGET_COUNT]], pred_test_c,
-     pch = 16, col = rgb(1, 0.5, 0, 0.5),
-     xlab = "Actual Courses Approved", ylab = "Predicted Courses Approved",
-     main = sprintf("Poisson GAM (R² = %.4f)", test_r2_c),
-     cex.main = 1.3, cex.lab = 1.1)
-abline(0, 1, col = "red", lwd = 2, lty = 2)
-grid()
-```
+- Logistic GAM achieves **AUC = `r round(auc_s, 3)`**, using both 1st and 2nd semester data
+- **2nd semester performance** (edf=4.90) emerges as the dominant non-linear predictor
+- **Age** (edf=4.41) shows strong curved relationship - younger students have different graduation patterns
+- **GDP** was not significant (p=0.31) and could be dropped in a refined model
 
 ------------------------------------------------------------------------
 
@@ -1523,7 +1800,7 @@ We train two neural networks to compare Lab 1 and Lab 2 approaches.
 
 Following `ANN_Lab1_GermanCredit_v1.Rmd`, we use `nnet` with one hidden layer and weight decay.
 
-```{r nn-train-model-A, results="hide"}
+```{r nn-train-model-A, results="hide", cache=TRUE, cacherebuild=FALSE}
 # Model A: nnet with single hidden layer (Lab 1 style)
 model_A <- nnet(
   Target ~ .,
@@ -1539,9 +1816,9 @@ model_A <- nnet(
 
 Following `ANN_Lab2_Iris_v1.Rmd`, we use `neuralnet` with a deeper architecture using **three hidden layers**. This requires numeric inputs and numeric output columns, so we build 0/1 columns for our binary target.
 
-In this run, Model B uses a **2-5-2** hidden-layer setup (2 neurons → 5 neurons → 2 neurons). We also set `threshold = 0.8` mainly to keep runtime manageable while we debug and iterate. A **larger** threshold usually stops earlier (faster), but it can also stop before the model has learned enough.
+In this run, Model B uses a **2-5-2** hidden-layer setup (2 neurons - 5 neurons - 2 neurons). We also set `threshold = 0.8` mainly to keep runtime manageable while we debug and iterate. A **larger** threshold usually stops earlier (faster), but it can also stop before the model has learned enough.
 
-```{r nn-train-model-B, results="hide", cache=TRUE}
+```{r nn-train-model-B, results="hide", cache=TRUE, cache.rebuild=FALSE}
 # One-hot encode predictors for neuralnet (Lab 2 approach)
 dummies <- dummyVars(Target ~ ., data = train_nn)
 train_matrix <- as.data.frame(predict(dummies, newdata = train_nn))
@@ -1570,10 +1847,9 @@ model_B <- neuralnet(
 )
 ```
 
-## 8.6 Model Evaluation
+## 8.6 Model Evaluation  
 
-We generate predictions and confusion matrices for both models.
-
+We generate predictions and confusion matrices for both models:
 ```{r nn-evaluate-both-models, results="hide"}
 # --- Model A predictions (nnet) ---
 pred_A_class <- predict(model_A, newdata = test_nn, type = "class")
@@ -1591,10 +1867,40 @@ pred_B_class <- factor(
 )
 conf_matrix_B <- confusionMatrix(pred_B_class, test_nn$Target)
 ```
+### Confusion Matrix Comparison  
 
-## 8.7 Performance Metrics Summary
+side-by-side heatmaps comparing both models. X-axis (top) = Predicted, Y-axis = True labels.
+```{r nn-confusion-matrix-comparison, fig.width=12, fig.height=5}
+# Helper function to create confusion matrix plot
+nn_plot_confusion_matrix <- function(conf_matrix, title) {
+  cm_df <- as.data.frame(conf_matrix$table)
+  names(cm_df) <- c("Predicted", "True", "Count")
+  
+  ggplot(cm_df, aes(x = Predicted, y = True, fill = Count)) +
+    geom_tile(color = "white", linewidth = 1) +
+    geom_text(aes(label = Count), size = 5, fontface = "bold", color = "white") +
+    scale_fill_gradient(low = "#3498DB", high = "#E74C3C", name = "Count") +
+    scale_x_discrete(position = "top") +
+    scale_y_discrete(limits = rev(c("Dropout", "NotDropout"))) +
+    labs(title = title, x = "Predicted Class", y = "True Class") +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 13),
+      axis.text = element_text(size = 10),
+      legend.position = "right"
+    )
+}
 
-We report common classification metrics for both models. In the binary setting, we treat **Dropout** as the "positive" class (this matches the business goal of flagging students who may need support).
+# Create plots for both models
+plot_A <- nn_plot_confusion_matrix(conf_matrix_A, "Model A: nnet (1 hidden layer)")
+plot_B <- nn_plot_confusion_matrix(conf_matrix_B, "Model B: neuralnet (3 hidden layers)")
+
+# Display side by side
+grid.arrange(plot_A, plot_B, ncol = 2)
+```
+
+### Performance Metrics Summary
+
+We report accuracy, precision, recall for both NN models. In the binary setting, we treat **Dropout** as the "positive" class (this matches the business goal of flagging students who may need support).
 
 ```{r nn-performance-summary, results="hide"}
 nn_metrics_df <- tibble(
@@ -1645,41 +1951,18 @@ ggplot(nn_metrics_long, aes(x = Metric, y = Value, fill = Model)) +
   theme(legend.position = "top")
 ```
 
-Model A (1 layer) still delivers the strongest result on the test set. The deeper Model B (hidden layers: 2-5-2) does not automatically outperform the simpler Model A. This mirrors the lecture message that more layers are not automatically better for structured tabular data.
+**Interpreting the metrics:**
 
-## 8.8 Confusion Matrix Comparison
+- **Accuracy(Dropout)** = (TP + TN) / Total — Overall correctness. Model A: 87.1%, Model B: 87.7%  
+- **Precision (Dropout)** = TP / (TP + FP) — "Of students predicted as Dropout, how many actually dropped out?" Higher precision = fewer false alarms. Model B (86.9%) > Model A (83.2%)  
+- **Recall (Dropout)** = TP / (TP + FN) — "Of actual dropouts, how many did we catch?" Higher recall = fewer missed at-risk students. Model A (75.0%) > Model B (72.5%)  
 
-Side-by-side heatmaps comparing both models. X-axis (top) = Predicted, Y-axis = True labels.
+**Trade-off:** Model B has higher precision (fewer false positives) but lower recall (misses more true dropouts). For an early warning system, **recall matters more** — we'd rather flag some students unnecessarily than miss at-risk ones. Model A's higher recall makes it slightly better for intervention purposes.
 
-```{r nn-confusion-matrix-comparison, fig.width=12, fig.height=5}
-# Helper function to create confusion matrix plot
-nn_plot_confusion_matrix <- function(conf_matrix, title) {
-  cm_df <- as.data.frame(conf_matrix$table)
-  names(cm_df) <- c("Predicted", "True", "Count")
-  
-  ggplot(cm_df, aes(x = Predicted, y = True, fill = Count)) +
-    geom_tile(color = "white", linewidth = 1) +
-    geom_text(aes(label = Count), size = 5, fontface = "bold", color = "white") +
-    scale_fill_gradient(low = "#3498DB", high = "#E74C3C", name = "Count") +
-    scale_x_discrete(position = "top") +
-    scale_y_discrete(limits = rev(c("Dropout", "NotDropout"))) +
-    labs(title = title, x = "Predicted Class", y = "True Class") +
-    theme(
-      plot.title = element_text(hjust = 0.5, face = "bold", size = 13),
-      axis.text = element_text(size = 10),
-      legend.position = "right"
-    )
-}
+Model A (1 layer) delivers the strongest overall result. The deeper Model B (2-5-2) does not automatically outperform the simpler architecture — confirming that more layers aren't always better for structured tabular data.
 
-# Create plots for both models
-plot_A <- nn_plot_confusion_matrix(conf_matrix_A, "Model A: nnet (1 hidden layer)")
-plot_B <- nn_plot_confusion_matrix(conf_matrix_B, "Model B: neuralnet (3 hidden layers)")
 
-# Display side by side
-grid.arrange(plot_A, plot_B, ncol = 2)
-```
-
-## 8.9 ROC Curve Comparison
+### ROC Curve Comparison
 
 We compare ROC curves for **Dropout** (Dropout vs NotDropout) across both models using `ROCR`.
 
@@ -1740,9 +2023,17 @@ ggplot(roc_df, aes(x = FPR, y = TPR, color = Model)) +
 
 **AUC interpretation:** higher AUC means better separation of Dropout vs NotDropout. Here, Model A has AUC **`r auc_A`** and Model B has AUC **`r auc_B`**. But **the difference is minimal**.
 
-## 8.10 Feature Importance (Permutation)
+## 8.7 Feature Importance (Permutation)
 
-Permutation importance (same spirit as Lab 1's "what-if" checks) measures how much each *model's accuracy* drops when we randomly shuffle one predictor at a time. Bigger drops mean the learner *relied heavily on that feature*. It shows that **second semester grades are a very important factor**. It is interesting that at HSLU, we also feel like the **second semester is the hardest** and requires a lot of **effort and attention**.
+**Why we need this:** Unlike GLMs where we can interpret coefficients directly, neural networks are "black boxes" — we can't use `drop1()` or `anova()` on them. **Permutation importance** is the standard technique to understand which features matter most.
+
+**How it works (simple explanation):**
+1. Train the model and record its accuracy (e.g., 87%)
+2. Take one feature (e.g., "2nd Sem Grade") and randomly shuffle its values
+3. Measure the new accuracy — if it drops a lot (e.g., 87% → 70%), that feature was important
+4. Repeat for each feature
+
+**Interpretation:** A bigger drop in accuracy = the model relied more on that feature. Features with small drops can be shuffled without hurting performance, meaning the model didn't use them much.
 
 ```{r nn-permutation-importance, message=FALSE, results="hide"}
 # Helper to compute accuracy drop for a single feature and model
@@ -1822,7 +2113,7 @@ knitr::kable(
 )
 ```
 
-## 8.11 Business Use: Early Warning and Intervention
+## 8.8 Business Use: Early Warning and Intervention
 
 This neural network can be used as an **early warning system**:
 
@@ -1841,7 +2132,7 @@ Important caution:
 - The model helps us **prioritize** students for support, but it should not be the only decision tool.
 - The safest process is to combine model predictions with human review (advisors) before taking action.
 
-## 8.12 Neural Network Architecture Visualization
+## 8.9 Neural Network Architecture Visualization
 
 `NeuralNetTools::plotnet()` turns the fitted networks into diagrams that show layers, neurons, and connection strengths (thicker lines = larger absolute weights).
 
@@ -1873,54 +2164,52 @@ NeuralNetTools::plotnet(
 par(mfrow = c(1, 1))
 ```
 
-## 8.13 Findings & Interpretation
+## 8.10 Neural Network Conclusions
 
-**Model A (nnet):** 9 inputs - 10 hidden neurons - 1 output (P(NotDropout)). **Simple, fast**, handles factors directly and reaches strong test performance.
+**Model A (nnet):** 9 inputs - 10 hidden neurons - 1 output (P(NotDropout)). 
+**Model B (neuralnet):** 9 inputs - 2 - 5 - 2 neurons - 2 outputs.
 
-**Model B (neuralnet):** 9 inputs - 2 - 5 - 2 neurons - 2 outputs. Shows Lab 2's deeper setup but **does not automatically outperform the simpler Model A**.
-
-**Strengths observed:** Neural networks capture non-linear interaction between grades, tuition status, and scholarships.
+1. Both neural networks predict **dropout risk** reasonably well, but the single hidden layer (Model A) provides the best balance of accuracy and stability on this dataset.  
+2. Adding **more layers** (Model B: 2-5-2) does **not automatically outperform** the simpler architecture; this reinforces the lab insight that "deeper" is not automatically "better" for structured tabular data.  
 
 **Limitations observed:**
 
-- Deeper networks remain sensitive to hyperparameters and can overfit small samples.
-- Interpretability is limited compared to GLM/GAM coefficients.
-- Because we combine **Enrolled + Graduate** into **NotDropout**, this target cannot distinguish "still studying" from "already graduated". This is acceptable for an early-warning dropout use case, but it matters if the business question is specifically "who will graduate".
-
-## 8.14 Neural Network Conclusions
-
-1. Both neural networks predict **dropout risk** reasonably well, but the single hidden layer (Model A) provides the best balance of accuracy and stability on this dataset.
-2. Adding more layers (Model B: 2-5-2) does not automatically outperform the simpler architecture; this reinforces the lab insight that "deeper" is not automatically "better" for structured tabular data.
-3. Standard preprocessing steps (scaling numeric features, stratified train/test split) remain essential for consistent results.
+- Deeper networks remain **sensitive to hyperparameters** and can overfit small samples.  
+- **Interpretability** is **limited** compared to GLM/GAM coefficients.  
+- Because we combine **Enrolled + Graduate** into **NotDropout**, this target cannot distinguish "still studying" from "already graduated". This is acceptable for an early-warning dropout use case, but it matters if the business question is specifically "who will graduate".  
 
 ------------------------------------------------------------------------
 
 # 9. Support Vector Machine Analysis
 
-```{r svm-load-data, echo=FALSE}
+**Business Question:** *"Who is classified as at risk of dropping out?"* (from Section 1.1)
+
+Support Vector Machines represent our **robust, high-accuracy classifier** for the Early Warning System. They find the **maximum margin** boundary that best separates dropout students from successful ones. We test three kernel types (Linear, Radial, Polynomial) to determine which decision boundary works best.
+
+```{r svm-load-data, echo=TRUE}
 # Load the dataset from the project data folder
 student_data <- read_csv("data/preprocessed_data.csv")
 
-# Filter to keep only Dropout and Graduate (remove Enrolled)
+# Create binary target: Dropout vs Not Dropout (Graduate + Enrolled)
+# This aligns with the Early Warning System goal and is consistent with our Neural Network
 student_data <- student_data %>%
-  filter(Target %in% c("Dropout", "Graduate"))
+  mutate(Target = ifelse(Target == "Dropout", "Dropout", "Not Dropout"))
 
-# Convert Target to factor with only 2 levels
-student_data$Target <- factor(student_data$Target, levels = c("Dropout", "Graduate"))
+# Convert Target to factor
+student_data$Target <- factor(student_data$Target, levels = c("Dropout", "Not Dropout"))
 ```
 
-We will now test different vector models to understand what is the best classifier for our student's performance. SVMs operate by identifying where the **margin** between different categories of data is the greatest.
+We will now test different **SVM kernels** to understand which is the best classifier for our student performance prediction. SVMs operate by identifying where the **margin** between different categories of data is the greatest.
 To classify our dataset, the model plots a separating line between the two outcome classes using a number of predictors - in order to keep it clear, we want to create a two-dimensional plane (two predictors).
 
 By applying different kernels—linear, radial, and polynomial— we assess how the shape of the decision boundary affects prediction accuracy and determine which kernel provides the most reliable classification for our dataset.
 
-## Feature Selection
+## 9.1 Feature Selection
 
-For us to choose the best predictors, we will compute **F-statistic ANOVA** for every numeric feature in the dataset. The F-score tell us _how much_ the mean of each feature differs between the **two target groups** (_Graduation_/_Dropout_). higher scores mean there is a bigger separation between classes, and a better cutoff between groups. 
-Results indicate that grades and the amount of credits approved have the highest F-Values, suggesting they are the most significant predictors for predicting the success of graduating or not.
+For us to choose the best predictors, we will compute **F-statistic ANOVA** for every numeric feature in the dataset. The F-score tells us _how much_ the **mean** of each feature **differs** between the **two target groups** (_Dropout_ vs _Not Dropout_). Higher scores mean bigger separation between classes, making the feature more useful for classification. 
 
-In this case, we want to choose the features of **second semester marks** and the **amount of units passed** to plot our model.
-```{r svm-fscore-top5, echo=FALSE}
+To visualize the SVM decision boundary, we need to limit our analysis to **two features** (creating a 2D plot with X and Y axes). We selected **second semester marks** and **courses approved** as they have the highest F-values, indicating they best separate Dropout from Not Dropout students.
+```{r svm-fscore-top5, echo=TRUE}
 numeric_cols <- sapply(student_data, is.numeric)
 features <- names(student_data)[numeric_cols]
 # Remove Target if it's numeric
@@ -1953,12 +2242,10 @@ rownames(results) <- NULL
 knitr::kable(head(results, 5), caption = "Top 5 Features by F-statistic")
 ```
 
-## Prepare Data for SVM
+## 9.2 Data Preparation & Train/Test Split
 
-Support Vector Machines require **predictors** (numerical variables) and a **target** (categorical: _Graduate_/_Dropout_) for classification. The data was then structured into a format suitable for SVM modeling.
-The original dataset contained three academic outcomes: _Enrolled_, _Dropout_, and _Graduate_. Since the objective of this analysis is to distinguish students who ultimately graduate from those who drop out, **the Enrolled category was removed**. 
-This reduces the dataset size but produces a cleaner binary classification.
-```{r svm-prepare-marks, echo=FALSE, results='hide'}
+For consistency with our Neural Network model and the Early Warning System goal, we use a **binary classification**: *Dropout* vs *Not Dropout* (which includes both Graduate and Enrolled students). This approach makes sense because at prediction time, all students are enrolled — we want to predict if they will drop out.
+```{r svm-prepare-marks, echo=TRUE, results='hide'}
 # Get the top 2 features (excluding Target)
 top_feature_1 <- as.character(results$Feature[1])
 top_feature_2 <- as.character(results$Feature[2])
@@ -1973,7 +2260,7 @@ marks <- data.frame(
 # Remove rows with NA values if any exist
 marks <- na.omit(marks)
 ```
-```{r svm-prepare-marks-display, echo=FALSE}
+```{r svm-prepare-marks-display, echo=TRUE}
 # Create summary table
 data_summary <- data.frame(
   Metric = c("Total Observations", "Target Classes"),
@@ -1982,18 +2269,14 @@ data_summary <- data.frame(
 
 knitr::kable(data_summary, align = 'c', caption = "Dataset Summary")
 ```
-## Exploratory Visualization
 
-## Train/Test Split
-
-Now, we will split the data into training and testing sets, and then fit several SVM models to classify the students based on their marks.
-```{r svm-train-test-split, echo=FALSE, results='hide'}
+We split the data 80/20 for training and testing:
+```{r svm-train-test-split-display, echo=TRUE}
+# svm-train-test-split
 set.seed(123)
 trainIndex <- createDataPartition(marks$y, p = 0.8, list = FALSE)
 train_data <- marks[trainIndex, ]
 test_data <- marks[-trainIndex, ]
-```
-```{r svm-train-test-split-display, echo=FALSE}
 # Create split summary table
 split_summary <- data.frame(
   Dataset = c("Training", "Testing"),
@@ -2007,416 +2290,450 @@ split_summary <- data.frame(
 knitr::kable(split_summary, align = 'c', caption = "Train/Test Split")
 ```
 
-## Model Training
+## 9.3 Model Training & Tuning
 
-In our dataset, each student is described by academic features such as second-semester grades and credits passed. If the two groups—graduated and dropout— separate cleanly in a straight line, a linear SVM finds the optimal boundary that splits high-performing students from those with a higher risk of dropping out. But if the patterns are more complex, a non-linear kernel like the radial SVM transforms the data so the model can still draw a clear dividing boundary. This allows the SVM to classify students accurately even when the relationship between performance and graduation is not linear.
+We train and optimize **all three SVM kernels** using `tune()` to find the best hyperparameters for each. This ensures a fair comparison rather than using arbitrary parameter values.
 
-**Linear Kernel**: Creates a straight decision boundary to separate classes. This kernel is ideal when the data is linearly separable. In our student dropout analysis, a linear kernel would suggest that the relationship between academic performance metrics and graduation outcomes follows a straightforward, proportional pattern.
+**Linear Kernel**: Creates a straight decision boundary to separate classes. This kernel is ideal when the data is linearly separable.  
+**Radial Basis Function (RBF) Kernel**: Generates curved, non-linear decision boundaries by measuring the distance between data points.  
+**Polynomial Kernel**: Produces curved boundaries with a specific degree of curve. 
+```{r svm-train-models, echo=TRUE}
+set.seed(123)
 
-**Radial Basis Function (RBF) Kernel**: Generates curved, non-linear decision boundaries by measuring the distance between data points. This flexible kernel works best at tracking irregular patterns in the data. For our dataset, the RBF kernel can identify students who may succeed despite lower grades in one metric if they compensate with higher performance in another.
+# 1. Linear Kernel (Tune cost only)
+tune_linear <- tune(svm, y ~ x.1 + x.2, data = train_data,
+                    kernel = "linear",
+                    ranges = list(cost = c(0.1, 1, 10, 100)))
+svm_linear <- tune_linear$best.model
 
-**Polynomial Kernel**: Produces curved boundaries with a specific degree of curve. In student performance prediction, a polynomial kernel might capture scenarios where moderate performance in both metrics leads to different outcomes than extreme performance in either direction, revealing threshold effects or interaction patterns between academic indicators.
-```{r svm-train-models, echo=FALSE}
-svm_linear <- svm(y ~ x.1 + x.2, data = train_data, kernel = "linear", cost = 1)
-svm_radial <- svm(y ~ x.1 + x.2, data = train_data, kernel = "radial", cost = 10, gamma = 0.1)
-svm_poly <- svm(y ~ x.1 + x.2, data = train_data, kernel = "polynomial", cost = 1, degree = 3)
+# 2. Radial Kernel (Tune cost + gamma)
+tune_radial <- tune(svm, y ~ x.1 + x.2, data = train_data, 
+                    kernel = "radial",
+                    ranges = list(cost = c(0.1, 1, 10, 100),
+                                 gamma = c(0.1, 0.5, 1, 2)))
+svm_radial <- tune_radial$best.model
+
+# 3. Polynomial Kernel (Tune cost + degree)
+tune_poly <- tune(svm, y ~ x.1 + x.2, data = train_data,
+                  kernel = "polynomial",
+                  ranges = list(cost = c(0.1, 1, 10),
+                               degree = c(2, 3, 4)))
+svm_poly <- tune_poly$best.model
+
 ```
 
-## Model Evaluation
+**Optimal Hyperparameters:**
 
-```{r svm-predictions, echo=FALSE}
-pred_linear <- predict(svm_linear, test_data)
-pred_radial <- predict(svm_radial, test_data)
-pred_poly <- predict(svm_poly, test_data)
-```
-### Linear Kernel Results
+*   **Linear:** Cost = `r tune_linear$best.parameters$cost`. A lower cost suggests the data is not perfectly separable, allowing some misclassifications to find a wider margin (Soft Margin).
+*   **Radial:** Cost = `r tune_radial$best.parameters$cost`, Gamma = `r tune_radial$best.parameters$gamma`. The gamma value controls the "reach" of a single training example; a moderate value implies a balance between capturing complex boundaries and overfitting.
+*   **Polynomial:** Cost = `r tune_poly$best.parameters$cost`, Degree = `r tune_poly$best.parameters$degree`. The degree indicates the complexity of the curved boundary needed.
 
-```{r svm-plot-linear, fig.width=6, fig.height=5, fig.align='center', echo=FALSE}
-# Get predictions for the grid
+## 9.4 Decision Boundary Comparison
+
+The plots below compare the **"Rigid" Linear Boundary** against the **"Flexible" Tuned Radial Boundary**. The decision boundary represents the "Safe Zone" — students above the line are predicted to *Not Dropout*, while those below are flagged as *Dropout* risk.
+
+```{r svm-boundary-comparison, fig.width=10, fig.height=5, fig.align='center', echo=FALSE}
+# Setup grid for plotting
 x1_range <- range(train_data$x.1)
 x2_range <- range(train_data$x.2)
-
 x1_seq <- seq(x1_range[1], x1_range[2], length.out = 200)
 x2_seq <- seq(x2_range[1], x2_range[2], length.out = 200)
-
 grid <- expand.grid(x.1 = x1_seq, x.2 = x2_seq)
-grid$pred <- predict(svm_linear, grid)
 
-# Create colors for binary classification (Yellow for Dropout, Blue for Graduate)
+# Colors: Yellow (Dropout) vs Blue (Not Dropout)
 cols <- c("#FFF9C4", "#B3E5FC")
+pt_cols <- c("#FFA000", "#1976D2")
 
-# Set up plot with smaller margins
-par(mar = c(4, 4, 2, 2))
+# Function to plot boundary
+plot_svm_boundary <- function(model, title_text) {
+  # Background Grid (Prediction)
+  grid$pred <- predict(model, grid)
+  plot(grid$x.1, grid$x.2, col = cols[as.numeric(grid$pred)], pch = 15, cex = 0.3,
+       xlab = gsub("\\.", " ", top_feature_2),
+       ylab = gsub("\\.", " ", top_feature_1),
+       main = title_text,
+       cex.lab = 0.9, cex.axis = 0.8)
+  
+  # Overlay TEST Data points (Actual)
+  # Jitter added to separate overlapping integer scores
+  points(jitter(test_data$x.1, amount = 0.3), jitter(test_data$x.2, amount = 0.3), 
+         col = pt_cols[as.numeric(test_data$y)],
+         pch = 19, cex = 0.6)
+}
 
-# Plot decision regions
-plot(grid$x.1, grid$x.2, col = cols[as.numeric(grid$pred)], pch = 15, cex = 0.3,
-     xlab = gsub("\\.", " ", top_feature_2),
-     ylab = gsub("\\.", " ", top_feature_1),
-     main = "",
-     cex.lab = 0.9, cex.axis = 0.8)
+# Dual Plot Layout
+par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
 
-# Add training points
-points(train_data$x.1, train_data$x.2, 
-       col = c("#FFA000", "#1976D2")[as.numeric(train_data$y)],
-       pch = 19, cex = 0.8)
+plot_svm_boundary(svm_linear, "Linear Kernel (Test Data)")
+legend("topright", legend = levels(test_data$y), col = pt_cols, pch = 19, cex = 0.7, bty = "n")
 
-# Add simple legend
-legend("topright", 
-       legend = levels(train_data$y),
-       col = c("#FFA000", "#1976D2"),
-       pch = 19,
-       cex = 0.7,
-       bty = "n")
+plot_svm_boundary(svm_radial, "Tuned Radial Kernel (Test Data)")
+legend("topright", legend = levels(test_data$y), col = pt_cols, pch = 19, cex = 0.7, bty = "n")
+
+par(mfrow = c(1, 1))
 ```
 
-```{r svm-eval-linear, echo=FALSE}
-cm_linear <- confusionMatrix(pred_linear, test_data$y)
 
-# Display confusion matrix as a table
-knitr::kable(cm_linear$table, 
-             caption = "Linear Kernel - Confusion Matrix",
-             align = 'c')
-```
-The confusion matrix shows that the linear kernel correctly classified **218 dropouts** and **416 graduates**. However, the model misclassified **66 students who dropped out as graduates** and **25 graduates as dropouts**, indicating some overlap between the two groups. Overall, the linear SVM achieved high accuracy with relatively balanced performance across both prediction categories.
+The **Linear kernel** creates a simple straight line cut-off. The **Radial kernel** is more sophisticated: notice how it creates a second "risk zone" (yellow blob) for students with many approved units but very low grades. The Linear model misses these at-risk students, classifying them as safe.
 
-```{r svm-metrics-linear, echo=FALSE}
-metrics_linear <- data.frame(
-  Metric = c("Accuracy", "Sensitivity", "Specificity", "Kappa"),
-  Value = c(
-    round(cm_linear$overall['Accuracy'], 4),
-    round(cm_linear$byClass['Sensitivity'], 4),
-    round(cm_linear$byClass['Specificity'], 4),
-    round(cm_linear$overall['Kappa'], 4)
-  )
-)
-rownames(metrics_linear) <- NULL
+## 9.5 Visual Comparison: Confusion Matrices
 
-knitr::kable(metrics_linear, 
-             caption = "Linear Kernel - Performance Metrics",
-             align = 'c')
-```
-The linear kernel achieved an accuracy of 87.6%, correctly classifying nearly 9 out of 10 students in the test set. The model demonstrates **high specificity (94.3%)**, meaning it excels at identifying graduates, but shows moderate **sensitivity (76.7%)**, indicating it sometimes misses students at risk of dropping out. The **Kappa score of 0.73** suggests substantial agreement beyond chance, confirming the model's reliability. These metrics indicate that while the linear SVM performs well overall, it is **especially strong at predicting graduation**, but could be improved for dropout detection.
+Here we visually compare where the models make mistakes. The **Linear Model** serves as our baseline.
 
-### Radial Kernel Results
+```{r svm-matrix-comparison, fig.width=10, fig.height=4, fig.align='center', echo=FALSE}
+# Helper to plot matrix
+plot_cm_tile <- function(pred_vals, title) {
+  cm <- caret::confusionMatrix(pred_vals, test_data$y)
+  cm_df <- as.data.frame(cm$table)
+  colnames(cm_df) <- c("Predicted", "Actual", "Count")
+  
+  ggplot(cm_df, aes(x = Predicted, y = Actual, fill = Count)) +
+    geom_tile(color = "white") +
+    geom_text(aes(label = Count), color = "black", size = 5) +
+    scale_fill_gradient(low = "#E3F2FD", high = "#2196F3") +
+    labs(title = title, x = "Predicted", y = "Actual") +
+    theme_minimal() +
+    theme(legend.position = "none", plot.title = element_text(hjust = 0.5, face="bold"))
+}
 
-```{r svm-plot-radial, fig.width=6, fig.height=5, fig.align='center', echo=FALSE}
-# Get predictions for the grid
-grid$pred <- predict(svm_radial, grid)
+# Generate plots
+pred_lin <- predict(svm_linear, test_data)
+pred_rad <- predict(svm_radial, test_data)
 
-# Set up plot
-par(mar = c(4, 4, 2, 2))
+p1 <- plot_cm_tile(pred_lin, "Linear Confusion Matrix")
+p2 <- plot_cm_tile(pred_rad, "Radial Confusion Matrix")
 
-# Plot decision regions
-plot(grid$x.1, grid$x.2, col = cols[as.numeric(grid$pred)], pch = 15, cex = 0.3,
-     xlab = gsub("\\.", " ", top_feature_2),
-     ylab = gsub("\\.", " ", top_feature_1),
-     main = "",
-     cex.lab = 0.9, cex.axis = 0.8)
-
-# Add training points
-points(train_data$x.1, train_data$x.2, 
-       col = c("#FFA000", "#1976D2")[as.numeric(train_data$y)],
-       pch = 19, cex = 0.8)
-
-# Add legend
-legend("topright", 
-       legend = levels(train_data$y),
-       col = c("#FFA000", "#1976D2"),
-       pch = 19,
-       cex = 0.7,
-       bty = "n")
+gridExtra::grid.arrange(p1, p2, ncol = 2)
 ```
 
-```{r svm-eval-radial, echo=FALSE}
-cm_radial <- confusionMatrix(pred_radial, test_data$y)
+**Interpretation:** The confusion matrices show where each model makes errors. For an Early Warning System, **false negatives** (predicting "Not Dropout" for students who actually dropout) are more costly than false positives.
 
-# Display confusion matrix as a table
-knitr::kable(cm_radial$table, 
-             caption = "Radial Kernel - Confusion Matrix",
-             align = 'c')
-```
-The radial kernel shows improved performance over the linear model, correctly classifying **220 dropouts** and **416 graduates**. The model reduced misclassifications of at-risk students, while maintaining the same **25 graduates misclassified as dropouts**. This suggests the **radial function better captures the relationships** in the data, leading to slightly better detection of students at risk of dropping out.
+Comparing the two models:
 
-```{r svm-metrics-radial, echo=FALSE}
-metrics_radial <- data.frame(
-  Metric = c("Accuracy", "Sensitivity", "Specificity", "Kappa"),
-  Value = c(
-    round(cm_radial$overall['Accuracy'], 4),
-    round(cm_radial$byClass['Sensitivity'], 4),
-    round(cm_radial$byClass['Specificity'], 4),
-    round(cm_radial$overall['Kappa'], 4)
-  )
-)
-rownames(metrics_radial) <- NULL
+- **Linear kernel:** Catches 157 dropouts, but **misses 127** (false negatives)
+- **Radial kernel:** Catches 195 dropouts, but **misses only 89** (false negatives)
 
-knitr::kable(metrics_radial, 
-             caption = "Radial Kernel - Performance Metrics",
-             align = 'c')
-```
-The radial kernel demonstrates a slight improvement in overall performance with an **accuracy of 87.7%** and **Kappa score of 0.7359**, both marginally better than the linear model. Notably, the **sensitivity increased to 77.46%**, showing improved ability to detect students at risk of dropping out. The **specificity holds steady at 94%**, maintaining excellent performance in identifying graduates. Overall, the radial kernel's performance is quite similar to the linear model, suggesting that the relationship between the features may be linear.
+The Radial kernel reduces missed dropout cases by **30%** (from 127 to 89). The trade-off is 26 extra false alarms (57 vs 31), which is acceptable since extra support for non-at-risk students causes no harm.
 
-### Polynomial Kernel Results
-```{r svm-eval-poly, echo=FALSE}
-cm_poly <- confusionMatrix(pred_poly, test_data$y)
+## 9.6 Performance Summary
 
-# Display confusion matrix as a table
-knitr::kable(cm_poly$table, 
-             caption = "Polynomial Kernel - Confusion Matrix",
-             align = 'c')
+All three kernels were optimized using grid search to find the best hyperparameters. The table below compares their final performance on the test set:
 
-# Display key metrics as a table
-metrics_poly <- data.frame(
-  Metric = c("Accuracy", "Sensitivity", "Specificity", "Kappa"),
-  Value = c(
-    round(cm_poly$overall['Accuracy'], 4),
-    round(cm_poly$byClass['Sensitivity'], 4),
-    round(cm_poly$byClass['Specificity'], 4),
-    round(cm_poly$overall['Kappa'], 4)
-  )
-)
-rownames(metrics_poly) <- NULL
+```{r svm-comparison, echo=TRUE}
+# Calculate predictions for all models
+pred_lin <- predict(svm_linear, test_data)
+pred_rad <- predict(svm_radial, test_data)
+pred_poly <- predict(svm_poly, test_data)
 
-knitr::kable(metrics_poly, 
-             caption = "Polynomial Kernel - Performance Metrics",
-             align = 'c')
-```
-```{r svm-plot-poly, fig.width=6, fig.height=5, fig.align='center', echo=FALSE}
-# Get predictions for the grid
-grid$pred <- predict(svm_poly, grid)
+cm_linear <- confusionMatrix(pred_lin, test_data$y)
+cm_radial <- confusionMatrix(pred_rad, test_data$y)
+cm_poly   <- confusionMatrix(pred_poly, test_data$y)
 
-# Set up plot
-par(mar = c(4, 4, 2, 2))
-
-# Plot decision regions
-plot(grid$x.1, grid$x.2, col = cols[as.numeric(grid$pred)], pch = 15, cex = 0.3,
-     xlab = gsub("\\.", " ", top_feature_2),
-     ylab = gsub("\\.", " ", top_feature_1),
-     main = "",
-     cex.lab = 0.9, cex.axis = 0.8)
-
-# Add training points
-points(train_data$x.1, train_data$x.2, 
-       col = c("#FFA000", "#1976D2")[as.numeric(train_data$y)],
-       pch = 19, cex = 0.8)
-
-# Add legend
-legend("topright", 
-       legend = levels(train_data$y),
-       col = c("#FFA000", "#1976D2"),
-       pch = 19,
-       cex = 0.7,
-       bty = "n")
-```
-```{r svm-eval-poly, echo=FALSE}
-cm_poly <- confusionMatrix(pred_poly, test_data$y)
-
-# Display confusion matrix as a table
-knitr::kable(cm_poly$table, 
-             caption = "Polynomial Kernel - Confusion Matrix",
-             align = 'c')
-```
-
-The polynomial kernel achieved 610 correct predictions (186 dropouts, 424 graduates) out of 725 total cases. The model's main weakness lies in misclassifying 98 actual dropout students as graduates, which could lead to missed intervention opportunities for at-risk students.
-
-```{r svm-metrics-poly, echo=FALSE}
-metrics_poly <- data.frame(
-  Metric = c("Accuracy", "Sensitivity", "Specificity", "Kappa"),
-  Value = c(
-    round(cm_poly$overall['Accuracy'], 4),
-    round(cm_poly$byClass['Sensitivity'], 4),
-    round(cm_poly$byClass['Specificity'], 4),
-    round(cm_poly$overall['Kappa'], 4)
-  )
-)
-
-knitr::kable(metrics_poly, 
-             caption = "Polynomial Kernel - Performance Metrics",
-             align = 'c')
-```
-The polynomial kernel achieved 84.1% overall accuracy with high specificity (96.2%), indicating strong performance in correctly identifying graduates. However, the model's sensitivity of 65.5% reveals a weakness in detecting dropout cases, with the Kappa score of 64.9% confirming moderate agreement.
-
-## Performance Comparison
-
-After evaluating all three SVM kernels, the results show minimal performance differences across models. The **radial kernel** achieved the highest accuracy at 87.7%, followed closely by the **linear kernel** at 87.4%, while the **polynomial kernel** performed slightly lower at 84.1%. However, given the marginal improvement of only 0.3% between the linear and radial models, the **linear kernel is the preferred choice** for this classification task. It offers comparable predictive performance while maintaining greater interpretability and computational efficiency—critical factors when deploying models in educational settings where stakeholders need to understand and trust the decision-making process. The linear model's simplicity also makes it easier to explain to administrators and educators, making interventions for at-risk students without sacrificing meaningful accuracy.
-```{r svm-comparison, echo=FALSE}
 comparison_results <- data.frame(
   Model = c("Linear", "Radial", "Polynomial"),
   Accuracy = c(cm_linear$overall['Accuracy'],
                cm_radial$overall['Accuracy'],
-               cm_poly$overall['Accuracy'])
+               cm_poly$overall['Accuracy']),
+  Sensitivity = c(cm_linear$byClass['Sensitivity'],
+                  cm_radial$byClass['Sensitivity'],
+                  cm_poly$byClass['Sensitivity']),
+  Kappa = c(cm_linear$overall['Kappa'],
+            cm_radial$overall['Kappa'],
+            cm_poly$overall['Kappa'])
 )
-rownames(comparison_results) <- NULL
 
-knitr::kable(comparison_results, digits = 3, caption = "Model Accuracy Comparison")
-
-# Store best model info for summary table
+# Store best model info using numeric values
 svm_best_idx <- which.max(comparison_results$Accuracy)
 svm_best_model <- comparison_results$Model[svm_best_idx]
 svm_best_accuracy <- comparison_results$Accuracy[svm_best_idx]
+
+# Create display table with formatting
+display_table <- comparison_results
+display_table[,2:3] <- lapply(display_table[,2:3], function(x) sprintf("%.1f%%", x*100))
+display_table$Kappa <- round(display_table$Kappa, 3)
+
+knitr::kable(display_table, caption = "Model Accuracy Comparison", align = 'c')
 ```
 
+Based on these results, the **Radial kernel** performs best with the highest accuracy and sensitivity. This makes it the recommended choice for the Early Warning System to identify at-risk students.
+
+Cross Validation will be elaborated in next Chapter 10.
 ------------------------------------------------------------------------
 
-# 10. Model Comparison & Summary
+# 10. Model Comparison & Cross Validation
 
-## 10.1 Performance Overview
+## 10.1 Model Overview
 
-```{r summary-table}
-summary_df <- data.frame(
-  Model = c("Linear Regression", "Poisson GLM (1st Sem)", "Poisson GLM (2nd Sem)",
-            "Binomial GLM (Admission)", "Binomial GLM (Graduation)",
-            "Gaussian GAM", "Logistic GAM", "Poisson GAM", "SVM (best kernel)"),
-  Outcome = c("Grades", "Course Count", "Course Count", "Classification",
-              "Classification", "Grades", "Classification", "Course Count", "Classification"),
-  Metric = c(sprintf("R² = %.3f", test_r2),
-             sprintf("RMSE = %.3f", test_rmse1),
-             sprintf("RMSE = %.3f", test_rmse2),
-             sprintf("Acc = %.3f", accuracy_adm),
-             sprintf("AUC = %.3f", auc_suc),
-             sprintf("R² = %.3f", test_r2_g),
-             sprintf("AUC = %.3f", auc_s),
-             sprintf("R² = %.3f", test_r2_c),
-             sprintf("Acc = %.3f (%s)", svm_best_accuracy, svm_best_model))
+Each model in our analysis serves a specific purpose in our client's decision-making toolkit:
+
+- **Understanding models** (LM, Gaussian GAM): overview of *which factors* drive academic performance and *by how much*.  
+- **Classification models** (Binomial GLM, Logistic GAM): give *interpretable risk scores* with clear odds ratios.  
+- **Early Warning models** (Neural Network, SVM): Deliver *maximum accuracy* (~88%) for operational deployment.  
+- **Planning model** (Poisson GLM): Enables *step-stone predictions* before any grades exist, predict how many courses a student can pass in first semester.
+
+This models gives our client flexibility: interpretable models for policy discussions, high-accuracy models for daily operations.
+
+<div style="font-size: 70%;">
+
+| Model | Target Outcome | Predictors | Evaluation |
+|-------|---------------|----------------|------------|
+| **Linear Regression** | 2nd Sem Grade (continuous) | 1st Sem Grade, Admission Grade, GDP | R² ~ 0.37 |
+| **Binomial GLM** | Graduation vs Dropout | 1st Sem Approved/Grade, Tuition Status, Debtor | AUC ~ 0.87 |
+| **Poisson GLM** | 1st Sem Courses Approved (count) | Admission Grade, Previous Qualification | RMSE ~ 1.8 |
+| **Gaussian GAM** | 2nd Sem Grade (continuous) | 1st Sem Grade (smooth), Age, Scholarship | R² ~ 0.55 |
+| **Logistic GAM** | Graduation vs Dropout | 1st Sem Approved/Grade (smooth), Tuition, Scholarship | AUC ~ 0.89 |
+| **Neural Network** | Dropout vs Not Dropout | 1st/2nd Sem Grades, Tuition, Debtor, Scholarship | Accuracy ~ 88% |
+| **SVM (Linear)** | Dropout vs Not Dropout | 2nd Sem Grade, 2nd Sem Approved | Accuracy ~ 87.6% |
+| **SVM (Radial)** | Dropout vs Not Dropout | 2nd Sem Grade, 2nd Sem Approved | Accuracy ~ 87.7% |
+| **SVM (Poly)** | Dropout vs Not Dropout | 2nd Sem Grade, 2nd Sem Approved | Accuracy ~ 84.1% |
+
+</div>
+
+### Early Warning System Approaches
+
+**Two prediction timelines are possible with our models:**
+
+```{r early-warning-flowchart, echo=FALSE, fig.width=10, fig.height=4}
+if (requireNamespace("DiagrammeR", quietly = TRUE)) {
+  DiagrammeR::grViz("
+  digraph early_warning {
+    graph [rankdir=LR, bgcolor=white, fontname=Helvetica]
+    node [shape=box, style='rounded,filled', fontname=Helvetica, fontsize=11]
+    
+    subgraph cluster_0 {
+      label='Option 1: At Admission (Experimental)'
+      style=dashed
+      color=gray
+      A [label='Admission\\nData', fillcolor='#e3f2fd']
+      B [label='Poisson\\nGLM', fillcolor='#bbdefb']
+      C [label='Predicted\\n1st Sem Courses', fillcolor='#90caf9']
+      D [label='Binomial\\nGLM', fillcolor='#64b5f6']
+      E [label='Dropout\\nRisk', fillcolor='#42a5f5']
+      A -> B -> C -> D -> E
+    }
+    
+    subgraph cluster_1 {
+      label='Option 2: After 1st Semester (Recommended)'
+      style=solid
+      color='#2e7d32'
+      F [label='1st/2nd Sem\\nData', fillcolor='#c8e6c9']
+      G [label='NN or SVM', fillcolor='#81c784']
+      H [label='Dropout Prediction\\n~88% Accuracy', fillcolor='#4caf50', fontcolor=white]
+      F -> G -> H
+    }
+  }
+  ")
+} else {
+  cat("Option 1 (Experimental): Admission Data - Poisson GLM - Predicted Courses - Binomial GLM - Dropout Risk\n")
+  cat("Option 2 (Recommended): 1st/2nd Sem Data - NN or SVM - Dropout Prediction (~88% Accuracy)")
+}
+```
+
+**Option 2 (NN/SVM after 1st semester)** is recommended for production use due to higher accuracy (~88%). Option 1 provides earlier predictions but relies on predicted intermediate values.
+
+## 10.2 Cross Validation
+
+Given the promising performance of the Support Vector Machines in Chapter 9, we proceed with a rigorous confirmation step. We use **10-Fold Cross-Validation** to test the stability of the three kernels. 
+
+For a fair comparison, all models use the exact same configuration as the previous section:
+- **Target:** Dropout vs Not Dropout
+- **Predictors:** 2nd Sem Grade, 2nd Sem Approved
+- **Data:** Full dataset (binary classification)
+
+> **Note on Methodology:** To efficiently verify the stability of our *optimized* models, we use the fixed hyperparameters identified in Chapter 9 (via `tune()`) rather than re-tuning inside each fold. This validates that our chosen model configurations perform reliably across different data subsets.
+
+```{r svm-cv-setup, echo=TRUE}
+# 10-Fold Cross-Validation for SVM Kernels
+set.seed(42)
+
+# Use the 'marks' dataset from Chapter 9 (Dropout vs Not Dropout)
+data_cv <- marks
+n <- nrow(data_cv)
+
+# Parameters
+K <- 10
+folds <- sample(rep(1:K, length.out = n))
+
+# Storage for accuracy results
+acc_linear <- numeric(K)
+acc_radial <- numeric(K)
+acc_poly <- numeric(K)
+
+# Loop through k folds
+for(k in 1:K) {
+    # Split into train/test for this fold
+    test_idx <- which(folds == k)
+    train_fold <- data_cv[-test_idx, ]
+    test_fold <- data_cv[test_idx, ]
+    
+    # Train using the TUNED parameters found in Chapter 9
+    # We access 'best.parameters' from the tune objects to ensure we use the optimized values
+    m_lin <- svm(y ~ x.1 + x.2, data = train_fold, kernel = "linear", 
+                 cost = tune_linear$best.parameters$cost)
+    
+    m_rad <- svm(y ~ x.1 + x.2, data = train_fold, kernel = "radial", 
+                 cost = tune_radial$best.parameters$cost, 
+                 gamma = tune_radial$best.parameters$gamma)
+    
+    m_pol <- svm(y ~ x.1 + x.2, data = train_fold, kernel = "polynomial", 
+                 cost = tune_poly$best.parameters$cost, 
+                 degree = tune_poly$best.parameters$degree)
+    
+    # Predict & Calculate Accuracy
+    p_lin <- predict(m_lin, test_fold)
+    p_rad <- predict(m_rad, test_fold)
+    p_pol <- predict(m_pol, test_fold)
+    
+    acc_linear[k] <- mean(p_lin == test_fold$y)
+    acc_radial[k] <- mean(p_rad == test_fold$y)
+    acc_poly[k]   <- mean(p_pol == test_fold$y)
+}
+```
+
+### Cross-Validation Results
+
+The boxplot below shows the spread of accuracy scores across the 10 folds. A narrower box indicates a more **stable** model.
+
+```{r svm-cv-results, echo=TRUE, fig.width=8, fig.height=5}
+# Combine results for plotting
+cv_results <- data.frame(
+  Accuracy = c(acc_linear, acc_radial, acc_poly),
+  Model = factor(rep(c("Linear", "Radial", "Polynomial"), each = K))
 )
 
-knitr::kable(summary_df, caption = "Comparative Model Performance Summary")
+# Visual comparison of stability
+print(ggplot(cv_results, aes(x = Model, y = Accuracy, fill = Model)) +
+  geom_boxplot(alpha = 0.7) +
+  geom_jitter(width = 0.1, alpha = 0.5) +  # Show individual fold scores
+  labs(title = "Stability of SVM Kernels (10-Fold CV)",
+       subtitle = "Using optimized hyperparameters from Chapter 9",
+       y = "Accuracy per Fold") +
+  theme_minimal() +
+  scale_fill_manual(values = c("#90CAF9", "#1976D2", "#1565C0")) +
+  theme(legend.position = "none"))
+
+# Summary table
+cv_summary <- cv_results %>%
+  group_by(Model) %>%
+  summarise(
+    Mean_Accuracy = sprintf("%.1f%%", mean(Accuracy)*100),
+    SD = sprintf("%.3f", sd(Accuracy)),
+    Min = sprintf("%.1f%%", min(Accuracy)*100),
+    Max = sprintf("%.1f%%", max(Accuracy)*100)
+  )
+
+knitr::kable(cv_summary, caption = "10-Fold CV Performance Statistics", align = 'c')
+```
+### Statistical Comparison
+
+To confirm if the differences are statistically significant, we perform paired t-tests between the kernels.
+
+```{r svm-cv-stats, echo=TRUE}
+# Paired t-tests to compare kernels
+t_lin_vs_rad <- t.test(acc_linear, acc_radial, paired = TRUE)
+t_lin_vs_poly <- t.test(acc_linear, acc_poly, paired = TRUE)
+t_rad_vs_poly <- t.test(acc_radial, acc_poly, paired = TRUE)
+
+# Results table
+stat_results <- data.frame(
+  Comparison = c("Linear vs Radial", "Linear vs Poly", "Radial vs Poly"),
+  p_value = c(t_lin_vs_rad$p.value, t_lin_vs_poly$p.value, t_rad_vs_poly$p.value)
+)
+stat_results$Significant <- stat_results$p_value < 0.05
+
+knitr::kable(stat_results, 
+             caption = "Paired t-test Results (α = 0.05)",
+             digits = 4,
+             align = 'c')
 ```
 
-## 10.2 Key Findings Across All Models
+### CV Conclusion
 
-### 1. First Semester Performance: The Critical Juncture
+Based on repeated 10-fold cross-validation:
 
-Across all models and outcome types, first semester performance emerged as the dominant predictor of future success:
+*   **Radial kernel** achieves a mean accuracy of `r sprintf("%.1f%%", mean(acc_radial)*100)`.
+*   **Linear kernel** achieves `r sprintf("%.1f%%", mean(acc_linear)*100)`.
+*   **Polynomial kernel** achieves `r sprintf("%.1f%%", mean(acc_poly)*100)`.
 
--   **Early intervention is essential**: The first semester represents a critical window for identifying at-risk students
--   **Multiple indicators matter**: Both grades and course completion rates predict future outcomes
--   **Momentum effects exist**: Early success or struggle tends to compound over time
-
-**Recommendation**: Institutions should implement robust **first-semester monitoring systems** with automatic flagging of students whose performance falls below critical thresholds.
-
-### 2. Non-Linear Relationships Matter
-
-GAMs consistently outperformed their linear counterparts, revealing that relationships are often curved rather than straight:
-
--   **Age effects show U-shapes**: Middle-aged students tend to perform best, with elevated risks at both extremes
--   **Course load optima exist**: Sweet spots where students succeed; too few or too many courses both reduce performance
--   **Grade thresholds matter**: The impact of improving grades varies dramatically depending on current performance level
-
-**Recommendation**: Use **GAMs** for risk prediction systems to capture these nuances and improve identification of **at-risk students**.
-
-### 3. Socioeconomic and Financial Factors
-
-Several consistent patterns emerged:
-
--   **Parental education**: Mother's and father's qualification levels positively predict student success
--   **Financial status**: Scholarship holders and students current on tuition show better outcomes
--   **Economic context**: Macro-economic conditions show systematic but modest effects
-
-**Recommendation**: Financial aid programs appear justified by their positive impact on outcomes. Institutions should ensure **financial barriers don't prevent student success**.
-
-### 4. Model Selection Guidelines
-
-| Outcome Type               | Best Approach               | Why                                                         |
-|--------------------|----------------------|--------------------------------|
-| Continuous (grades)        | Linear Regression or GAM    | Efficient and interpretable; GAM if non-linearity suspected |
-| Count (course completions) | Poisson GLM/GAM             | Ensures non-negative predictions; appropriate distribution  |
-| Binary (graduation)        | Binomial GLM/GAM            | Provides probability estimates; ROC analysis                |
-| Complex patterns           | Neural Networks/SVM         | Captures interactions; high capacity                        |
+This confirms the findings from Section 9: The **Radial Kernel** is the most robust and accurate model for our Early Warning System. Its ability to capture non-linear relationships gives it a crucial edge in correctly identifying at-risk students.
 
 ------------------------------------------------------------------------
 
-# 11. Business Recommendations
 
-## 11.1 For Academic Advisors
+# 11. Conclusions & Business Recommendations
 
-1.  **First Semester Monitoring**: Flag students whose first semester grades fall below critical thresholds or who complete fewer than expected courses
-2.  **Course Load Guidance**: Use **GAM-derived optimal ranges** when advising students on semester enrollment
-3.  **Personalized Risk Assessment**: Apply **graduation prediction models** to identify students needing additional support
+This study applied multiple **machine learning approaches** to **predict** student **dropout** and graduation outcomes using academic performance data from a Portuguese higher education institution. Six ML methods were evaluated: **Linear**, **GLM** and non-linear models like **GAM**, **Support Vector Machines**, and **Neural Networks**.  
+The models consistently point to **two dominant factors**: **academic performance** (especially 1st/2nd semester grades) and **financial stability** (tuition payment, debtor status). These findings translate directly into intervention strategies.  
+Our **Early Warning System** can identify at-risk students with **88% accuracy** after first semester data is available. For students who haven't completed a semester yet, our **experimental admission-based pipeline** provides earlier (though less accurate) predictions.
 
-## 11.2 For Financial Aid Offices
+## 11.1 Key Findings
+We identified **second semester academic performance** as the **strongest predictors** of student success or dropout, this was proven in our most reliable models SVM and NN features selection process.
+However, for the business case, first semester **early warning** could make more sense, as first semester performance comes as second often as the most important features.
 
-1.  **Prioritize Retention**: Financial factors significantly impact outcomes—consider this when allocating aid
-2.  **Early Disbursement**: Ensure aid arrives **before the first semester**, when impact appears greatest
-3.  **Emergency Funds**: Maintain flexibility to address **mid-semester financial crises** that might derail students
+*   **1st Semester Performance:** The critical **"early warning"** signal. Even though less definitive than 2nd-semester results, poor performance here is the earliest actionable indicator of risk.
+*   **2nd Semester Performance:** The **"definitive"** predictor. Models using 2nd-semester data (SVM, NN) achieved the highest accuracy (~88%). By the end of the first year, the student's success or dropout is largely decided. **Failure to pass enrolled units** in the second semester is the dominant risk factor.
 
-## 11.3 For Institutional Research
+The **early warning system** could be established by the best-performing models **SVM** or **Neural Network**. The accuracy rate could reach **86.8%**. Another **experimental system** could be  [Admission Data] - [Poisson GLM] - [Predicted 1st Sem Courses] - [Binomial GLM] - [Dropout Risk].
 
-1.  **Continuous Monitoring**: Update models annually as new cohorts graduate
-2.  **Intervention Evaluation**: Use **holdout groups** to assess whether interventions informed by these models actually improve outcomes
-3.  **Subgroup Analysis**: Examine whether model performance and predictor importance vary across **demographic groups**
+## 11.2 Business Recommendations
 
-## 11.4 For Policy Makers
+Our models suggest that **grade performance** and **financial stability** are the most critical factors for student retention. We propose the following structured intervention strategy:
 
-1.  **Economic Context Matters**: While individual factors dominate, macro-economic conditions show measurable effects on student success
-2.  **Early Intervention ROI**: The dominant role of first semester performance suggests early intervention programs offer **high return on investment**
-3.  **Holistic Support**: Success depends on academic preparation, financial stability, and family background—**no single intervention suffices**
+**1. For Our Client University (Two-Stage Filter):**
 
-------------------------------------------------------------------------
+*   **Implement "Option 2" EarlyWarning System:**
+*   **Stage 1 (After Sem 1):** Deploy the **Binomial GLM** or **1st-Sem SVM** as a broad screening tool. The goal is *prevention*, flag students with difficulty early.  
+*   **Stage 2 (After Sem 2):** Deploy the higher precision **Neural Network** or **SVM** . The goal is *crisis intervention*. Accurately identify students who are on the brink of dropout for intensive counseling.  
+*   **Human-in-the-Loop Protocol:** Use the model as a *filtering tool*. High-risk lists should be reviewed by advisors, not used for automated decisions.  
+
+**2. For Academic Advisors:**  
+*   **Early Warning is key:** Do not wait for the 2nd semester. If the **system predicts dropout** based on first-semester data (where failing multiple courses is a key driver), this is the single biggest red flag for action. And another drop-out signal in 2nd semester would be definitive signal for immediate intervention.  
+*   **Multi-faceted Support:** Combine academic tutoring with financial counseling, as financial stress (debtor status) is a key dropout factor too.
+
+**3. For Policy Makers:**  
+*   **Economic Context:** External factors like Unemployment Rate and GDP have minor effects on academic success (The Linear Regression coefficients (Section 4.8) show GDP/Unemployment have small effect sizes). This could be considered into policy making as background information.  
+*   **Financial Safety Nets:** Consider policy to provide scholarship and emergency loan programs for in-risk students.
 
 # 12. Limitations & Future Work
 
-## 12.1 Current Limitations
+## 12.1 Limitations
 
-1.  **Missing Variables**: Important factors like motivation, study habits, mental health, and campus engagement aren't captured.
-2.  **Temporal Dynamics**: Our models don't account for how circumstances change over time.
-3.  **Causal Claims**: These are predictive models—we identify associations, not proven causal mechanisms.
-4.  **Institutional Specificity**: Results may not generalize to institutions with different student populations or support systems.
+Our dataset focuses on academic records and financial indicators, but real student life is more complex. We don't have data on **motivation**, **mental health**, or **study habits** (like how often someone visits the library or attends tutoring). These "soft" factors likely matter a lot, but they're hard to collect.
 
-## 12.2 Future Research Directions
+Finally, this is a Portuguese institution with its own grading scale (0-20). What works here might not directly transfer to HSLU or other universities without recalibration. A standardized scoring system would be needed for broader use.
 
-1.  **Add study-behavior data**: Add library visits, and tutoring center check-ins.
-2.  **Use text signals**: Look at course evaluations, advisor notes, or short essays for extra context.
-3.  **Track over time**: Try simple time-series approaches to see how risk changes semester by semester.
-5.  **Fairness checks**: Regularly test that the model isn’t reinforcing gaps between student groups.
+## 12.2 Ideas for Future Work
 
-------------------------------------------------------------------------
+1. **Behavioral Signals:** Library check-ins, Ilias login frequency, and assignment submission times could significantly boost predictive power.
+2. **Cross-University Validation:** Scaling this system to other universities (e.g., HSLU) to test robustness across different institutions.
 
-# 13. Conclusions 
+# 13. References
 
-This study applied multiple machine learning approaches to predict student dropout and graduation outcomes using academic performance data from a Portuguese higher education institution. Three classification methods were evaluated: Logistic Regression, Support Vector Machines with multiple kernels, and Random Forest.
+1. OECD (2025). *Education at a Glance 2025*. OECD. https://www.oecd.org/en/publications/education-at-a-glance-2025_1a3543e2-en/switzerland_e7c7fc03-en.html
+2. Realinho, V., Machado, J., Baptista, L., & Martins, M.V. (2022). *Predict Students' Dropout and Academic Success*. UCI Machine Learning Repository. https://doi.org/10.24432/C5MC89
 
-## 13.1 Model Performance Summary
+-------------------------------------------------------------------------
 
-The **Random Forest** model demonstrated superior performance across all evaluation metrics, achieving 89.9% accuracy with balanced sensitivity (81.0%) and specificity (94.7%). This method captured the non-linear relationships between academic indicators and student outcomes. The Logistic Regression model provided a strong baseline with 87.0% accuracy, offering interpretability through its linear decision boundary. Among the SVM kernels, the radial basis function achieved the highest performance (87.7% accuracy).
-
-## 13.2 Key Findings
-
-All models identified **_second-semester academic metrics_ as the strongest predictors of student success**. The feature importance analysis revealed that **curricular units approved** and **grade performance in the second semester** were consistently the most discriminative variables across all approaches. **Students who pass fewer than 50%** of their enrolled units in the second semester face substantially elevated dropout risk, while those achieving grades below 11.5 (on a 0-20 scale) demonstrate similar vulnerability patterns.
-
-The decision boundaries established by the best-performing models revealed clear risk thresholds. Students with second-semester **grades below 10.0** combined with _fewer_ than **4 approved units** exhibited dropout probabilities exceeding 75%. Conversely, students maintaining grades above 13.0 with at least 8 approved units showed graduation probabilities above 90%, indicating a safe performance zone.
-
-## 13.3 Validation and Refinement
-
-These threshold recommendations derive from model performance across the entire dataset. The specific grade scales, curricular structures, and student demographics at another institution may need adjustments.
-
-## 13.4 Broader Implications
-
-The high predictive performance achieved using only academic metrics suggests that dropout risk is **observable through readily available institutional data**. This finding reduces the barrier to implementing evidence-based retention programs, as institutions do not need to wait for sophisticated data infrastructure or external data sources before taking action.
-
-## 13.5 Final Remarks
-
-This project demonstrates that machine learning methods can achieve strong predictive performance for student retention challenges using readily available academic data. More importantly, the models provide specific, actionable thresholds that translate statistical predictions into decision rules. By implementing the three immediate actions outlined above, student supervisors can establish a data-driven early warning system that identifies at-risk students with approximately 80% accuracy while maintaining low false alarm rates. The combination of predictive power and practical implementation guidance positions these findings for immediate deployment in higher education retention efforts.
-
-
-## Generative AI Declaration & Guidelines
+# 14. Generative AI Declaration & Guidelines
 
 Generative AI was used as a supplementary tool on top of the assisting material provided in the Machine Learning1 lecture.
 
-### Guidelines for Responsible and Effective Usage of Gen-AI
+## Guidelines for Responsible and Effective Usage of Gen-AI
 1. **Human-in-the-loop verification:** All AI-suggested content was treated as a draft. Text, code, or sources delivered by AI had to be critically reviewed and tested before inclusion.
 2. **Emphasis on learning:** Gen-AI functioned as a learning companion rather than an automated code generator. After receiving suggestions, team members engaged in follow-up questions to grasp the underlying logic and method.
 3. **Transparency:** The team openly acknowledged where and how AI was used in the workflow so the benefits and quality safeguards remained clear.
 
-### Use Cases of AI Tools in the DBM Course Context
+## Use Cases of AI Tools in the Machine Learning 1 Course Context
 AI-based assistants were applied in the following specific cases:
+
 1. **Brainstorming:** Elaborating initial ideas, structuring thoughts, and outlining coding approaches.
 2. **Debugging & optimization:** Explaining error messages and helping improve self-developed scripts to raise efficiency.
 3. **Proofreading:** Accelerating grammar and typo checks during documentation.
 4. **Information acquisition:** Searching for methodological references or code documentation for R Markdown, or machine learning methods (always followed by human verification of credibility).
 
-### Benefits and Challenges in Using Generative AI Tools
+## Benefits and Challenges in Using Generative AI Tools
+
 1. **Benefits:** Faster debugging (e.g., resolving R Markdown knitting errors or debugging issues), on-demand tutoring for advanced questions, and more time spent on analytical reasoning instead of routine fixes.
 2. **Challenges:** The ease of getting answers can create a temptation to trust outputs blindly. The "human-in-the-loop" guideline ensured the team retained ownership, validating every AI-assisted contribution.
-------------------------------------------------------------------------
 
-------------------------------------------------------------------------
+-------------------------------------------------------------------------

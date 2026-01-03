@@ -1,0 +1,140 @@
+---
+title: "Iris Data Classification using a Support Vector Machine"
+author: "Daniel Meister"
+date: "10/16/2025"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading the Packages
+
+First make sure we have all the functionality from the `tidyverse` available:
+
+```{r}
+library(tidyverse)
+theme_set(theme_bw())
+```
+
+We are going to use the `e1071` package for this example and also some helper functions from `caret`
+
+```{r}
+library(e1071) 
+library(caret)
+```
+## Loading the Data
+
+Load the `iris` data set into the environment
+
+```{r}
+data(iris)
+```
+
+and let's have a look a the structure.
+
+```{r}
+str(iris)
+```
+## Have a quick look at the Data
+
+```{r}
+iris %>%
+  ggplot(aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +
+  geom_point()
+```
+```{r}
+iris %>%
+  ggplot(aes(x = Petal.Length, y = Petal.Width, color = Species)) +
+  geom_point()
+```
+
+## Prepare the Data for Training
+
+```{r}
+set.seed(123)
+indices <- createDataPartition(iris$Species, p=.85, list = F)
+```
+
+### Create some easy Variables to access Data
+
+```{r}
+train <- iris %>%
+  slice(indices)
+test_in <- iris %>%
+  slice(-indices) %>%
+  select(-Species)
+test_truth <- iris %>%
+  slice(-indices) %>%
+  pull(Species)
+```
+
+## Train the Support Vector Machine
+
+Call the `svm` function using the default `cost = 10` parameter.
+
+```{r}
+set.seed(123)
+iris_svm <- svm(Species ~ ., train, kernel = "linear", scale = TRUE, cost = 10)
+```
+
+Of course the visualization is a bit difficult as we have some classification regions in four dimensions.
+
+So plot first the resulting classification for the two Petal leaf dimensions
+
+```{r}
+plot(iris_svm, train, Petal.Length ~ Petal.Width)
+```
+And for the Sepal leaf dimensions (of course you need to slice the other dimensions at a reasonable point)
+
+
+```{r}
+plot(iris_svm, train, Sepal.Length ~ Sepal.Width, slice = list(Petal.Length = 4.5, Petal.Width = 1.75))
+```
+
+## Make Predictions
+
+```{r}
+test_pred <- predict(iris_svm, test_in)
+table(test_pred)
+```
+## Evaluate the Results
+
+```{r}
+conf_matrix <- confusionMatrix(test_pred, test_truth)
+conf_matrix
+```
+So we have a resulting SVM with a prediction accuracy of around 95% (of course we would also need to do some cross validation to ensure we were not simply "lucky" with the train/test split).
+
+## Try again with other parameters
+
+
+```{r}
+set.seed(123)
+iris_svm2 <- svm(Species ~ ., train, kernel = "radial", scale = TRUE, cost = 100)
+summary(iris_svm2)
+```
+
+```{r}
+plot(iris_svm2, train, Petal.Length ~ Petal.Width, slice = list(Sepal.Length = 6, Sepal.Width = 3))
+```
+
+
+
+```{r}
+plot(iris_svm2, train, Sepal.Length ~ Sepal.Width, slice = list(Petal.Length = 4.5, Petal.Width = 1.75))
+```
+```{r}
+test_pred <- predict(iris_svm2, test_in)
+table(test_pred)
+```
+```{r}
+conf_matrix <- confusionMatrix(test_pred, test_truth)
+conf_matrix
+```
+
+
+So we have here the same accuracy but with much more complex boundaries (radial kernels and higher costs) so we might be overfitting here a bit more.

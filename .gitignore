@@ -11,3 +11,7 @@ venv/
 pip-selfcheck.json
 __pycache__/
 *.py[cod]
+
+# RMarkdown cache directories (regenerated on each machine)
+*_cache/
+*_files/

@@ -1,0 +1,53 @@
+---
+title: "Testing Rmarkdown"
+author: "luisa.barbanti@hslu.ch"
+date: "October 4th, 2023"
+output: word_document
+---
+
+We create a vector that is the sequence of one to 20 and display it.
+
+```{r}
+x <- 1:20
+x
+```
+
+Now we can compute the mean _of the vector x_.
+
+```{r}
+mean(x)
+```
+
+Now we want to plot the vector x **against another vector y**. This latter is a vector of 20 random numbers.
+
+```{r}
+y <- rnorm(n = 20)
+plot(y ~ x)
+```
+
+Note that you can compile pdf documents, as long as LaTeX is installed on you machine. To quickly install LaTeX on your machine run the following commands.
+
+```{r eval=FALSE}
+install.packages("tinytex")
+library(tinytex)
+install_tinytex()
+```
+
+Then you can write things like this: $y = x + \epsilon$.
+
+This is a (non-exhaustive) list of things you can do with Rmarkdown:
+
+* name chunks
+* use "engines" other than R (e.g. SQL or python)
+* set chunk arguments such as:
+    + ``echo = FALSE`` (i.e. R-code is not reported)
+    + ``results = "hide"`` (R-output is not reported)
+    + ``fig.keep = "none"`` (plots are not reported)
+    + ``message = FALSE`` (messages such as package loading messages are not reported)
+* use LaTeX commands (e.g. \\bigskip to add vertical space)
+* or use html commands (e.g. \<br> to create a line break)
+* ... very many things
+
+
+<!-- Finally, this is a comment and won't be compiled -->
+

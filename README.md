@@ -12,20 +12,36 @@ A fictional university has engaged our consulting firm to diagnose why students 
 
 ---
 
+## Data Source
+
+| Attribute | Value |
+|-----------|-------|
+| **Dataset** | Predict Students' Dropout and Academic Success |
+| **Source** | UCI Machine Learning Repository |
+| **URL** | https://archive.ics.uci.edu/dataset/697 |
+| **Size** | 4,424 students × 36 features |
+| **Target** | Dropout / Graduate / *Enrolled |
+
+**Data Files:**
+- `data/input/raw_data.csv` — Original dataset from UCI repository
+- `data/preprocessed_data.csv` — Cleaned data (categorical encoding, factor conversion) used by all models
+
+---
+
 ## Team Members
 
 | Member | Responsibilities |
 |--------|------------------|
-| **Cyriel**| Linear Regression, GLM (Binomial), GLM (Poisson), GAM |
-| **Ramiro** | Neural Networks, Data Pre-processing |
-| **Dongyuan Gao**  | Support Vector Machines, Report Improvement, Documentation|
+| **Cyriel**| Linear Regression, GLM (Binomial & Poisson), Exploratory Analysis|
+| **Ramiro** | Support Vector Machines, Data Pre-processing |
+| **Dongyuan Gao**  | Neural Networks, Report Integration & Editing, Cross Validation & All-model Improvement |
 
 ---
 
 ## Quick Start
+### 1. Read the final_report_ml1_group.html directly in your browser, use the **show** and **output** toggle **buttons** to read the code and output
 
-### 1. Install R Packages before newly rendering the html
-
+### 2. Or if you want to render the html yourself, install R Packages before newly rendering the html
 Run once in R console if packages are not installed:
 
 ```r
@@ -50,7 +66,7 @@ install.packages(c(
 ))
 ```
 
-### 2. Knit the Report
+### 3. Knit the Report
 
 ```r
 rmarkdown::render("final_report_ml1_group.rmd")
@@ -68,7 +84,9 @@ machine_learning_I_Project/
 │   ├── data_choosing_process/       # Raw data exploration
 │   └── preprocessed_data.csv        # Cleaned data for modeling
 │
-├── final_report_ml1_group.rmd       # Main deliverable (knit this)
+├── final_report_ml1_group.html      # Main deliverable (open in browser)
+├── final_report_ml1_group.rmd       # Rmd file (knit this)
+├── appendix_models.Rmd              # Supplementary models not in final report
 ├── Evaluation_and_Hints.pdf         # Course requirements
 └── README.md                        # This file
 ```
@@ -95,30 +113,22 @@ machine_learning_I_Project/
 
 ---
 
-## Data Source
 
-| Attribute | Value |
-|-----------|-------|
-| **Dataset** | Predict Students' Dropout and Academic Success |
-| **Source** | UCI Machine Learning Repository |
-| **URL** | https://archive.ics.uci.edu/dataset/697 |
-| **Size** | 4,424 students × 36 features |
-| **Target** | Dropout / Enrolled / Graduate |
-
----
 
 ## Key Findings
 
-1. **1st semester performance** is the strongest predictor across all models
-2. **Financial stability** (tuition fees up to date) significantly increases graduation rates
-3. **Non-linear patterns** captured by GAMs outperform linear models by 2-5%
-4. **Neural networks** score about 0.87 AUC when telling graduates apart from others (overall comparison)
-5. **SVM** (linear kernel) achieves ~87% accuracy on Dropout vs Graduate classification (best kernel: radial at ~87.7%, slightly higher)
-6. **Early intervention** after 1st semester, with targeted support, can significantly change student outcomes
+1. **1st/2nd semester performance** is the strongest predictor across all models (~88% accuracy with NN/SVM)
+2. **Financial stability** (tuition fees up to date) significantly increases graduation odds (~52% more courses approved)
+3. **Scholarship holders** demonstrate better outcomes across all models
+4. **Non-linear age effects**: Students aged 18-22 have optimal success rates (GAM finding)
+5. **Quasi-Poisson** model addresses overdispersion in 1st semester course prediction
+6. **Early Warning System** achievable with ~88% accuracy after 1st semester data
 
 ---
 
 ## References
+
+OECD (2025). *Education at a Glance 2025*. OECD. https://www.oecd.org/en/publications/education-at-a-glance-2025_1a3543e2-en/switzerland_e7c7fc03-en.html
 
 Realinho, V., Machado, J., Baptista, L., & Martins, M.V. (2022). *Predict Students' Dropout and Academic Success*. UCI Machine Learning Repository. https://doi.org/10.24432/C5MC89
 
@@ -131,8 +141,8 @@ Generative AI was used as a supplementary tool on top of the assisting material 
 2. **Emphasis on learning:** Gen-AI functioned as a learning companion rather than an automated code generator. After receiving suggestions, team members engaged in follow-up questions to grasp the underlying logic and method.
 3. **Transparency:** The team openly acknowledged where and how AI was used in the workflow so the benefits and quality safeguards remained clear.
 
-### Use Cases of AI Tools in the DBM Course Context
-AI-based assistants were applied in the following specific cases:
+### Use Cases of AI Tools in the ML1 Course Context
+GenAI tools were applied in the following specific cases:
 1. **Brainstorming:** Elaborating initial ideas, structuring thoughts, and outlining coding approaches.
 2. **Debugging & optimization:** Explaining error messages and helping improve self-developed scripts to raise efficiency.
 3. **Proofreading:** Accelerating grammar and typo checks during documentation.
