@@ -81,14 +81,16 @@ rmarkdown::render("final_report_ml1_group.rmd")
 ```
 machine_learning_I_Project/
 ├── data/
-│   ├── data_choosing_process/       # Raw data exploration
-│   └── preprocessed_data.csv        # Cleaned data for modeling
+│   ├── input/raw_data.csv           # Original UCI dataset
+│   └── **preprocessed_data.csv**    # Cleaned data (used by all models)
 │
-├── final_report_ml1_group.html      # Main deliverable (open in browser)
+├── **final_report_ml1_group.html**  # **Main deliverable** (open in browser)
 ├── final_report_ml1_group.rmd       # Rmd file (knit this)
 ├── appendix_models.Rmd              # Supplementary models not in final report
 ├── Evaluation_and_Hints.pdf         # Course requirements
-└── README.md                        # This file
+├── README.md                        # This file
+├── final_report_ml1_group_files/    # Generated figures (auto-created by knitr)
+└── final_report_ml1_group_cache/    # Cached chunks (speeds up re-knitting)
 ```
 
 ---
