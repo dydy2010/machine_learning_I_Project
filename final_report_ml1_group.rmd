@@ -2172,6 +2172,10 @@ par(mfrow = c(1, 1))
 
 # 9. Support Vector Machine Analysis
 
+**Business Question:** *"Who is classified as at risk of dropping out?"* (from Section 1.1)
+
+Support Vector Machines represent our **robust, high-accuracy classifier** for the Early Warning System. They find the **maximum margin** boundary that best separates dropout students from successful ones. We test three kernel types (Linear, Radial, Polynomial) to determine which decision boundary works best.
+
 ```{r svm-load-data, echo=TRUE}
 # Load the dataset from the project data folder
 student_data <- read_csv("data/preprocessed_data.csv")
@@ -2449,9 +2453,15 @@ Cross Validation will be elaborated in next Chapter 10.
 # 10. Model Comparison & Cross Validation
 
 ## 10.1 Model Overview
-Until now, we have done the following models and experiments,
-the first models served also as a exploration and learning, we did not limit ourselves to dropout and non-dropout predictions. These could also provide other insights for our client.
-With NN and SVM, we focused on the dropout prediction.
+
+Each model in our analysis serves a specific purpose in our client's decision-making toolkit:
+
+- **Understanding models** (LM, Gaussian GAM): overview of *which factors* drive academic performance and *by how much*.  
+- **Classification models** (Binomial GLM, Logistic GAM): give *interpretable risk scores* with clear odds ratios.  
+- **Early Warning models** (Neural Network, SVM): Deliver *maximum accuracy* (~88%) for operational deployment.  
+- **Planning model** (Poisson GLM): Enables *step-stone predictions* before any grades exist, predict how many courses a student can pass in first semester.
+
+This models gives our client flexibility: interpretable models for policy discussions, high-accuracy models for daily operations.
 
 <div style="font-size: 70%;">
 
@@ -2642,13 +2652,15 @@ This confirms the findings from Section 9: The **Radial Kernel** is the most rob
 
 # 11. Conclusions & Business Recommendations
 
-This study applied multiple machine learning approaches to predict student dropout and graduation outcomes using academic performance data from a Portuguese higher education institution. Three classification methods were evaluated: Linear and non-linear models like GLM/GAM, Support Vector Machines with multiple kernels, and Neural Networks.
+This study applied multiple machine learning approaches to predict student dropout and graduation outcomes using academic performance data from a Portuguese higher education institution. Six classification methods were evaluated: Linear and non-linear models like GLM/GAM, Support Vector Machines, and Neural Networks.  
+The models consistently point to two dominant factors: **academic performance** (especially 1st/2nd semester grades) and **financial stability** (tuition payment, debtor status). These findings translate directly into intervention strategies.  
+Our Early Warning System can identify at-risk students with **88% accuracy** after first semester data is available. For students who haven't completed a semester yet, our experimental admission-based pipeline provides earlier (though less accurate) predictions.
 
 ## 11.1 Key Findings
 We identified **second semester academic performance** as the **strongest predictors** of student success or dropout, this was proven in our most reliable models SVM and NN features selection process.
 However, for the business case, first semester **early warning** could make more sense, as first semester performance comes as second often as the most important features.
 
-*   **1st Semester Performance:** The critical **"early warning"** signal. While less definitive than 2nd-semester results, poor performance here is the earliest actionable indicator of risk.
+*   **1st Semester Performance:** The critical **"early warning"** signal. Even though less definitive than 2nd-semester results, poor performance here is the earliest actionable indicator of risk.
 *   **2nd Semester Performance:** The **"definitive"** predictor. Models using 2nd-semester data (SVM, NN) achieved the highest accuracy (~88%). By the end of the first year, the student's success or dropout is largely decided. **Failure to pass enrolled units** in the second semester is the dominant risk factor.
 
 The **early warning system** could be established by the best-performing models **SVM** or **Neural Network**. The accuracy rate could reach **86.8%**. Another **experimental system** could be  [Admission Data] - [Poisson GLM] - [Predicted 1st Sem Courses] - [Binomial GLM] - [Dropout Risk].
@@ -2659,7 +2671,7 @@ Our models suggest that **grade performance** and **financial stability** are th
 
 **1. For Our Client University (Two-Stage Filter):**
 
-*   **Implement "Option 2" Warning System:**
+*   **Implement "Option 2" EarlyWarning System:**
 *   **Stage 1 (After Sem 1):** Deploy the **Binomial GLM** or **1st-Sem SVM** as a broad screening tool. The goal is *prevention*, flag students with difficulty early.
 *   **Stage 2 (After Sem 2):** Deploy the higher precision **Neural Network** or **SVM** . The goal is *crisis intervention*. Accurately identify students who are on the brink of dropout for intensive counseling.
 *   **Human-in-the-Loop Protocol:** Use the model as a *filtering tool*. High-risk lists should be reviewed by advisors, not used for automated decisions.
